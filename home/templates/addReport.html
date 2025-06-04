@@ -1,14 +1,20 @@
 {% extends 'layout.html' %}
 {% block body %}
 
+<style>
+    .accordion-button::after {
+    display: none !important;
+}
+</style>
 <!-- Sidebar -->
-<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 p-3" style="width: 225px;">
-    <div class="d-flex mt-3 mb-3">
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100"
+    style="overflow-y: auto;">
+    <div class="d-flex m-3">
         <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
         <h3 class="h6">Vision Center</h3>
     </div>
 
-    <form action="" class="form mb-3">
+    <form class="form m-3">
         <div class="form-group">
             <input type="text" class="form-control" placeholder="Search...">
         </div>
@@ -19,182 +25,1621 @@
         <!-- Industry Accordion -->
         <div class="accordion-item bg-dark border-0">
             <h2 class="accordion-header">
+               
                 <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
                     data-bs-target="#industryCollapse">
-                    Backup Power Management
+                    <i class="fa-solid fa-folder"></i> 
+                    <span class="mx-1">Industry</span>
                 </button>
             </h2>
             <div id="industryCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-                <div class="accordion-body p-0">
-                    <ul class="list-unstyled">
-                        <li><a href="#" class="text-white d-block py-1 graph-toggle" data-target="form1">Generator
-                                Activity Report</a></li>
-                        <li><a href="#" class="text-white d-block py-1 graph-toggle" data-target="form2">Generator
-                                Battery Health Report</a></li>
-                        <li><a href="#" class="text-white d-block py-1 graph-toggle" data-target="form3">Generator Test
-                                EPSS Report</a></li>
-                        <li><a href="#" class="text-white d-block py-1 graph-toggle" data-target="form4">UPS Auto Test
-                                Report</a></li>
+                <div class="accordion-body pl-3">
 
-                    </ul>
+                    <!-- Nested Accordion inside Industry -->
+                    <div class="accordion accordion-flush" id="industrySubAccordion">
+
+                        <!-- Section Template -->
+                        <!-- Each section uses a unique collapse ID and title -->
+
+                        <!-- Backup Power Management -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#backupPowerCollapse">
+                                    Backup Power Management
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="backupPowerCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('generatorActivityReport')">Generator Activity Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('generatorBatteryHealthReport')">Generator Battery Health
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('generatorLoadSummaryReport')">Generator Load Summary
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('generatorTestEPSSReport')">Generator Test EPSS Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('UPSAutoTestReport')">UPS Auto Test Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('UPSBatteryHealthReport')">UPS Battery Test Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Billing and Allocation -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#billingCollapse">
+                                    Billing and Allocation
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="billingCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Billing Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Billing Summary Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Billing Verification Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy by IT Customer Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Multiple Billing Export
+                                                Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Breaker Performance -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#breakerCollapse">
+                                    Breaker Performance
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="breakerCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Circuit Breaker Aging Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Circuit Breaker Settings
+                                                Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Capacity Management -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#capacityCollapse">
+                                    Capacity Management
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="capacityCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Branch Circuit Power Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Equipment Capacity Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Power Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Power Losses Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">UPS Power Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Energy Analysis -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#energyAnalysisCollapse">
+                                    Energy Analysis
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="energyAnalysisCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Create Model Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Use Model Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Duration Curve Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Regression Analysis
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Usage Per State
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">KPI Engine Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Multi Equipment Operation
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Power Usage Per State Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">PUE Summary Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Single Equipment Operation
+                                                Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Energy Management -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#energyMgmtCollapse">
+                                    Energy Management
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="energyMgmtCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Calendar Trend Month Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Consumption Ranking Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Comparison Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Cost Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Period Over Period
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Usage by Shift Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Usage by TOU Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Usage Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Hourly Usage Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Load Profile Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Measurement Aggregation
+                                                Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- General -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#generalCollapse">
+                                    General
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="generalCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">100ms Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Dashboard Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Data Export Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Event History Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">System Configuration Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Tabular Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Insulation Monitoring -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#insulationCollapse">
+                                    insulation Monitoring
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="insulationCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Operating Room Isolated Power
+                                                Report (ANSI)</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Operating Room Isolated Power
+                                                Report (IEC)</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Power Quality -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#powerQualityCollapse">
+                                    Power Quality
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="powerQualityCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">EN50160:2000 Mains Signaling
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">EN50160:2000 Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">EN50160:2010 Mains Signaling
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Harmonic Compliance 2014
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Harmonic Compliance Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">IEC61000-3-30 Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Power Quality Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Power Quality Performance -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#powerQualityPerfCollapse">
+                                    Power Quality Performance
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i>  
+                                </button>
+                            </h2>
+                            <div id="powerQualityPerfCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Power Quality Analysis
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Power Quality Impact Report</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Usage Trending -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#usageTrendingCollapse">
+                                    Usage Trending
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="usageTrendingCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Multi Device Usage Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Multiple Trend Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Single Device Usage Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Trend Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div> <!-- End of industrySubAccordion -->
+
                 </div>
             </div>
         </div>
+
 
         <!-- Buildings Accordion -->
         <div class="accordion-item bg-dark border-0">
             <h2 class="accordion-header">
                 <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
                     data-bs-target="#buildingsCollapse">
-                    Biling and Allocation
+                    <i class="fa-solid fa-folder"></i> 
+                    <span class="mx-2">Building</span>
                 </button>
             </h2>
             <div id="buildingsCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-                <div class="accordion-body p-0">
-                    <ul class="list-unstyled">
-                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Activity Report</a></li>
-                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Battery Health Report</a>
-                        </li>
-                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Test EPSS Report</a></li>
-                        <li><a href="#" class="text-white d-block py-1 graph-toggle">UPS Auto Test Report</a></li>
-                    </ul>
+                <div class="accordion-body pl-3">
+                    <div class="accordion accordion-flush" id="buildingSubAccordion">
+
+                        <!-- Repeat for each subcategory exactly like Industry -->
+
+                        <!-- Backup Power Management -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#buildingBackupCollapse">
+                                    Backup Power Management
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="buildingBackupCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#buildingSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Generator Activity Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Battery Health
+                                                Export</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Battery Health
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Load Summary
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Test EPSS Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">UPS Auto Test Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">UPS Battery Test Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Billing and Allocation -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#buildingBillingCollapse">
+                                    Billing and Allocation
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="buildingBillingCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#buildingSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Billing Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Billing Summary Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Billing Verification Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy by IT Customer Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Multiple Billing Export
+                                                Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Breaker Performance -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#buildingBreakerCollapse">
+                                    Breaker Performance
+                                </button>
+                            </h2>
+                            <div id="buildingBreakerCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#buildingSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Circuit Breaker Aging Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Circuit Breaker Settings
+                                                Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Capacity Management -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#buildingCapacityCollapse">
+                                    Capacity Management
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="buildingCapacityCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#buildingSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Branch Circuit Power Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Equipment Capacity Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Power Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Power Losses Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">UPS Power Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Energy Analysis -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#buildingEnergyAnalysisCollapse">
+                                    Energy Analysis
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="buildingEnergyAnalysisCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#buildingSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Create Model Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Use Model Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Duration Curve Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Regression Analysis
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Usage per State
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">KPI Engine Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Multi Equipment Operation
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Power Usage per State Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">PUE Summary Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Single Equipment Operation
+                                                Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Energy Management -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#buildingEnergyMgmtCollapse">
+                                    Energy Management
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="buildingEnergyMgmtCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#buildingSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Calendar Trend Month Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Consumption Ranking Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Comparison Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Cost Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Period Over Period
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Usage by Shift Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Usage by TOU Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Usage Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Hourly Usage Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Load Profile Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Measurement Aggregation
+                                                Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- General -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#buildingGeneralCollapse">
+                                    General
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="buildingGeneralCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#buildingSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">100ms Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Dashboard Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Data Export Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Event History Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">System Configuration Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Tabular Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Insulation Monitoring -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#buildingInsulationCollapse">
+                                    Insulation Monitoring
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="buildingInsulationCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#buildingSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Operating Room Isolated Power
+                                                Report (ANSI)</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Operating Room Isolated Power
+                                                Report (IEC)</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Power Quality -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#buildingPQCollapse">
+                                    Power Quality
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="buildingPQCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#buildingSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">EN50160:2000 Mains Signaling
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">EN50160:2000 Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">EN50160:2010 Mains Signaling
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">EN50160:2000 Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Harmonic Compliance 2014
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Harmonic Compliance Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">IEC61000-3-30 Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Power Quality Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Power Quality Performance -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#buildingPQPcollapse">
+                                    Power Quality Performance
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="buildingPQPcollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#buildingSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Power Quality Analysis
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Power Quality Impact Report</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Usage Trending -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#buildingTrendingCollapse">
+                                    Usage Trending
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="buildingTrendingCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#buildingSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Multi Device Usage Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Multiple Trend Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Single Device Usage Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Trend Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div> <!-- /buildingSubAccordion -->
                 </div>
             </div>
         </div>
+
+
 
         <!-- Healthcare Accordion -->
         <div class="accordion-item bg-dark border-0">
             <h2 class="accordion-header">
                 <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#healthCollapse">
-                    Power Quality
+                    data-bs-target="#healthcareCollapse">
+                    <i class="fa-solid fa-folder"></i> 
+                    <span class="mx-2">Healthcare</span>
                 </button>
             </h2>
-            <div id="healthCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-                <div class="accordion-body p-0">
-                    <ul class="list-unstyled">
-                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Activity Report</a></li>
-                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Battery Health Report</a>
-                        </li>
-                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Test EPSS Report</a></li>
-                        <li><a href="#" class="text-white d-block py-1 graph-toggle">UPS Auto Test Report</a></li>
-                    </ul>
+            <div id="healthcareCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body pl-3">
+                    <div class="accordion accordion-flush" id="healthcareSubAccordion">
+
+                        <!-- ✅ Reuse of all subcategories from Industry/Building -->
+
+                        <!-- Backup Power Management -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#healthcareBackupCollapse">
+                                    Backup Power Management
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="healthcareBackupCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#healthcareSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Generator Activity Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Battery Health
+                                                Export</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Battery Health
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Load Summary
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Test EPSS Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">UPS Auto Test Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">UPS Battery Test Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Billing and Allocation -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#healthcareBillingCollapse">
+                                    Billing and Allocation
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="healthcareBillingCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#healthcareSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Billing Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Billing Summary Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Billing Verification Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy by IT Customer Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Multiple Billing Export
+                                                Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Breaker Performance -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#healthcareBreakerCollapse">
+                                    Breaker Performance
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="healthcareBreakerCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#healthcareSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Circuit Breaker Aging Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Circuit Breaker Settings
+                                                Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Capacity Management -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#healthcareCapacityCollapse">
+                                    Capacity Management
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="healthcareCapacityCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#healthcareSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Branch Circuit Power Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Equipment Capacity Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Power Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Power Losses Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">UPS Power Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Energy Analysis -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#healthcareEnergyAnalysisCollapse">
+                                    Energy Analysis
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="healthcareEnergyAnalysisCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#healthcareSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Create Model Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Use Model Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Duration Curve Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Regression Analysis
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Usage per State
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">KPI Engine Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Multi Equipment Operation
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Power Usage per State Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">PUE Summary Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Single Equipment Operation
+                                                Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Energy Management -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#healthcareEnergyMgmtCollapse">
+                                    Energy Management
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="healthcareEnergyMgmtCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#healthcareSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Calendar Trend Month Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Consumption Ranking Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Comparison Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Cost Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Period Over Period
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Usage by Shift Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Usage by TOU Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Usage Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Hourly Usage Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Load Profile Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Measurement Aggregation
+                                                Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- General -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#healthcareGeneralCollapse">
+                                    General
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="healthcareGeneralCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#healthcareSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">100ms Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Dashboard Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Data Export Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Event History Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">System Configuration Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Tabular Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Insulation Monitoring -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#healthcareInsulationCollapse">
+                                    Insulation Monitoring
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="healthcareInsulationCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#healthcareSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Operating Room Isolated Power
+                                                Report (ANSI)</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Operating Room Isolated Power
+                                                Report (IEC)</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Power Quality -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#healthcarePQCollapse">
+                                    Power Quality
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="healthcarePQCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#healthcareSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">EN50160:2000 Mains Signaling
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">EN50160:2000 Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">EN50160:2010 Mains Signaling
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">EN50160:2000 Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Harmonic Compliance 2014
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Harmonic Compliance Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">IEC61000-3-30 Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Power Quality Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Power Quality Performance -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#healthcarePQPcollapse">
+                                    Power Quality Performance
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="healthcarePQPcollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#healthcareSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Power Quality Analysis
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Power Quality Impact Report</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Usage Trending -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#healthcareTrendingCollapse">
+                                    Usage Trending
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="healthcareTrendingCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#healthcareSubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Multi Device Usage Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Multiple Trend Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Single Device Usage Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Trend Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div> <!-- /healthcareSubAccordion -->
                 </div>
             </div>
         </div>
+
 
         <!-- Utility Accordion -->
         <div class="accordion-item bg-dark border-0">
             <h2 class="accordion-header">
                 <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
                     data-bs-target="#utilityCollapse">
-                    thermal Monitoring
+                    <i class="fa-solid fa-folder"></i> 
+                    <span class="mx-2">Utility</span>
                 </button>
             </h2>
             <div id="utilityCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-                <div class="accordion-body p-0">
-                    <ul class="list-unstyled">
-                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Activity Report</a></li>
-                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Battery Health Report</a>
-                        </li>
-                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Test EPSS Report</a></li>
-                        <li><a href="#" class="text-white d-block py-1 graph-toggle">UPS Auto Test Report</a></li>
-                    </ul>
+                <div class="accordion-body pl-3">
+                    <div class="accordion accordion-flush" id="utilitySubAccordion">
+
+                        <!-- 🟦 Sub-accordions copied from Industry/Building/Healthcare -->
+
+                        <!-- Backup Power Management -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#utilityBackupCollapse">
+                                    Backup Power Management
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="utilityBackupCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#utilitySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Generator Activity Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Battery Health
+                                                Export</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Battery Health
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Load Summary
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Test EPSS Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">UPS Auto Test Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">UPS Battery Test Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Billing and Allocation -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#utilityBillingCollapse">
+                                    Billing and Allocation
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="utilityBillingCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#utilitySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Billing Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Billing Summary Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Billing Verification Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy by IT Customer Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Multiple Billing Export
+                                                Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Breaker Performance -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#utilityBreakerCollapse">
+                                    Breaker Performance
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="utilityBreakerCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#utilitySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Circuit Breaker Aging Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Circuit Breaker Settings
+                                                Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Capacity Management -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#utilityCapacityCollapse">
+                                    Capacity Management
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="utilityCapacityCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#utilitySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Branch Circuit Power Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Equipment Capacity Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Power Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Power Losses Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">UPS Power Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Energy Analysis -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#utilityEnergyAnalysisCollapse">
+                                    Energy Analysis
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="utilityEnergyAnalysisCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#utilitySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Create Model Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Use Model Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Duration Curve Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Regression Analysis
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Usage per State
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">KPI Engine Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Multi Equipment Operation
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Power Usage per State Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">PUE Summary Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Single Equipment Operation
+                                                Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Energy Management -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#utilityEnergyMgmtCollapse">
+                                    Energy Management
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="utilityEnergyMgmtCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#utilitySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Calendar Trend Month Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Consumption Ranking Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Comparison Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Cost Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Period Over Period
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Usage by Shift Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Usage by TOU Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Energy Usage Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Hourly Usage Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Load Profile Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Measurement Aggregation
+                                                Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- General -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#utilityGeneralCollapse">
+                                    General
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="utilityGeneralCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#utilitySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">100ms Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Dashboard Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Data Export Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Event History Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">System Configuration Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Tabular Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Insulation Monitoring -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#utilityInsulationCollapse">
+                                    Insulation Monitoring
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="utilityInsulationCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#utilitySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Operating Room Isolated Power
+                                                Report (ANSI)</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Operating Room Isolated Power
+                                                Report (IEC)</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Power Quality -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#utilityPQCollapse">
+                                    Power Quality
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="utilityPQCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#utilitySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">EN50160:2000 Mains Signaling
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">EN50160:2000 Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">EN50160:2010 Mains Signaling
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">EN50160:2000 Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Harmonic Compliance 2014
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Harmonic Compliance Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">IEC61000-3-30 Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Power Quality Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Power Quality Performance -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#utilityPQPcollapse">
+                                    Power Quality Performance
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="utilityPQPcollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#utilitySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Power Quality Analysis
+                                                Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Power Quality Impact Report</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Usage Trending -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#utilityTrendingCollapse">
+                                    Usage Trending
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="utilityTrendingCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#utilitySubAccordion">
+                                <div class="accordion-body p-0">
+                                    <ul class="list-unstyled ms-3">
+                                        <li><a href="#" class="text-white d-block py-1">Multi Device Usage Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Multiple Trend Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1">Single Device Usage Report</a>
+                                        </li>
+                                        <li><a href="#" class="text-white d-block py-1">Trend Report</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div> <!-- /utilitySubAccordion -->
                 </div>
             </div>
         </div>
 
+        <!-- Airport Accordion -->
+        <div class="accordion-item bg-dark border-0">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#airportCollapse">
+                    <i class="fa-solid fa-folder"></i> 
+                    <span class="mx-2">Airport</span>
+                </button>
+            </h2>
+            <div id="airportCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body pl-3">
+                    <!-- No content for now -->
+                </div>
+            </div>
+        </div>
+
+        <!-- EV Battery Accordion -->
+        <div class="accordion-item bg-dark border-0">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#evBatteryCollapse">
+                    <i class="fa-solid fa-folder"></i> 
+                    <span class="mx-2">EV Battery</span>
+                </button>
+            </h2>
+            <div id="evBatteryCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body pl-3">
+                    <!-- No content for now -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Life Sciences Accordion -->
+        <div class="accordion-item bg-dark border-0">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#lifeSciencesCollapse">
+                    <i class="fa-solid fa-folder"></i> 
+                    <span class="mx-2">Life Sciences</span>
+                </button>
+            </h2>
+            <div id="lifeSciencesCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body pl-3">
+                    <!-- No content for now -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Semiconductor Accordion -->
+        <div class="accordion-item bg-dark border-0">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#semiconductorCollapse">
+                    <i class="fa-solid fa-folder"></i> 
+                    <span class="mx-2">Semiconductor</span>
+                </button>
+            </h2>
+            <div id="semiconductorCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body pl-3">
+                    <!-- No content for now -->
+                </div>
+            </div>
+        </div>
+
+
     </div>
 </div>
+
 
 <!-- Overlay -->
 <div id="overlay" class="overlay"></div>
 
-<div class="container mt-4">
-    <div id="noDocument">
+<div class="container mt-2">
+    <div id="noDocument" class="">
         <h1 class="h1 text-center mt-5 pt-5 text-secondary"><i class="fa-solid fa-file fa-2x"></i></h1>
         <h3 class="text-center mt-5 text-secondary">Select a format to generate a report</h3>
         <p class="text-center text-secondary">Click on any form link from the sidebar to see its generate a report.</p>
     </div>
-    <div id="form1" class="form-section d-none shadow p-5" style="width: 500px; margin-left: 400px; margin-top: 60px; border-radius: 10px;">
-      <h4 class="text-info mb-4 text-center">Generator Activity Report</h4>
-      <form>
-        <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date" class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date" class="form-control w-25 mx-2"></div>
-        <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
-        <div class="mb-3">
-            <label>Select Device:</label> 
-            <select class="form-select form-select-sm mb-2 ms-auto">
-                <option>Generator 1</option>
-                <option>Generator 2</option>
-                <option>Generator 3</option>
-            </select>
-        </div>
-        <div class="mb-3">
-            <label>Select Graph:</label> 
-            <select class="form-select form-select-sm mb-2 ms-auto">
-                <option>Trend 1</option>
-                <option>Histogram 1</option>
-                <option>Histogram 2</option>
-            </select>
-        </div>
-        <div class="mb-3">
-            <label>Select Table:</label> 
-            <select class="form-select form-select-sm mb-2 ms-auto">
-                <option>Table 1</option>
-                <option>Table 2</option>
-                <option>Table 3</option>
-            </select>
-        </div>
-        <button class="btn btn-info">Generate Report </button>
-      </form>
-    </div>
-  
-    <div id="form2" class="form-section d-none">
-      <h4 class="text-info">Generator Battery Health Report</h4>
-      <form>
-        <div class="mb-3"><label>Battery ID:</label> <input type="text" class="form-control w-25"></div>
-        <div class="mb-3"><label>Status:</label> <select class="form-control w-25"><option>Good</option><option>Replace</option></select></div>
-      </form>
-    </div>
-  
-    <div id="form3" class="form-section d-none">
-      <h4 class="text-info">Generator Test EPSS Report</h4>
-      <form>
-        <div class="mb-3"><label>Test Time:</label> <input type="time" class="form-control w-25"></div>
-      </form>
-    </div>
-  
-    <div id="form4" class="form-section d-none">
-      <h4 class="text-info">UPS Auto Test Report</h4>
-      <form>
-        <div class="mb-3"><label>UPS ID:</label> <input type="text" class="form-control w-25"></div>
-      </form>
-    </div>
-  </div>
 
-  
-  <script>
+
+    <div id="generatorActivityReport" class="form-section d-none shadow p-5"
+        style="width: 500px; margin-left: 400px; margin-top: 60px; border-radius: 10px;">
+        <h4 class="text-info mb-4 text-center">Generator Activity Report</h4>
+        <form>
+            <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"></div>
+            <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+            <div class="mb-3">
+                <label>EPSS Group:</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Backup Generator</option>
+                </select>
+            </div>
+            
+            <div class="mb-3 d-flex">
+                <label>Threshold Hours:</label>
+                <input class="form-control" type="int">
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Include Activity Details:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Include Data Notifications:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <button class="btn btn-info">Generate Report </button>
+        </form>
+    </div>
+
+    <div id="generatorBatteryHealthReport" class="form-section d-none shadow p-5"
+        style="width: 500px; margin-left: 400px; margin-top: 60px; border-radius: 10px;">
+        <h4 class="text-info mb-4 text-center">Generator Battery Health Report</h4>
+        <form>
+            <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"></div>
+            <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+            <div class="mb-3">
+                <label>EPSS Group:</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Backup Generator</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Generator Starts:</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Backup Generator</option>
+                </select>
+            </div>
+            
+            <div class="mb-3 d-flex">
+                <label>Cumulative Degradation Threshold:</label>
+                <input class="form-control" type="int">
+            </div>
+            
+            <div class="d-flex">
+                <button class="btn btn-info">Generate Report </button>
+                <button class="btn btn-info mx-3">Export Report </button>
+            </div>
+        </form>
+    </div>
+
+    <div id="generatorLoadSummaryReport" class="form-section d-none shadow p-5"
+        style="width: 500px; margin-left: 400px; margin-top: 60px; border-radius: 10px;">
+        <h4 class="text-info mb-4 text-center">Generator Load Summary Report</h4>
+        <form>
+            <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"></div>
+            <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+            <div class="mb-3">
+                <label>EPSS Group:</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Backup Generator</option>
+                </select>
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Include Electrical Details:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Include Data Warnings:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            
+            <div class="d-flex">
+                <button class="btn btn-info">Generate Report </button>
+            </div>
+        </form>
+    </div>
+
+
+    <div id="generatorTestEPSSReport" class="form-section d-none shadow p-5"
+        style="width: 500px; margin-left: 400px; margin-top: 60px; border-radius: 10px;">
+        <h4 class="text-info mb-4 text-center">Generator Test EPSS Report</h4>
+        <form>
+            <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"></div>
+            <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+            <div class="mb-3"><label>Company Name:</label> <input class="form-control"></div>
+            <div class="mb-3"><label>Technician Name:</label> <input class="form-control"></div>
+            <div class="mb-3">
+                <label>EPSS Group:</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Backup Generator</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Data Selection:</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>ATS Summary</option>
+                    <option>Generator Summary</option>
+                    <option>Events Summary</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Comments:</label>
+                <textarea name="" id="" class="form-control mb-2 ms-auto" cols="50" rows="3"></textarea>
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Include Glossary:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Show Data Notifications:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            
+            <div class="d-flex">
+                <button class="btn btn-info">Generate Report </button>
+            </div>
+        </form>
+    </div>
+
+
+    <div id="UPSAutoTestReport" class="form-section d-none shadow p-5"
+        style="width: 500px; margin-left: 400px; margin-top: 60px; border-radius: 10px;">
+        <h4 class="text-info mb-4 text-center">UPS Auto Test Report</h4>
+        <form>
+            <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"></div>
+            <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+            <div class="mb-3">
+                <label>UPS Group:</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Data Center</option>
+                    <option>Living Room</option>
+                    <option>Main Office</option>
+                </select>
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Include Event History:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Include Data Notifications:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            
+            <div class="d-flex">
+                <button class="btn btn-info">Generate Report </button>
+            </div>
+        </form>
+    </div>
+
+    <div id="UPSBatteryHealthReport" class="form-section d-none shadow p-5"
+        style="width: 500px; margin-left: 400px; margin-top: 60px; border-radius: 10px;">
+        <h4 class="text-info mb-4 text-center">UPS Battery Health Report</h4>
+        <form>
+            <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"></div>
+            <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+            <div class="mb-3">
+                <label>Select Waveform Source:</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Select Comparison Waveform:</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                </select>
+            </div>
+            <div class="mb-3"><label>Waveform Drop Percentage:</label> <input class="form-control" type="number"></div>
+            <div class="mb-3"><label>Waveform Drop Sample Size:</label> <input class="form-control" type="number"></div>
+            <div class="mb-3"><label>Recovery Value Multiplier:</label> <input class="form-control" type="number"></div>
+            <div class="mb-3"><label>Voltage Threshold:</label> <input class="form-control" type="number"></div>
+
+            
+            <div class="mb-3 d-flex">
+                <label>Include Data Notifications:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            
+            <div class="d-flex">
+                <button class="btn btn-info">Generate Report </button>
+            </div>
+        </form>
+    </div>
+
+    
+</div>
+
+
+<script>
     document.querySelectorAll('.graph-toggle').forEach(item => {
-      item.addEventListener('click', e => {
-        e.preventDefault();
-        
+        item.addEventListener('click', e => {
+            e.preventDefault();
+
+            // Hide all forms
+            document.querySelectorAll('.form-section').forEach(form => {
+                form.classList.add('d-none');
+            });
+
+            // Show the one targeted
+            const targetId = item.getAttribute('data-target');
+            const targetForm = document.getElementById(targetId);
+            const noDisplay = document.getElementById("noDocument");
+            if (targetForm) {
+                targetForm.classList.remove('d-none');
+                noDisplay.classList.add('d-none')
+            }
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const accordions = document.querySelectorAll('.accordion-collapse');
+
+        accordions.forEach(collapse => {
+            collapse.addEventListener('show.bs.collapse', function () {
+                const icon = this.previousElementSibling.querySelector('.toggle-icon');
+                if (icon) {
+                    icon.classList.remove('fa-plus');
+                    icon.classList.add('fa-minus');
+                }
+            });
+
+            collapse.addEventListener('hide.bs.collapse', function () {
+                const icon = this.previousElementSibling.querySelector('.toggle-icon');
+                if (icon) {
+                    icon.classList.remove('fa-minus');
+                    icon.classList.add('fa-plus');
+                }
+            });
+        });
+    });
+</script>
+
+<script>
+    function showForm(id) {
         // Hide all forms
         document.querySelectorAll('.form-section').forEach(form => {
-          form.classList.add('d-none');
+            form.classList.add('d-none');
         });
-  
-        // Show the one targeted
-        const targetId = item.getAttribute('data-target');
-        const targetForm = document.getElementById(targetId);
-        const noDisplay = document.getElementById("noDocument");
-        if (targetForm) {
-          targetForm.classList.remove('d-none');
-          noDisplay.classList.add('d-none')
-        }
-      });
-    });
+      document.getElementById(id).classList.remove("d-none")
+      document.getElementById('noDocument').classList.add("d-none")
+    }
   </script>
   
+  
+
 
 
 {% endblock %}

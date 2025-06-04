@@ -1,14 +1,21 @@
 {% extends 'layout.html' %}
 {% block body %}
 
+<style>
+  .accordion-button::after {
+  display: none !important;
+}
+</style>
+
 <!-- Sidebar -->
-<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 p-3" style="width: 225px;">
-    <div class="d-flex mt-3 mb-3">
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
+    style="overflow-y: auto;">
+    <div class="d-flex m-3">
         <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
         <h3 class="h6">Vision Center</h3>
     </div>
 
-    <form action="" class="form mb-3">
+    <form class="form m-3">
         <div class="form-group">
             <input type="text" class="form-control" placeholder="Search...">
         </div>
@@ -17,123 +24,1440 @@
     <div class="accordion accordion-flush" id="sidebarAccordion">
 
         <!-- Industry Accordion -->
+        <!-- Industry Accordion -->
         <div class="accordion-item bg-dark border-0">
             <h2 class="accordion-header">
                 <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
                     data-bs-target="#industryCollapse">
-                    Backup Power Management
+                    <i class="fa-solid fa-folder"></i> 
+                    <span class="mx-2">Industry</span>
                 </button>
             </h2>
             <div id="industryCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-                <div class="accordion-body p-0">
-                    <ul class="list-unstyled">
-                        <li>
-                          <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf">Generator Activity Report</a>
-                        </li>
-                        <li>
-                          <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel">Battery Health Report</a>
-                        </li>
-                        <li>
-                          <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf">EPSS Test Report</a>
-                        </li>
-                        <li>
-                          <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel">UPS Auto Test Report</a>
-                        </li>
-                      </ul>
-                      
+                <div class="accordion-body pl-3">
+
+                    <!-- Nested Accordion inside Industry -->
+                    <div class="accordion accordion-flush" id="industrySubAccordion">
+
+                        <!-- Section Template -->
+                        <!-- Each section uses a unique collapse ID and title -->
+
+                        <!-- Backup Power Management -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#backupPowerCollapse">
+                                    Backup Power Management
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="backupPowerCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-4">
+                                  <ul class="list-unstyled">
+                                    <li>
+                                        <!-- <i class="fa-solid fa-file"></i> -->
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                                    </li>
+                                    <li>
+                                      <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                                    </li>
+                                  </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Billing and Allocation -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#billingCollapse">
+                                    Billing and Allocation
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="billingCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-4">
+                                  <ul class="list-unstyled">
+                                    <li>
+                                        <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                                    </li>
+                                    <li>
+                                      <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                                    </li>
+                                  </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Breaker Performance -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#breakerCollapse">
+                                    Breaker Performance
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="breakerCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-4">
+                                  <ul class="list-unstyled">
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                                    </li>
+                                    <li>
+                                      <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                                    </li>
+                                  </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Capacity Management -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#capacityCollapse">
+                                    Capacity Management
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="capacityCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-4">
+                                  <ul class="list-unstyled">
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                                    </li>
+                                    <li>
+                                      <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                                    </li>
+                                  </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Energy Analysis -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#energyAnalysisCollapse">
+                                    Energy Analysis
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="energyAnalysisCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-4">
+                                  <ul class="list-unstyled">
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                                    </li>
+                                    <li>
+                                      <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                                    </li>
+                                  </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Energy Management -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#energyMgmtCollapse">
+                                    Energy Management
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="energyMgmtCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-4">
+                                  <ul class="list-unstyled">
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                                    </li>
+                                    <li>
+                                      <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                                    </li>
+                                  </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- General -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#generalCollapse">
+                                    General
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="generalCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-4">
+                                  <ul class="list-unstyled">
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                                    </li>
+                                    <li>
+                                      <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                                    </li>
+                                  </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Insulation Monitoring -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#insulationCollapse">
+                                    Insulation Monitoring
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="insulationCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-4">
+                                  <ul class="list-unstyled">
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                                    </li>
+                                    <li>
+                                      <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                                    </li>
+                                  </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Power Quality -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#powerQualityCollapse">
+                                    Power Quality
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="powerQualityCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-4">
+                                  <ul class="list-unstyled">
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                                    </li>
+                                    <li>
+                                      <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                                    </li>
+                                  </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Power Quality Performance -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#powerQualityPerfCollapse">
+                                    Power Quality Performance
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="powerQualityPerfCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-4">
+                                  <ul class="list-unstyled">
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                                    </li>
+                                    <li>
+                                      <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                                    </li>
+                                  </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Usage Trending -->
+                        <div class="accordion-item bg-dark border-0">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#usageTrendingCollapse">
+                                    Usage Trending
+                                    <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                                </button>
+                            </h2>
+                            <div id="usageTrendingCollapse" class="accordion-collapse collapse"
+                                data-bs-parent="#industrySubAccordion">
+                                <div class="accordion-body p-4">
+                                  <ul class="list-unstyled">
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                                    </li>
+                                    <li>
+                                      <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                                    </li>
+                                    <li>
+                                      <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                                    </li>
+                                  </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div> <!-- End of industrySubAccordion -->
+
                 </div>
             </div>
         </div>
 
-        <!-- Buildings Accordion -->
-        <div class="accordion-item bg-dark border-0">
-            <h2 class="accordion-header">
-                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#buildingsCollapse">
-                    Biling and Allocation
-                </button>
-            </h2>
-            <div id="buildingsCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-                <div class="accordion-body p-0">
-                    <ul class="list-unstyled">
-                        <li>
-                          <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf">Generator Activity Report</a>
-                        </li>
-                        <li>
-                          <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel">Battery Health Report</a>
-                        </li>
-                        <li>
-                          <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf">EPSS Test Report</a>
-                        </li>
-                        <li>
-                          <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel">UPS Auto Test Report</a>
-                        </li>
-                      </ul>
-                      
-                </div>
-            </div>
-        </div>
+        <!-- Industry Accordion -->
+<!-- Buildings Accordion -->
+<div class="accordion-item bg-dark border-0">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed bg-dark text-white" type="button"
+            data-bs-toggle="collapse" data-bs-target="#buildingsCollapse">
+            <i class="fa-solid fa-folder"></i> 
+            <span class="mx-2">Buildings</span>
+        </button>
+    </h2>
+    <div id="buildingsCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body pl-3">
+            <div class="accordion accordion-flush" id="buildingSubAccordion">
 
-        <!-- Healthcare Accordion -->
-        <div class="accordion-item bg-dark border-0">
-            <h2 class="accordion-header">
-                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#healthCollapse">
-                    Power Quality
-                </button>
-            </h2>
-            <div id="healthCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-                <div class="accordion-body p-0">
-                    <ul class="list-unstyled">
-                        <li>
-                          <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf">Generator Activity Report</a>
-                        </li>
-                        <li>
-                          <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel">Battery Health Report</a>
-                        </li>
-                        <li>
-                          <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf">EPSS Test Report</a>
-                        </li>
-                        <li>
-                          <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel">UPS Auto Test Report</a>
-                        </li>
-                      </ul>
-                      
-                </div>
-            </div>
-        </div>
+                <!-- Repeat for each subcategory exactly like Industry -->
 
-        <!-- Utility Accordion -->
-        <div class="accordion-item bg-dark border-0">
-            <h2 class="accordion-header">
-                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#utilityCollapse">
-                    thermal Monitoring
-                </button>
-            </h2>
-            <div id="utilityCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-                <div class="accordion-body p-0">
-                    <ul class="list-unstyled">
-                        <li>
-                          <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf">Generator Activity Report</a>
-                        </li>
-                        <li>
-                          <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel">Battery Health Report</a>
-                        </li>
-                        <li>
-                          <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf">EPSS Test Report</a>
-                        </li>
-                        <li>
-                          <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel">UPS Auto Test Report</a>
-                        </li>
-                      </ul>
-                      
+                <!-- Backup Power Management -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#buildingBackupCollapse">
+                            Backup Power Management
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="buildingBackupCollapse" class="accordion-collapse collapse" data-bs-parent="#buildingSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
                 </div>
-            </div>
+
+                <!-- Billing and Allocation -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#buildingBillingCollapse">
+                            Billing and Allocation
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="buildingBillingCollapse" class="accordion-collapse collapse" data-bs-parent="#buildingSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Breaker Performance -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#buildingBreakerCollapse">
+                            Breaker Performance
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="buildingBreakerCollapse" class="accordion-collapse collapse" data-bs-parent="#buildingSubAccordion">
+                        <div class="accordion-body p-4">
+                            <ul class="list-unstyled ms-3">
+                                <li><a href="#" class="text-white d-block py-1">Circuit Breaker Aging Report</a></li>
+                                <li><a href="#" class="text-white d-block py-1">Circuit Breaker Settings Report</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Capacity Management -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#buildingCapacityCollapse">
+                            Capacity Management
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="buildingCapacityCollapse" class="accordion-collapse collapse" data-bs-parent="#buildingSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Energy Analysis -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#buildingEnergyAnalysisCollapse">
+                            Energy Analysis
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="buildingEnergyAnalysisCollapse" class="accordion-collapse collapse" data-bs-parent="#buildingSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Energy Management -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#buildingEnergyMgmtCollapse">
+                            Energy Management
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="buildingEnergyMgmtCollapse" class="accordion-collapse collapse" data-bs-parent="#buildingSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- General -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#buildingGeneralCollapse">
+                            General
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="buildingGeneralCollapse" class="accordion-collapse collapse" data-bs-parent="#buildingSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insulation Monitoring -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#buildingInsulationCollapse">
+                            Insulation Monitoring
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="buildingInsulationCollapse" class="accordion-collapse collapse" data-bs-parent="#buildingSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Power Quality -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#buildingPQCollapse">
+                            Power Quality
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="buildingPQCollapse" class="accordion-collapse collapse" data-bs-parent="#buildingSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Power Quality Performance -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#buildingPQPcollapse">
+                            Power Quality Performance
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="buildingPQPcollapse" class="accordion-collapse collapse" data-bs-parent="#buildingSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Usage Trending -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#buildingTrendingCollapse">
+                            Usage Trending
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="buildingTrendingCollapse" class="accordion-collapse collapse" data-bs-parent="#buildingSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- /buildingSubAccordion -->
         </div>
+    </div>
+</div>
+
+
+
+<!-- Healthcare Accordion -->
+<div class="accordion-item bg-dark border-0">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed bg-dark text-white" type="button"
+            data-bs-toggle="collapse" data-bs-target="#healthcareCollapse">
+            <i class="fa-solid fa-folder"></i> 
+            <span class="mx-2">Healthcare</span>
+        </button>
+    </h2>
+    <div id="healthcareCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body pl-3">
+            <div class="accordion accordion-flush" id="healthcareSubAccordion">
+
+                <!-- ✅ Reuse of all subcategories from Industry/Building -->
+
+                <!-- Backup Power Management -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#healthcareBackupCollapse">
+                            Backup Power Management
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="healthcareBackupCollapse" class="accordion-collapse collapse" data-bs-parent="#healthcareSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Billing and Allocation -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#healthcareBillingCollapse">
+                            Billing and Allocation
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="healthcareBillingCollapse" class="accordion-collapse collapse" data-bs-parent="#healthcareSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Breaker Performance -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#healthcareBreakerCollapse">
+                            Breaker Performance
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="healthcareBreakerCollapse" class="accordion-collapse collapse" data-bs-parent="#healthcareSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Capacity Management -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#healthcareCapacityCollapse">
+                            Capacity Management
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="healthcareCapacityCollapse" class="accordion-collapse collapse" data-bs-parent="#healthcareSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Energy Analysis -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#healthcareEnergyAnalysisCollapse">
+                            Energy Analysis
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="healthcareEnergyAnalysisCollapse" class="accordion-collapse collapse" data-bs-parent="#healthcareSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Energy Management -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#healthcareEnergyMgmtCollapse">
+                            Energy Management
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="healthcareEnergyMgmtCollapse" class="accordion-collapse collapse" data-bs-parent="#healthcareSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- General -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#healthcareGeneralCollapse">
+                            General
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="healthcareGeneralCollapse" class="accordion-collapse collapse" data-bs-parent="#healthcareSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insulation Monitoring -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#healthcareInsulationCollapse">
+                            Insulation Monitoring
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="healthcareInsulationCollapse" class="accordion-collapse collapse" data-bs-parent="#healthcareSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Power Quality -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#healthcarePQCollapse">
+                            Power Quality
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="healthcarePQCollapse" class="accordion-collapse collapse" data-bs-parent="#healthcareSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Power Quality Performance -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#healthcarePQPcollapse">
+                            Power Quality Performance
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="healthcarePQPcollapse" class="accordion-collapse collapse" data-bs-parent="#healthcareSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Usage Trending -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#healthcareTrendingCollapse">
+                            Usage Trending
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="healthcareTrendingCollapse" class="accordion-collapse collapse" data-bs-parent="#healthcareSubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- /healthcareSubAccordion -->
+        </div>
+    </div>
+</div>
+
+
+<!-- Utility Accordion -->
+<div class="accordion-item bg-dark border-0">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed bg-dark text-white" type="button"
+            data-bs-toggle="collapse" data-bs-target="#utilityCollapse">
+            <i class="fa-solid fa-folder"></i> 
+            <span class="mx-2">Utility</span>
+        </button>
+    </h2>
+    <div id="utilityCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body pl-3">
+            <div class="accordion accordion-flush" id="utilitySubAccordion">
+
+                <!-- 🟦 Sub-accordions copied from Industry/Building/Healthcare -->
+
+                <!-- Backup Power Management -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#utilityBackupCollapse">
+                            Backup Power Management
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="utilityBackupCollapse" class="accordion-collapse collapse" data-bs-parent="#utilitySubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Billing and Allocation -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#utilityBillingCollapse">
+                            Billing and Allocation
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="utilityBillingCollapse" class="accordion-collapse collapse" data-bs-parent="#utilitySubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Breaker Performance -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#utilityBreakerCollapse">
+                            Breaker Performance
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="utilityBreakerCollapse" class="accordion-collapse collapse" data-bs-parent="#utilitySubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Capacity Management -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#utilityCapacityCollapse">
+                            Capacity Management
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="utilityCapacityCollapse" class="accordion-collapse collapse" data-bs-parent="#utilitySubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Energy Analysis -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#utilityEnergyAnalysisCollapse">
+                            Energy Analysis
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="utilityEnergyAnalysisCollapse" class="accordion-collapse collapse" data-bs-parent="#utilitySubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Energy Management -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#utilityEnergyMgmtCollapse">
+                            Energy Management
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="utilityEnergyMgmtCollapse" class="accordion-collapse collapse" data-bs-parent="#utilitySubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- General -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#utilityGeneralCollapse">
+                            General
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="utilityGeneralCollapse" class="accordion-collapse collapse" data-bs-parent="#utilitySubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insulation Monitoring -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#utilityInsulationCollapse">
+                            Insulation Monitoring
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="utilityInsulationCollapse" class="accordion-collapse collapse" data-bs-parent="#utilitySubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Power Quality -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#utilityPQCollapse">
+                            Power Quality
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="utilityPQCollapse" class="accordion-collapse collapse" data-bs-parent="#utilitySubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Power Quality Performance -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#utilityPQPcollapse">
+                            Power Quality Performance
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="utilityPQPcollapse" class="accordion-collapse collapse" data-bs-parent="#utilitySubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Usage Trending -->
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-dark text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#utilityTrendingCollapse">
+                            Usage Trending
+                            <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
+                        </button>
+                    </h2>
+                    <div id="utilityTrendingCollapse" class="accordion-collapse collapse" data-bs-parent="#utilitySubAccordion">
+                        <div class="accordion-body p-4">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>Generator Activity Report</a>
+                            </li>
+                            <li>
+                              <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>Battery Health Report</a>
+                            </li>
+                            <li>
+                              <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf"><i class="fa-solid fa-file-pdf me-2"></i>EPSS Test Report</a>
+                            </li>
+                            <li>
+                              <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel"><i class="fa-solid fa-file-excel me-2"></i>UPS Auto Test Report</a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- /utilitySubAccordion -->
+        </div>
+    </div>
+</div>
+
+       <!-- Airport Accordion -->
+<div class="accordion-item bg-dark border-0">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed bg-dark text-white" type="button"
+            data-bs-toggle="collapse" data-bs-target="#airportCollapse">
+            <i class="fa-solid fa-folder"></i> 
+            <span class="mx-2">Airport</span>
+        </button>
+    </h2>
+    <div id="airportCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body pl-3">
+            <!-- No content for now -->
+        </div>
+    </div>
+</div>
+
+<!-- EV Battery Accordion -->
+<div class="accordion-item bg-dark border-0">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed bg-dark text-white" type="button"
+            data-bs-toggle="collapse" data-bs-target="#evBatteryCollapse">
+            <i class="fa-solid fa-folder"></i> 
+            <span class="mx-2">EV Battery</span>
+        </button>
+    </h2>
+    <div id="evBatteryCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body pl-3">
+            <!-- No content for now -->
+        </div>
+    </div>
+</div>
+
+<!-- Life Sciences Accordion -->
+<div class="accordion-item bg-dark border-0">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed bg-dark text-white" type="button"
+            data-bs-toggle="collapse" data-bs-target="#lifeSciencesCollapse">
+            <i class="fa-solid fa-folder"></i> 
+            <span class="mx-2">Life Sciences</span>
+        </button>
+    </h2>
+    <div id="lifeSciencesCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body pl-3">
+            <!-- No content for now -->
+        </div>
+    </div>
+</div>
+
+<!-- Semiconductor Accordion -->
+<div class="accordion-item bg-dark border-0">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed bg-dark text-white" type="button"
+            data-bs-toggle="collapse" data-bs-target="#semiconductorCollapse">
+            <i class="fa-solid fa-folder"></i> 
+            <span class="mx-2">Semiconductor</span>
+        </button>
+    </h2>
+    <div id="semiconductorCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body pl-3">
+            <!-- No content for now -->
+        </div>
+    </div>
+</div>
+
 
     </div>
 </div>
+
 
 <!-- Overlay -->
 <div id="overlay" class="overlay"></div>
@@ -169,13 +1493,14 @@
     
           fileTitle.textContent = title;
     
-          if (type === "pdf" || type=="word") {
+          if (type === "pdf" || type === "word") {
             fileContent.innerHTML = `
               <iframe src="${file}" width="100%" height="600px" style="border: none;"></iframe>
             `;
-          } else if (type === "excel") {
+          } else if (type === "excel" || type === "csv") {
             fileContent.innerHTML = `
-              <p class="p-5">Click to download: <a href="${file}" class="btn btn-sm btn-info" download>Download Excel</a></p>
+              <p class="text-center h-4">Spreadsheet format live view is not supported. Download instead.</p>
+              <p class="text-center"><a href="${file}" class="btn btn-lg btn-info fw-bold" download>Download Excel</a></p>
               <p class="text-muted">Excel preview not supported. File will be downloaded.</p>
             `;
           }
@@ -186,5 +1511,29 @@
     
   
 
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+          const accordions = document.querySelectorAll('.accordion-collapse');
+  
+          accordions.forEach(collapse => {
+              collapse.addEventListener('show.bs.collapse', function () {
+                  const icon = this.previousElementSibling.querySelector('.toggle-icon');
+                  if (icon) {
+                      icon.classList.remove('fa-plus');
+                      icon.classList.add('fa-minus');
+                  }
+              });
+  
+              collapse.addEventListener('hide.bs.collapse', function () {
+                  const icon = this.previousElementSibling.querySelector('.toggle-icon');
+                  if (icon) {
+                      icon.classList.remove('fa-minus');
+                      icon.classList.add('fa-plus');
+                  }
+              });
+          });
+      });
+  </script>
+  
 
 {% endblock %}
