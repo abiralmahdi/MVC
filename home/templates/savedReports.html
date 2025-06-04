@@ -1,0 +1,190 @@
+{% extends 'layout.html' %}
+{% block body %}
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 p-3" style="width: 225px;">
+    <div class="d-flex mt-3 mb-3">
+        <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
+        <h3 class="h6">Vision Center</h3>
+    </div>
+
+    <form action="" class="form mb-3">
+        <div class="form-group">
+            <input type="text" class="form-control" placeholder="Search...">
+        </div>
+    </form>
+
+    <div class="accordion accordion-flush" id="sidebarAccordion">
+
+        <!-- Industry Accordion -->
+        <div class="accordion-item bg-dark border-0">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#industryCollapse">
+                    Backup Power Management
+                </button>
+            </h2>
+            <div id="industryCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body p-0">
+                    <ul class="list-unstyled">
+                        <li>
+                          <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf">Generator Activity Report</a>
+                        </li>
+                        <li>
+                          <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel">Battery Health Report</a>
+                        </li>
+                        <li>
+                          <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf">EPSS Test Report</a>
+                        </li>
+                        <li>
+                          <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel">UPS Auto Test Report</a>
+                        </li>
+                      </ul>
+                      
+                </div>
+            </div>
+        </div>
+
+        <!-- Buildings Accordion -->
+        <div class="accordion-item bg-dark border-0">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#buildingsCollapse">
+                    Biling and Allocation
+                </button>
+            </h2>
+            <div id="buildingsCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body p-0">
+                    <ul class="list-unstyled">
+                        <li>
+                          <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf">Generator Activity Report</a>
+                        </li>
+                        <li>
+                          <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel">Battery Health Report</a>
+                        </li>
+                        <li>
+                          <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf">EPSS Test Report</a>
+                        </li>
+                        <li>
+                          <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel">UPS Auto Test Report</a>
+                        </li>
+                      </ul>
+                      
+                </div>
+            </div>
+        </div>
+
+        <!-- Healthcare Accordion -->
+        <div class="accordion-item bg-dark border-0">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#healthCollapse">
+                    Power Quality
+                </button>
+            </h2>
+            <div id="healthCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body p-0">
+                    <ul class="list-unstyled">
+                        <li>
+                          <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf">Generator Activity Report</a>
+                        </li>
+                        <li>
+                          <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel">Battery Health Report</a>
+                        </li>
+                        <li>
+                          <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf">EPSS Test Report</a>
+                        </li>
+                        <li>
+                          <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel">UPS Auto Test Report</a>
+                        </li>
+                      </ul>
+                      
+                </div>
+            </div>
+        </div>
+
+        <!-- Utility Accordion -->
+        <div class="accordion-item bg-dark border-0">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#utilityCollapse">
+                    thermal Monitoring
+                </button>
+            </h2>
+            <div id="utilityCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body p-0">
+                    <ul class="list-unstyled">
+                        <li>
+                          <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/generator-activity.pdf" data-type="pdf">Generator Activity Report</a>
+                        </li>
+                        <li>
+                          <a class="text-start py-1 graph-toggle" href="#" data-file="/static/files/battery-health.xlsx" data-type="excel">Battery Health Report</a>
+                        </li>
+                        <li>
+                          <a class=" text-start py-1 graph-toggle" href="#" data-file="/static/files/epss-test.pdf" data-type="pdf">EPSS Test Report</a>
+                        </li>
+                        <li>
+                          <a class=" w-100 text-start py-1 graph-toggle" href="#" data-file="/static/files/ups-test.xlsx" data-type="excel">UPS Auto Test Report</a>
+                        </li>
+                      </ul>
+                      
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Overlay -->
+<div id="overlay" class="overlay"></div>
+
+<div class="container">
+    <div id="noDocument">
+        <h1 class="h1 text-center mt-5 pt-5 text-secondary"><i class="fa-solid fa-file fa-2x"></i></h1>
+        <h3 class="text-center mt-5 text-secondary">Select a report to view details</h3>
+        <p class="text-center text-secondary">Click on any report link from the sidebar to see its content here.</p>
+    </div>
+    <div id="fileViewer" class="container" style="margin-left: 50px; padding: 20px;">
+        <h4 class="text-info" id="fileTitle"></h4>
+        <div id="fileContent" class="" style="border: none; padding: 10px;">
+          <!-- PDF or Excel will be embedded here -->
+        </div>
+      </div>
+  </div>
+
+  
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const buttons = document.querySelectorAll(".graph-toggle");
+      const fileTitle = document.getElementById("fileTitle");
+      const fileContent = document.getElementById("fileContent");
+      const noDisplay = document.getElementById('noDocument');
+    
+      buttons.forEach(button => {
+        button.addEventListener("click", function () {
+          noDisplay.style.display = 'none';
+          const file = button.getAttribute("data-file");
+          const type = button.getAttribute("data-type");
+          const title = button.textContent.trim();
+    
+          fileTitle.textContent = title;
+    
+          if (type === "pdf" || type=="word") {
+            fileContent.innerHTML = `
+              <iframe src="${file}" width="100%" height="600px" style="border: none;"></iframe>
+            `;
+          } else if (type === "excel") {
+            fileContent.innerHTML = `
+              <p class="p-5">Click to download: <a href="${file}" class="btn btn-sm btn-info" download>Download Excel</a></p>
+              <p class="text-muted">Excel preview not supported. File will be downloaded.</p>
+            `;
+          }
+        });
+      });
+    });
+    </script>
+    
+  
+
+
+{% endblock %}

@@ -1,0 +1,200 @@
+{% extends 'layout.html' %}
+{% block body %}
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 p-3" style="width: 225px;">
+    <div class="d-flex mt-3 mb-3">
+        <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
+        <h3 class="h6">Vision Center</h3>
+    </div>
+
+    <form action="" class="form mb-3">
+        <div class="form-group">
+            <input type="text" class="form-control" placeholder="Search...">
+        </div>
+    </form>
+
+    <div class="accordion accordion-flush" id="sidebarAccordion">
+
+        <!-- Industry Accordion -->
+        <div class="accordion-item bg-dark border-0">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#industryCollapse">
+                    Backup Power Management
+                </button>
+            </h2>
+            <div id="industryCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body p-0">
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white d-block py-1 graph-toggle" data-target="form1">Generator
+                                Activity Report</a></li>
+                        <li><a href="#" class="text-white d-block py-1 graph-toggle" data-target="form2">Generator
+                                Battery Health Report</a></li>
+                        <li><a href="#" class="text-white d-block py-1 graph-toggle" data-target="form3">Generator Test
+                                EPSS Report</a></li>
+                        <li><a href="#" class="text-white d-block py-1 graph-toggle" data-target="form4">UPS Auto Test
+                                Report</a></li>
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buildings Accordion -->
+        <div class="accordion-item bg-dark border-0">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#buildingsCollapse">
+                    Biling and Allocation
+                </button>
+            </h2>
+            <div id="buildingsCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body p-0">
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Activity Report</a></li>
+                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Battery Health Report</a>
+                        </li>
+                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Test EPSS Report</a></li>
+                        <li><a href="#" class="text-white d-block py-1 graph-toggle">UPS Auto Test Report</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Healthcare Accordion -->
+        <div class="accordion-item bg-dark border-0">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#healthCollapse">
+                    Power Quality
+                </button>
+            </h2>
+            <div id="healthCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body p-0">
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Activity Report</a></li>
+                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Battery Health Report</a>
+                        </li>
+                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Test EPSS Report</a></li>
+                        <li><a href="#" class="text-white d-block py-1 graph-toggle">UPS Auto Test Report</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Utility Accordion -->
+        <div class="accordion-item bg-dark border-0">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#utilityCollapse">
+                    thermal Monitoring
+                </button>
+            </h2>
+            <div id="utilityCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body p-0">
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Activity Report</a></li>
+                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Battery Health Report</a>
+                        </li>
+                        <li><a href="#" class="text-white d-block py-1 graph-toggle">Generator Test EPSS Report</a></li>
+                        <li><a href="#" class="text-white d-block py-1 graph-toggle">UPS Auto Test Report</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Overlay -->
+<div id="overlay" class="overlay"></div>
+
+<div class="container mt-4">
+    <div id="noDocument">
+        <h1 class="h1 text-center mt-5 pt-5 text-secondary"><i class="fa-solid fa-file fa-2x"></i></h1>
+        <h3 class="text-center mt-5 text-secondary">Select a format to generate a report</h3>
+        <p class="text-center text-secondary">Click on any form link from the sidebar to see its generate a report.</p>
+    </div>
+    <div id="form1" class="form-section d-none shadow p-5" style="width: 500px; margin-left: 400px; margin-top: 60px; border-radius: 10px;">
+      <h4 class="text-info mb-4 text-center">Generator Activity Report</h4>
+      <form>
+        <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date" class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date" class="form-control w-25 mx-2"></div>
+        <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+        <div class="mb-3">
+            <label>Select Device:</label> 
+            <select class="form-select form-select-sm mb-2 ms-auto">
+                <option>Generator 1</option>
+                <option>Generator 2</option>
+                <option>Generator 3</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label>Select Graph:</label> 
+            <select class="form-select form-select-sm mb-2 ms-auto">
+                <option>Trend 1</option>
+                <option>Histogram 1</option>
+                <option>Histogram 2</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label>Select Table:</label> 
+            <select class="form-select form-select-sm mb-2 ms-auto">
+                <option>Table 1</option>
+                <option>Table 2</option>
+                <option>Table 3</option>
+            </select>
+        </div>
+        <button class="btn btn-info">Generate Report </button>
+      </form>
+    </div>
+  
+    <div id="form2" class="form-section d-none">
+      <h4 class="text-info">Generator Battery Health Report</h4>
+      <form>
+        <div class="mb-3"><label>Battery ID:</label> <input type="text" class="form-control w-25"></div>
+        <div class="mb-3"><label>Status:</label> <select class="form-control w-25"><option>Good</option><option>Replace</option></select></div>
+      </form>
+    </div>
+  
+    <div id="form3" class="form-section d-none">
+      <h4 class="text-info">Generator Test EPSS Report</h4>
+      <form>
+        <div class="mb-3"><label>Test Time:</label> <input type="time" class="form-control w-25"></div>
+      </form>
+    </div>
+  
+    <div id="form4" class="form-section d-none">
+      <h4 class="text-info">UPS Auto Test Report</h4>
+      <form>
+        <div class="mb-3"><label>UPS ID:</label> <input type="text" class="form-control w-25"></div>
+      </form>
+    </div>
+  </div>
+
+  
+  <script>
+    document.querySelectorAll('.graph-toggle').forEach(item => {
+      item.addEventListener('click', e => {
+        e.preventDefault();
+        
+        // Hide all forms
+        document.querySelectorAll('.form-section').forEach(form => {
+          form.classList.add('d-none');
+        });
+  
+        // Show the one targeted
+        const targetId = item.getAttribute('data-target');
+        const targetForm = document.getElementById(targetId);
+        const noDisplay = document.getElementById("noDocument");
+        if (targetForm) {
+          targetForm.classList.remove('d-none');
+          noDisplay.classList.add('d-none')
+        }
+      });
+    });
+  </script>
+  
+
+
+{% endblock %}

@@ -1,0 +1,264 @@
+{% extends 'layout.html' %}
+{% block body %}
+
+<style>
+    .chart-container {
+        width: 100%;
+        padding: 10px;
+    }
+
+    .plot {
+        width: 100%;
+        height: 250px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+    .graph-box{
+        margin-bottom: 10px;
+    }
+</style>
+
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 p-3" style="width: 225px;">
+    <div class="d-flex mt-3 mb-3">
+      <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
+      <h3 class="h6">Vision Center</h3>
+    </div>
+  
+    <form action="" class="form mb-3">
+      <div class="form-group">
+        <input type="text" class="form-control" placeholder="Search...">
+      </div>
+    </form>
+  
+    <div class="accordion accordion-flush" id="sidebarAccordion">
+  
+      <!-- Industry Accordion -->
+      <div class="accordion-item bg-dark border-0">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#industryCollapse">
+            Industry
+          </button>
+        </h2>
+        <div id="industryCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+          <div class="accordion-body p-0">
+            <ul class="list-unstyled">
+                <li><a href="#" class="text-white d-block py-1 graph-toggle" data-graph="activeDemand">Plant - Active Demand History</a></li>
+                <li><a href="#" class="text-white d-block py-1 graph-toggle" data-graph="energyUsage">Plant - Energy Usage</a></li>
+                <li><a href="#" class="text-white d-block py-1 graph-toggle" data-graph="powerUsage">Plant - Power Usage</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Buildings Accordion -->
+      <div class="accordion-item bg-dark border-0">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#buildingsCollapse">
+            Buildings
+          </button>
+        </h2>
+        <div id="buildingsCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+          <div class="accordion-body p-0">
+            <ul class="list-unstyled">
+              <li><a href="#" class="text-white d-block py-1">HVAC Systems</a></li>
+              <li><a href="#" class="text-white d-block py-1">Lighting Loads</a></li>
+              <li><a href="#" class="text-white d-block py-1">Elevator Usage</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Healthcare Accordion -->
+      <div class="accordion-item bg-dark border-0">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#healthCollapse">
+            Healthcare
+          </button>
+        </h2>
+        <div id="healthCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+          <div class="accordion-body p-0">
+            <ul class="list-unstyled">
+              <li><a href="#" class="text-white d-block py-1">MRI Machine Load</a></li>
+              <li><a href="#" class="text-white d-block py-1">Lab Energy Use</a></li>
+              <li><a href="#" class="text-white d-block py-1">Emergency Backup Power</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Utility Accordion -->
+      <div class="accordion-item bg-dark border-0">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#utilityCollapse">
+            Utility
+          </button>
+        </h2>
+        <div id="utilityCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+          <div class="accordion-body p-0">
+            <ul class="list-unstyled">
+              <li><a href="#" class="text-white d-block py-1">Transformer Load</a></li>
+              <li><a href="#" class="text-white d-block py-1">Meter Readings</a></li>
+              <li><a href="#" class="text-white d-block py-1">Power Loss Monitoring</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+  
+    </div>
+  </div>
+
+<!-- Overlay -->
+<div id="overlay" class="overlay"></div>
+
+
+<div class="container-fluid" id="">
+  <div id="noDocument">
+    <h1 class="h1 text-center mt-5 pt-5 text-secondary"><i class="fa-solid fa-chart-simple fa-2x"></i></h1>
+    <h3 class="text-center mt-5 text-secondary">Select a trend graph</h3>
+    <p class="text-center text-secondary">Click on any trend graph from the sidebar to view the trend in different timestamps.</p>
+</div>
+    <div id="graphContainer" class="mt-2">
+    </div>
+</div>
+<script>
+    const MAX_POINTS = 20;
+    const UPDATE_INTERVAL = 1000; // 1 second
+    const activeGraphs = new Map();
+  
+    // Graph config per key
+    const graphConfigs = {
+      activeDemand: [
+        { name: 'Voltage (V)', color: '#4a90e2', initial: 410 },
+        { name: 'Current (A)', color: '#50e3c2', initial: 20 }
+      ],
+      energyUsage: [
+        { name: 'Real Power (kW)', color: '#f5a623', initial: 15 },
+        { name: 'Apparent Power (kVA)', color: '#ba68c8', initial: 16 }
+      ],
+      powerUsage: [
+        { name: 'Power Factor', color: '#7ed321', initial: 0.95 },
+        { name: 'Reactive Power (kVAr)', color: '#ab47bc', initial: 4.5 }
+      ]
+    };
+  
+    // Titles for each graph key
+    const graphTitles = {
+      activeDemand: 'Active Demand History',
+      energyUsage: 'Energy Usage',
+      powerUsage: 'Power Usage'
+    };
+  
+    // Initialize Plotly chart in container with given traces and title
+    function initChart(containerId, traces, title) {
+      const data = traces.map(trace => ({
+        x: [new Date()],
+        y: [trace.initial],
+        name: trace.name,
+        mode: 'lines+markers',
+        line: { color: trace.color }
+      }));
+  
+      Plotly.newPlot(containerId, data, {
+        title,
+        paper_bgcolor: '#121212',
+        plot_bgcolor: '#121212',
+        font: { color: '#ffffff' },
+        margin: { t: 40, b: 30, l: 50, r: 150 },  // extra right margin for legend
+        xaxis: { showgrid: false, type: 'date' },
+        yaxis: { showgrid: true },
+        legend: { x: 1.05, y: 1, bgcolor: '#222', bordercolor: '#444', borderwidth: 1 },
+        height: 180
+      }, {responsive: true});
+    }
+  
+    // Extend chart data with new random points and shift old points out
+    function pushRandomData(chartId, ranges) {
+      const time = new Date();
+      const update = { x: [], y: [] };
+  
+      ranges.forEach(range => {
+        update.x.push([time]);
+        update.y.push([randomInRange(range.min, range.max)]);
+      });
+  
+      Plotly.extendTraces(chartId, update, ranges.map((_, i) => i), MAX_POINTS);
+    }
+  
+    function randomInRange(min, max) {
+      return +(Math.random() * (max - min) + min).toFixed(2);
+    }
+  
+    // Start updating a graph every second and keep interval ID for cleanup
+    function startGraphUpdates(chartId, graphKey) {
+      let intervalId = setInterval(() => {
+        if (!activeGraphs.has(graphKey)) {
+          clearInterval(intervalId);
+          return;
+        }
+        let ranges;
+        if (graphKey === 'activeDemand') {
+          ranges = [
+            { min: 408, max: 415 },   // Voltage
+            { min: 18, max: 26 }      // Current
+          ];
+        } else if (graphKey === 'energyUsage') {
+          ranges = [
+            { min: 14, max: 20 },     // Real Power
+            { min: 15, max: 22 }      // Apparent Power
+          ];
+        } else if (graphKey === 'powerUsage') {
+          ranges = [
+            { min: 0.90, max: 0.97 }, // Power Factor
+            { min: 3.5, max: 5.5 }    // Reactive Power
+          ];
+        }
+        pushRandomData(chartId, ranges);
+      }, UPDATE_INTERVAL);
+      return intervalId;
+    }
+    
+    const noDisplay = document.getElementById('noDocument');
+    // Handle clicks on graph toggle items
+    document.querySelectorAll('.graph-toggle').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const graphKey = link.dataset.graph;
+        const graphContainer = document.getElementById('graphContainer');
+        noDisplay.style.display = 'none';
+        if (activeGraphs.has(graphKey)) {
+          // Remove graph
+          const graphDiv = document.getElementById(`graph-${graphKey}`);
+          if (graphDiv) graphDiv.remove();
+  
+          // Stop interval updating
+          clearInterval(activeGraphs.get(graphKey).intervalId);
+          activeGraphs.delete(graphKey);
+  
+          // Remove active class
+          link.classList.remove('active');
+        } else {
+          // Create graph container div
+          const div = document.createElement('div');
+          div.id = `graph-${graphKey}`;
+          div.classList.add('graph-box');
+          div.style.height = '180px';
+  
+          graphContainer.appendChild(div);
+  
+          // Init chart with config
+          initChart(div.id, graphConfigs[graphKey], graphTitles[graphKey]);
+  
+          // Start periodic updates and store interval ID
+          const intervalId = startGraphUpdates(div.id, graphKey);
+          activeGraphs.set(graphKey, { intervalId });
+  
+          // Mark as active
+          link.classList.add('active');
+        }
+      });
+    });
+  </script>
+
+{% endblock %}

@@ -1,0 +1,321 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+<style>
+    /* graph */
+    .graph-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: space-between;
+    }
+
+    .graph-card {
+        background-color: #1e1e1e;
+        border-radius: 10px;
+        padding: 1rem;
+        flex: 1 1 calc(50% - 1rem);
+        /* Two per row */
+        min-width: 700px;
+        max-width: 48%;
+    }
+
+    .graph-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .graph-header h5 {
+        margin: 0;
+    }
+</style>
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column">
+    <div class="d-flex mt-5">
+        <h3 class="h5 text-info fw-bold mx-2">MARKS</h3>
+        <h3 class="h5"> Vision Center</h3>
+    </div>
+    <form action="" class="form p-3">
+        <div class="form-group mb-1">
+            <input type="text" class="form-control" placeholder="Search...">
+        </div>
+    </form>
+    <a href="/dashboard/plantSummary" class="text-white">Plant Summary</a>
+    <a href="/dashboard/allUtilities" class="text-white">Energy - All Utilities</a>
+    <a href="/dashboard/energyCostComparison" class="text-white">Energy - Cost Comparison</a>
+    <a href="/dashboard/plantHeatMaps" class="text-white">Plant - Heat Maps</a>
+    <a href="/dashboard/sankeyDiagram" class="text-white">Plant - Sankey Diagram</a>
+    <a href="/dashboard/statusTable" class="text-white">Plant - Status Table</a>
+
+</div>
+
+<!-- Overlay -->
+<div id="overlay" class="overlay"></div>
+
+<div class="container-fluid" id="main-content">
+
+    <div class="row">
+        <main class="mt-3">
+            <div class="graph-container">
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <div class="graph-card bg-dark border-dark rounded p-3 text-white shadow" style="height: 620px;">
+                        <div class="d-flex">
+                            <h6 class="mb-2 mx-2">Heat Map - Natural Gas Usage</h6>
+                            <select class="form-select form-select-sm mb-2 ms-auto" style="width: 100px;">
+                                <option>Last 7 days</option>
+                                <option>Last 14 days</option>
+                                <option>Last 28 days</option>
+                            </select>
+
+                            <i class="fa-solid m-2 fa-window-maximize"></i>
+                        </div>
+
+                        <canvas id="gasHeatMap" style="max-height: 650px;"></canvas>
+                        <div id="color-legend" style="display:flex; align-items:center; gap:10px; color: white; font-size: 14px; margin-top: 30px;">
+                            <span>Low</span>
+                            <div style="flex-grow: 1; height: 20px; background: linear-gradient(to right, rgb(0,153,0), rgb(255,255,0), rgb(255,0,0)); border: 1px solid #444;"></div>
+                            <span>High</span>
+                        </div>
+                    </div>
+
+
+
+
+                    <div class="graph-card bg-dark border-dark rounded p-3 text-white shadow" style="height: 620px;">
+                        <div class="d-flex">
+                            <h6 class="mb-2 mx-2">Heat Map - Energy Usage</h6>
+                            <select class="form-select form-select-sm mb-2 ms-auto" style="width: 100px;">
+                                <option>Last 7 days</option>
+                                <option>Last 14 days</option>
+                                <option>Last 28 days</option>
+                            </select>
+
+                            <i class="fa-solid m-2 fa-window-maximize"></i>
+                        </div>
+
+                        <canvas id="energyHeatMap" style="max-height: 650px;"></canvas>
+                        <div id="color-legend" style="display:flex; align-items:center; gap:10px; color: white; font-size: 14px; margin-top: 30px;">
+                            <span>Low</span>
+                            <div style="flex-grow: 1; height: 20px; background: linear-gradient(to right, rgb(0,153,0), rgb(255,255,0), rgb(255,0,0)); border: 1px solid #444;"></div>
+                            <span>High</span>
+                        </div>
+                    </div>
+                    
+                </div>
+
+
+
+            </div>
+
+
+
+        </main>
+    </div>
+</div>
+
+<script>
+    const hours = [
+        '12 AM', '1 AM', '2 AM', '3 AM', '4 AM', '5 AM',
+        '6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM',
+        '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM',
+        '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM'
+    ];
+
+    const days = Array.from({ length: 31 }, (_, i) => `${i + 1}`);
+
+    const data = [];
+    for (let day = 0; day < 31; day++) {
+        for (let hour = 0; hour < 24; hour++) {
+            data.push({
+                x: day,
+                y: hour,
+                v: Math.floor(Math.random() * 100)
+            });
+        }
+    }
+
+    const ctx = document.getElementById('gasHeatMap').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'matrix',
+        data: {
+            datasets: [{
+                label: 'Gas Heatmap',
+                data: data,
+                width: ({ chart }) => (chart.chartArea || {}).width / 31,
+                height: ({ chart }) => (chart.chartArea || {}).height / 24,
+                backgroundColor: function (ctx) {
+    const value = ctx.raw.v / 100; // Normalize to 0–1
+
+    let r = 0, g = 0, b = 0;
+
+    if (value < 0.25) {
+        // Blue to Cyan
+        r = 0;
+        g = Math.floor(255 * (value / 0.25));
+        b = 255;
+    } else if (value < 0.5) {
+        // Cyan to Green
+        r = 0;
+        g = 255;
+        b = Math.floor(255 * (1 - (value - 0.25) / 0.25));
+    } else if (value < 0.75) {
+        // Green to Yellow
+        r = Math.floor(255 * ((value - 0.5) / 0.25));
+        g = 255;
+        b = 0;
+    } else {
+        // Yellow to Red
+        r = 255;
+        g = Math.floor(255 * (1 - (value - 0.75) / 0.25));
+        b = 0;
+    }
+
+    return `rgba(${r}, ${g}, ${b}, 0.7)`;
+},
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    type: 'linear',
+                    min: 0,
+                    max: 31,
+                    ticks: {
+                        stepSize: 1,
+                        callback: val => days[val] || '',
+                        color: '#fff'
+                    },
+                    grid: { color: '#333' }
+                },
+                y: {
+                    type: 'linear',
+                    min: 0,
+                    max: 24,
+                    ticks: {
+                        stepSize: 1,
+                        callback: val => hours[val] || '',
+                        color: '#fff'
+                    },
+                    grid: { color: '#333' }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: ctx => `Day ${ctx[0].raw.x + 1}, Hour: ${hours[ctx[0].raw.y]}`,
+                        label: ctx => `Value: ${ctx.raw.v}`
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+<script>
+    const hoursEnergy = [...hours];
+    const daysEnergy = [...days];
+
+    const energyData = [];
+    for (let day = 0; day < 31; day++) {
+        for (let hour = 0; hour < 24; hour++) {
+            energyData.push({
+                x: day,
+                y: hour,
+                v: Math.floor(Math.random() * 100)
+            });
+        }
+    }
+
+    const ctxEnergy = document.getElementById('energyHeatMap').getContext('2d');
+
+    new Chart(ctxEnergy, {
+        type: 'matrix',
+        data: {
+            datasets: [{
+                label: 'Energy Heatmap',
+                data: energyData,
+                width: ({ chart }) => (chart.chartArea || {}).width / 31,
+                height: ({ chart }) => (chart.chartArea || {}).height / 24,
+                backgroundColor: function (ctx) {
+    const value = ctx.raw.v / 100; // Normalize to 0–1
+
+    let r = 0, g = 0, b = 0;
+
+    if (value < 0.25) {
+        // Blue to Cyan
+        r = 0;
+        g = Math.floor(255 * (value / 0.25));
+        b = 255;
+    } else if (value < 0.5) {
+        // Cyan to Green
+        r = 0;
+        g = 255;
+        b = Math.floor(255 * (1 - (value - 0.25) / 0.25));
+    } else if (value < 0.75) {
+        // Green to Yellow
+        r = Math.floor(255 * ((value - 0.5) / 0.25));
+        g = 255;
+        b = 0;
+    } else {
+        // Yellow to Red
+        r = 255;
+        g = Math.floor(255 * (1 - (value - 0.75) / 0.25));
+        b = 0;
+    }
+
+    return `rgba(${r}, ${g}, ${b}, 0.7)`;
+},
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    type: 'linear',
+                    min: 0,
+                    max: 31,
+                    ticks: {
+                        stepSize: 1,
+                        callback: val => daysEnergy[val] || '',
+                        color: '#fff'
+                    },
+                    grid: { color: '#333' }
+                },
+                y: {
+                    type: 'linear',
+                    min: 0,
+                    max: 24,
+                    ticks: {
+                        stepSize: 1,
+                        callback: val => hoursEnergy[val] || '',
+                        color: '#fff'
+                    },
+                    grid: { color: '#333' }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: ctx => `Day ${ctx[0].raw.x + 1}, Hour: ${hoursEnergy[ctx[0].raw.y]}`,
+                        label: ctx => `Value: ${ctx.raw.v}`
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+
+
+
+{% endblock %}

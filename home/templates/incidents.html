@@ -1,0 +1,117 @@
+{% extends 'layout.html' %}
+{% block body %}
+
+<style>
+    .shadow{
+            box-shadow: 0px 20px 100px black !important;
+        }
+        .btn-info{
+            background-color: #6fc8d6 !important;
+            border-color: #6fc8d6 !important;
+        }
+</style>
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column">
+    <div class="d-flex mt-5">
+        <h3 class="h5 text-info fw-bold mx-2">MARKS</h3>
+        <h3 class="h5"> Vision Center</h3>
+    </div>
+    <form action="" class="form p-3">
+        <div class="form-group mb-1">
+            <input type="text" class="form-control" placeholder="Search...">
+        </div>
+    </form>
+    <a href="/alarms/activeAlarms" class="text-white">Active Alarms</a>
+    <a href="/alarms/activeAlarms" class="text-white">All Alarms</a>
+    <a href="/alarms/recentIncidents" class="text-white">Recent Incidents</a>
+    <a href="/alarms/powerQualityIncidents" class="text-white">Power Quality Incidents</a>
+    <a href="/alarms/loadLossIncidents" class="text-white">Load Loss Incidents</a>
+    <a href="/alarms/unackAlarms" class="text-white">Unacknowledged Alarms</a>
+    
+    
+
+</div>
+
+<!-- Overlay -->
+<div id="overlay" class="overlay"></div>
+
+<div class="container">
+    <div class="container mt-4">
+        <h4 class="mb-3">Incident History</h4>
+        <!-- Incident Card 1 -->
+  <div class="card mb-1 shadow bg-dark text-light">
+    <div class="card-body d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="h6 mb-1">Network Outage</h5>
+        <p class="mb-1 small">Unexpected disconnection in production floor due to power failure.</p>
+        <small class="text-secondary small">31 May 2025, 11:45 AM</small>
+      </div>
+      <div>
+        <button class="btn btn-info fw-bold">View Details</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Incident Card 2 -->
+  <div class="card mb-1 shadow bg-dark text-light">
+    <div class="card-body d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="h6 mb-1">High Temperature Warning</h5>
+        <p class="mb-1 small">Boiler temperature exceeded the safety threshold for over 5 minutes.</p>
+        <small class="text-secondary small">02 June 2025, 03:15 PM</small>
+      </div>
+      <div>
+        <button class="btn btn-info fw-bold">View Details</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Incident Card 3 -->
+  <div class="card mb-1 shadow bg-dark text-light">
+    <div class="card-body d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="h6 mb-1">Unauthorized Access</h5>
+        <p class="mb-1 small">Login attempt from an unrecognized device at CIP.Station2.</p>
+        <small class="text-secondary small">03 June 2025, 07:50 AM</small>
+      </div>
+      <div>
+        <button class="btn btn-info fw-bold">View Details</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Incident Card 3 -->
+  <div class="card mb-1 shadow bg-dark text-light">
+    <div class="card-body d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="h6 mb-1">Unauthorized Access</h5>
+        <p class="mb-1 small">Login attempt from an unrecognized device at CIP.Station2.</p>
+        <small class="text-secondary small">03 June 2025, 07:50 AM</small>
+      </div>
+      <div>
+        <button class="btn btn-info fw-bold">View Details</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Incident Card 3 -->
+  <div class="card mb-1 shadow bg-dark text-light">
+    <div class="card-body d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="h6 mb-1">Unauthorized Access</h5>
+        <p class="mb-1 small">Login attempt from an unrecognized device at CIP.Station2.</p>
+        <small class="text-secondary small">03 June 2025, 07:50 AM</small>
+      </div>
+      <div>
+        <button class="btn btn-info fw-bold">View Details</button>
+      </div>
+    </div>
+  </div>
+
+
+
+      </div>
+</div>
+
+{% endblock %}

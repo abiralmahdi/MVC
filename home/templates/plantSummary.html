@@ -1,0 +1,341 @@
+{% extends 'layout.html' %}
+{% block body %}
+
+<style>
+    ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+/* Track (background of scrollbar) */
+::-webkit-scrollbar-track {
+  background: #24252a;  /* dark grey */
+}
+
+/* Handle (scroll thumb) */
+::-webkit-scrollbar-thumb {
+  background: #00eaff;      /* black */
+  border-radius: 4px;
+}
+
+/* Optional: Hide scrollbar arrows */
+::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* graph */
+.graph-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: space-between;
+        }
+
+        .graph-card {
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            padding: 1rem;
+            flex: 1 1 calc(50% - 1rem);
+            /* Two per row */
+            min-width: 300px;
+            max-width: 48%;
+        }
+
+        .graph-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .graph-header h5 {
+            margin: 0;
+        }
+
+</style>
+
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column">
+    <div class="d-flex mt-5">
+        <h3 class="h5 text-info fw-bold mx-2">MARKS</h3><h3 class="h5"> Vision Center</h3>
+      </div>
+    <form action="" class="form p-3">
+        <div class="form-group mb-1">
+            <input type="text" class="form-control" placeholder="Search..." >
+        </div>
+    </form>
+    <a href="/dashboard/plantSummary" class="text-white">Plant Summary</a>
+    <a href="/dashboard/allUtilities" class="text-white">Energy - All Utilities</a>
+    <a href="/dashboard/energyCostComparison" class="text-white">Energy - Cost Comparison</a>
+    <a href="/dashboard/plantHeatMaps" class="text-white">Plant - Heat Maps</a>
+    <a href="/dashboard/sankeyDiagram" class="text-white">Plant - Sankey Diagram</a>
+    <a href="/dashboard/statusTable" class="text-white">Plant - Status Table</a>
+  </div>
+
+  <!-- Overlay -->
+  <div id="overlay" class="overlay"></div>
+
+    <div class="container-fluid" id="main-content">
+        
+        <div class="row">
+            <main class="mt-3">
+                <div class="graph-container">
+                    <div class="d-flex flex-wrap mx-5 gap-3">
+                        <div class="graph-card bg-dark border-dark rounded p-3 text-white shadow"
+                            style="height: 300px; max-width: 200px;">
+                            <div class="d-flex">
+                                <h6 class="mb-2 mx-2">Green KPI</h6>
+                                <select class="form-select form-select-sm mb-2 ms-auto" style="width: 100px;">
+                                    <option>Last 7 days</option>
+                                <option>Last 14 days</option>
+                                <option>Last 28 days</option>
+                                </select>
+                                
+                                <i class="fa-solid m-2 fa-window-maximize"></i>
+                            </div>
+
+                            <div id="greenKPI" class="text-center" style="max-height: 200px;">
+                                <i class="fa-solid fa-leaf text-success h1 mt-5"></i>
+                                <p class="h3">
+                                    Carbon Emissions
+                                    <br>
+                                    <p class="text-secondary">
+                                        154,560.34 MtCO2
+                                    </p>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="graph-card bg-dark border-dark rounded p-3 text-white shadow"
+                            style="height: 300px;">
+                            <div class="d-flex">
+                                <h6 class="mb-2 mx-2">Energy Usage</h6>
+                                <select class="form-select form-select-sm mb-2 ms-auto" style="width: 100px;">
+                                    <option>Last 7 days</option>
+                                <option>Last 14 days</option>
+                                <option>Last 28 days</option>
+                                </select>
+                                
+                                <i class="fa-solid m-2 fa-window-maximize"></i>
+                            </div>
+
+                            <canvas id="histogramChart" style="max-height: 200px;"></canvas>
+                        </div>
+
+
+                        <div class="graph-card bg-dark border-dark rounded p-3 text-white shadow" style="height: 300px; max-width: 350px;">
+                            <div class="d-flex flex-wrap align-items-center">
+                              <h6 class="mb-2">Energy Cost Breakdown</h6>
+                              <select class="form-select form-select-sm mb-2 ms-auto" style="width: 100px;">
+                                <option>Last 7 days</option>
+                                <option>Last 14 days</option>
+                                <option>Last 28 days</option>
+                              </select>
+                              
+                              <i class="fa-solid m-2 fa-window-maximize"></i>
+                            </div>
+                            <canvas id="pieChart" style="max-height: 200px;"></canvas>
+                          </div>
+                          
+
+                        <div class="graph-card bg-dark border-dark rounded p-3 text-white shadow"
+                            style="height: 300px; max-width: 400px;">
+                            <div class="d-flex">
+                                <h6 class="mb-2 mx-2">Weather</h6>
+                                <select class="form-select form-select-sm mb-2 ms-auto" style="width: 100px;">
+                                    <option>Last 7 days</option>
+                                <option>Last 14 days</option>
+                                <option>Last 28 days</option>
+                                </select>
+                                
+                                <i class="fa-solid m-2 fa-window-maximize"></i>
+                            </div>
+                            <div id="weather" style="max-height: 200px; overflow-y: auto;">
+                                    <h5>Current Weather</h5>
+                                    <p id="current-weather"></p>
+                                    <h5>7-Day Forecast</h5>
+                                    <ul id="forecast"></ul>
+                            </div>
+                        </div>
+
+                        <div class="graph-card bg-dark border-dark rounded p-3 text-white shadow"
+                            style="height: 300px; min-width: 915px;">
+                            <div class="d-flex">
+                                <h6 class="mb-2 mx-2">Power Quality</h6>
+                                <select class="form-select form-select-sm mb-2 ms-auto" style="width: 100px;">
+                                    <option>Last 7 days</option>
+                                <option>Last 14 days</option>
+                                <option>Last 28 days</option>
+                                </select>
+                                
+                                <i class="fa-solid m-2 fa-window-maximize"></i>
+                            </div>
+                            <canvas id="trendCurve" style="max-height: 200px;"></canvas>
+                        </div>
+                    </div>
+
+
+
+                </div>
+
+
+
+            </main>
+        </div>
+    </div>
+
+
+    <script>
+        // Histogram
+        new Chart(document.getElementById('histogramChart'), {
+            type: 'bar',
+            data: {
+                labels: ['0-10', '10-20', '20-30', '30-40'],
+                datasets: [{
+                    label: 'Frequency',
+                    data: [5, 10, 8, 4],
+                    backgroundColor: '#0dcaf0'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { x: {}, y: { beginAtZero: true } }
+            }
+        });
+
+
+        // Pie Chart
+        new Chart(document.getElementById('pieChart'), {
+    type: 'pie',
+    data: {
+        labels: ['Electricity', 'Water', 'Gas'],
+        datasets: [{
+            data: [40, 10, 20],
+            backgroundColor: ['#dc3545', '#0d6efd', '#ffc107']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom', // Moves legend below chart
+                labels: {
+                    color: '#ffffff' // Optional: white labels for dark backgrounds
+                }
+            }
+        }
+    }
+});
+
+
+    </script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('trendCurve').getContext('2d');
+        const trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+                datasets: [
+                    {
+                        label: 'Plant A',
+                        data: [12, 19, 14, 17, 20, 15, 22],
+                        borderColor: 'blue',
+                        backgroundColor: '#4bc0c0',
+                        tension: 0.3,
+                        pointRadius: 4,
+                        fill: false
+                    },
+                    {
+                        label: 'Plant B',
+                        data: [10, 15, 13, 16, 18, 14, 19],
+                        borderColor: 'red',
+                        backgroundColor: 'red',
+                        tension: 0.3,
+                        pointRadius: 4,
+                        fill: false
+                    },
+                    {
+                        label: 'Plant C',
+                        data: [14, 17, 11, 18, 21, 16, 23],
+                        borderColor: 'yellow',
+                        backgroundColor: 'yellow',
+                        tension: 0.3,
+                        pointRadius: 4,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        ticks: { color: '#fff' },
+                        grid: { color: '#444' }
+                    },
+                    y: {
+                        ticks: { color: '#fff' },
+                        grid: { color: '#444' }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#fff'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const apiKey = 'efefdf01f1944806b0a64921250206'; // Replace with your WeatherAPI.com API key
+      const city = 'Dhaka';
+      const days = 7;
+  
+      fetch(`https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${city}&days=${days}&aqi=no&alerts=no`)
+        .then(response => response.json())
+        .then(data => {
+          const weatherDiv = document.getElementById('weather');
+          const current = data.current;
+          const forecast = data.forecast.forecastday;
+  
+          let html = `
+            <div class="mb-2">
+              <strong>Current:</strong> ${current.temp_c}°C, ${current.condition.text}
+              <img src="${current.condition.icon}" alt="${current.condition.text}">
+            </div>
+            <div>
+              <strong>7-Day Forecast:</strong>
+              <ul class="list-unstyled">
+          `;
+  
+          forecast.forEach(day => {
+            html += `
+              <li class="mb-1">
+                <strong>${day.date}:</strong> ${day.day.avgtemp_c}°C, ${day.day.condition.text}
+                <img src="${day.day.condition.icon}" alt="${day.day.condition.text}">
+              </li>
+            `;
+          });
+  
+          html += '</ul></div>';
+          weatherDiv.innerHTML = html;
+        })
+        .catch(error => {
+          console.error('Error fetching weather data:', error);
+          document.getElementById('weather').innerHTML = '<p>Error loading weather data.</p>';
+        });
+    });
+  </script>
+  
+  
+{% endblock %}
