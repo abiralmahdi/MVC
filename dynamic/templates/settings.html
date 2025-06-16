@@ -1,0 +1,68 @@
+{% extends 'layout.html' %}
+{% block body %}
+
+<style>
+
+
+/* graph */
+.graph-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: space-between;
+        }
+
+        .graph-card {
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            padding: 1rem;
+            flex: 1 1 calc(50% - 1rem);
+            /* Two per row */
+            min-width: 300px;
+            max-width: 48%;
+        }
+
+        .graph-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .graph-header h5 {
+            margin: 0;
+        }
+
+</style>
+
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column">
+    <div class="d-flex mt-5">
+        <h3 class="h5 text-info fw-bold mx-2">MARKS</h3><h3 class="h5"> Vision Center</h3>
+      </div>
+    <form action="" class="form p-3">
+        <div class="form-group mb-1">
+            <input type="text" class="form-control" placeholder="Search..." >
+        </div>
+    </form>
+    <a href="/settings/billingRates" class="text-white">Billing Rates</a>
+    <a href="/settings/deviceManager" class="text-white">Device Manager</a>
+    <a href="/settings/hierarchy" class="text-white">Hierarchy</a>
+    <a href="/settings/modelling" class="text-white">Modelling</a>
+    <a href="/settings/sysLog" class="text-white">System Log</a>
+  </div>
+
+  <!-- Overlay -->
+  <div id="overlay" class="overlay"></div>
+
+    <div class="container-fluid" id="main-content">
+        <div id="noDocument" class="">
+            <h1 class="h1 text-center mt-5 pt-5 text-secondary"><i class="fa-solid fa-gear fa-2x"></i></h1>
+            <h3 class="text-center mt-5 text-secondary">No Option Selected</h3>
+            <p class="text-center text-secondary">Click on any option from the sidebar to configure settings</p>
+        </div>
+        
+    </div>
+  
+{% endblock %}

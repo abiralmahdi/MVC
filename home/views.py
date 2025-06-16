@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from dynamic.models import *
 
 # Create your views here.
 def energyCostComparison(request):
@@ -33,3 +34,4 @@ def addReport(request):
 
 def savedReports(request):
     return render(request, "savedReports.html")
+

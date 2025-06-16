@@ -1,0 +1,506 @@
+{% extends 'layout.html' %}
+{% block body %}
+
+<style>
+    /* Highlight for selected gadget */
+    .gadget-highlight {
+        border: 2px solid #00eaff;
+        /* Indigo border */
+    }
+
+    a {
+        text-decoration: none;
+    }
+
+    .maximizeGadget:hover {
+        color: #00eaff;
+        cursor: pointer;
+    }
+
+    ::-webkit-scrollbar {
+        width: 2px !important;
+        /* For vertical scrollbars */
+        height: 2px !important;
+        /* For horizontal scrollbars */
+    }
+
+    /* Track (background of scrollbar) */
+    ::-webkit-scrollbar-track {
+        background: #24252a;
+        /* dark grey */
+    }
+
+    /* Handle (scroll thumb) */
+    ::-webkit-scrollbar-thumb {
+        background: #085f67;
+        /* black */
+        border-radius: 4px;
+    }
+
+    /* Optional: Hide scrollbar arrows */
+    ::-webkit-scrollbar-button {
+        display: none;
+    }
+</style>
+
+<!-- Maximize Gadget Modal [TO BE FIXED] -->
+<div class="modal fade" id="maximizeModal" tabindex="-1" aria-labelledby="maximizeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content bg-dark text-white">
+        <div class="modal-header">
+          <h5 class="modal-title" id="maximizeModalLabel">Maximized Gadget</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="maximizeModalBody">
+          <!-- Gadget will be injected here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- Modal -->
+<div class="modal fade" id="addGadgetModal" tabindex="-1" aria-labelledby="addGadgetModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" action="/dashboard/{{dashboard.id}}/newGadget">
+            {% csrf_token %}
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header border-dark">
+                    <h5 class="modal-title" id="addGadgetModalLabel">Create New Gadget</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Gadget Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="gadget_type" class="form-label">Gadget Type</label>
+                        <select class="form-select" id="gadget_type" name="gadget_type" required>
+                            <option value="">-- Select Type --</option>
+                            <option value="pie">Pie Chart</option>
+                            <option value="bar">Bar Chart</option>
+                            <option value="line">Trend Graph</option>
+                            <option value="table">Table</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meters" class="form-label">Meters</label>
+                        <select class="form-select" id="meters" name="meters" multiple required>
+                            {% for area in areas %}
+                            <optgroup label="{{ area.name }}">
+                                {% for meter in area.meters.all %}
+                                <option value="{{ meter.id }}">{{ meter.name }}</option>
+                                {% endfor %}
+                            </optgroup>
+                            {% endfor %}
+
+                        </select>
+                        <div class="form-text text-light">Hold Ctrl (Windows) or Cmd (Mac) to select multiple meters.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meters" class="form-label">Measurements</label>
+                        <select class="form-select" id="measurement" name="measurement" required>
+                            {% for measurement in measurements %}
+                            <option value="{{ measurement.id }}">{{ measurement.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-dark">
+                    <button type="submit" class="btn btn-info">Add Gadget</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+<!-- Sidebar -->
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
+    style="overflow-y: auto;">
+    <div class="d-flex m-3">
+        <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
+        <h3 class="h6">Vision Center</h3>
+    </div>
+
+    <form class="form m-3">
+        <div class="form-group">
+            <input type="text" class="form-control" placeholder="Search...">
+        </div>
+    </form>
+
+    <div class="accordion accordion-flush" id="sidebarAccordion">
+        <button class="btn btn-block btn-info ms-3 fw-bold" data-bs-toggle="modal"
+            data-bs-target="#addDashboardModal"><i class="fa-solid me-2 fa-plus"></i>Create a new Dashboard</button>
+        {% for site in sites %}
+        <!-- Industry Accordion -->
+        <div class="accordion-item bg-dark border-0">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#industryCollapse{{forloop.counter}}">
+                    <i class="fa-solid fa-folder"></i>
+                    <span class="mx-2">{{site.name}}</span>
+                </button>
+            </h2>
+            <div id="industryCollapse{{forloop.counter}}" class="accordion-collapse collapse"
+                data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body pl-3">
+
+                    <ul class="list-unstyled">
+                        {% for dashboard in site.dashboard.all %}
+                        <li>
+                            <a href="/dashboard/{{dashboard.id}}" class="text-white text-decoration-none">
+                                {{ dashboard.title }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+
+    </div>
+</div>
+
+
+<!-- Overlay -->
+<div id="overlay" class="overlay"></div>
+
+<div class="" id="main-content">
+
+    <div class="row">
+        <main class="mt-3">
+            {% if gadgets == None %}
+            <div id="noDocument">
+                <h1 class="h1 text-center mt-5 pt-5 text-secondary"><i class="fa-solid fa-signal fa-2x"></i></h1>
+                <h3 class="text-center mt-5 text-secondary">No Gadgets Configured</h3>
+                <p class="text-center text-secondary">No Gadgets were configured for this dashboard. <br> Click below to
+                    configure gadgets.</p>
+                <p class="text-center"><button class="btn btn-info" data-bs-toggle="modal"
+                        data-bs-target="#addGadgetModal"><i class="fa-solid fa-plus me-2"></i>Add Gadget</button></p>
+            </div>
+            {% else %}
+            <div class="">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h1 class="h5">
+                        <button class="btn btn-info btn-sm ps-2 me-2" id="treeToggleBtn" style="border-radius: 1000px;"
+                            onclick="toggleTree()"><i class="fa-solid fa-arrow-left"></i></button>
+                        {{ dashboard.title }}
+
+                    </h1>
+                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#addGadgetModal"><i
+                            class="fa-solid fa-plus me-2"></i>Add Gadget</button>
+                </div>
+                <div class="d-flex">
+                    <!-- Tree Sidebar -->
+                    <div id="tree" class="me-1 border-end border-dark text-secondary"
+                        style="width: 300px; overflow-y: auto; height: 75vh; font-size: small;">
+                        <ul class="list-group text-secondary">
+                            {% for site in sites %}
+                            <li class="list-group-item bg-dark border-dark text-secondary">
+                                <strong>
+                                    <a class="text-secondary" href="#site-{{ site.id }}" data-bs-toggle="collapse"
+                                        role="button" aria-expanded="false" aria-controls="site-{{ site.id }}">
+                                        {{ site.name }}
+                                    </a>
+                                </strong>
+                                <ul class="list-group bg-dark border-dark text-secondary collapse ms-1"
+                                    id="site-{{ site.id }}">
+                                    {% for building in site.buildings.all %}
+                                    <li class="list-group-item bg-dark border-dark text-secondary">
+                                        <a class="text-secondary" href="#building-{{ building.id }}"
+                                            data-bs-toggle="collapse" role="button" aria-expanded="false"
+                                            aria-controls="building-{{ building.id }}">
+                                            {{ building.name }}
+                                        </a>
+                                        <ul class="list-group bg-dark border-dark text-secondary collapse ms-1"
+                                            id="building-{{ building.id }}">
+                                            {% for area in building.areas.all %}
+                                            <li class="list-group-item bg-dark border-dark text-secondary">
+                                                <a class="text-secondary" href="#area-{{ area.id }}"
+                                                    data-bs-toggle="collapse" role="button" aria-expanded="false"
+                                                    aria-controls="area-{{ area.id }}">
+                                                    {{ area.name }}
+                                                </a>
+                                                <ul class="list-group bg-dark border-dark text-secondary collapse ms-1"
+                                                    style="font-size: smaller; width: 150px;" id="area-{{ area.id }}">
+                                                    {% for meter in area.meters.all %}
+                                                    <li class="list-group-item bg-dark border-dark text-secondary meter-item"
+                                                        id="meter-{{ meter.id }}">
+                                                        {{ meter.name }}
+                                                    </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+
+                    <div class=" d-flex flex-wrap ">
+                        {% for gadget in gadgets %}
+                        <div class="p-3 shadow mb-1 mx-1 gadget-item" id="gadget-wrapper-{{ gadget.id }}"
+                            data-meter-ids='[{% for m in gadget.meters.all %}{{ m.id }}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+                            <div class="d-flex">
+                                <h5 class="h6">{{ gadget.name }}</h5>
+                                <i class="fa-solid fa-window-maximize ms-auto maximizeGadget"></i>
+                            </div>
+                            {% if gadget.gadget_type == 'bar' %}
+                            <canvas id="gadget-{{ gadget.id }}" style="max-height: 200px;"></canvas>
+                            <script>
+                                console.log('{% for meter in gadget.meters.all %}{{meter.name}}, {% endfor %}')
+                                const ctxBar{{ gadget.id }} = document.getElementById("gadget-{{ gadget.id }}").getContext('2d');
+                                new Chart(ctxBar{{ gadget.id }}, {
+                                    type: 'bar',
+                                    data: {
+                                        labels: [{% for meter in gadget.meters.all %}'{{meter.name}}', {% endfor %}], // Replace with actual data
+                                        datasets: [{
+                                            label: '{{gadget.name}}',
+                                            data: Array.from({length: +'{{gadget.meters.all|length}}'}, () => Math.floor(Math.random() * 101)), // Replace with gadget-specific data
+                                            backgroundColor: ['rgba(75, 192, 192, 0.2)'],
+                                            borderColor: ['rgba(75, 192, 192, 1)'],
+                                            borderWidth: 1
+                                        }]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: false
+                                    }
+                                });
+                            </script>
+
+                            {% elif gadget.gadget_type == 'pie' %}
+                            <canvas id="gadget-{{ gadget.id }}" style="max-height: 200px;" ></canvas>
+                            <script>
+                                const ctxPie{{ gadget.id }} = document.getElementById("gadget-{{ gadget.id }}").getContext('2d');
+                                new Chart(ctxPie{{ gadget.id }}, {
+                                    type: 'pie',
+                                    data: {
+                                        labels: [{% for meter in gadget.meters.all %}'{{meter.name}}', {% endfor %}], // Replace with actual data
+                                        datasets: [{
+                                            label: '{{gadget.name}}',
+                                            data: Array.from({length: +'{{gadget.meters.all|length}}'}, () => Math.floor(Math.random() * 101)), // Replace with gadget-specific data
+                                            backgroundColor: Array.from({length:  +'{{gadget.meters.all|length}}'}, () => '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0'))
+                                        }]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: false
+                                    }
+                                });
+                            </script>
+
+                            {% elif gadget.gadget_type == 'line' %}
+                            <canvas id="gadget-{{ gadget.id }}" style="max-height: 200px;"></canvas>
+                            <script>
+                                const ctxLine{{ gadget.id }} = document.getElementById("gadget-{{ gadget.id }}").getContext('2d');
+                                new Chart(ctxLine{{ gadget.id }}, {
+                                    type: 'line',
+                                    data: {
+                                        labels: ['T1', 'T2', 'T3'], // Replace with timestamps
+                                        datasets: [{
+                                            label: 'Trend',
+                                            data: [5, 15, 9], // Replace with real-time or fetched values
+                                            borderColor: '#818cf8',
+                                            tension: 0.3
+                                        }]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: false
+                                    }
+                                });
+                            </script>
+                            {% elif gadget.gadget_type == 'table' %}
+                            <div class="table-responsive" style="max-height: 250px;">
+                                <table class="table table-bordered table-sm table-dark table-hover text-white">
+                                    <thead>
+                                        <tr>
+                                            <th>Meter</th>
+                                            <th>Measurement</th>
+                                            <th>Value ()</th>
+                                            <!-- You can customize this column based on what you're showing -->
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for meter in gadget.meters.all %}
+
+                                        <tr>
+                                            <td>{{ meter.name }}</td>
+                                            <td>{{ gadget.measurement.name }}</td>
+                                            <td><!-- Add actual value here, or a placeholder for now -->
+                                                20
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </main>
+    </div>
+</div>
+
+<!-- maximuze gadget script [TO BE FIXED] -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const maximizeIcons = document.querySelectorAll(".maximizeGadget");
+      const modal = new bootstrap.Modal(document.getElementById('maximizeModal'));
+      const modalBody = document.getElementById('maximizeModalBody');
+  
+      maximizeIcons.forEach(icon => {
+        icon.addEventListener("click", function (e) {
+          e.stopPropagation();
+  
+          // Find the gadget card div
+          const gadgetCard = this.closest(".gadget-item");
+          if (!gadgetCard) return;
+  
+          // Clone the gadget content (deep clone)
+          const clone = gadgetCard.cloneNode(true);
+  
+          // Remove previous modal content
+          modalBody.innerHTML = "";
+          modalBody.appendChild(clone);
+  
+          // Re-render any Chart.js instances
+          const canvas = clone.querySelector("canvas");
+          if (canvas) {
+            const ctx = canvas.getContext("2d");
+            const type = gadgetCard.querySelector("script").textContent.match(/type:\s*['"](\w+)['"]/)[1];
+            const data = JSON.parse(gadgetCard.querySelector("script").textContent.match(/data:\s*({[\s\S]*?})\s*,\s*options/)[1]);
+            const options = JSON.parse(gadgetCard.querySelector("script").textContent.match(/options:\s*({[\s\S]*?})\s*\)?;/)[1]);
+  
+            new Chart(ctx, {
+              type: type,
+              data: data,
+              options: options
+            });
+          }
+  
+          modal.show();
+        });
+      });
+    });
+  </script>
+  
+
+
+  <!-- Tree script -->
+<script>
+    let tree = document.getElementById('tree');
+    let treeToggleBtn = document.getElementById('treeToggleBtn');
+    function toggleTree() {
+
+        if (tree.style.display === "none" || tree.style.display === "") {
+            tree.style.display = "block";
+            treeToggleBtn.innerHTML = `<i class="fa-solid fa-arrow-left"></i>`
+        } else {
+            tree.style.display = "none";
+            treeToggleBtn.innerHTML = `<i class="fa-solid fa-arrow-right"></i>`
+        }
+    }
+    document.addEventListener("DOMContentLoaded", function () {
+        // 1. Tree toggle (show/hide child UL)
+        document.querySelectorAll("#tree li").forEach(function (li) {
+            const childUl = li.querySelector("ul");
+            if (childUl) {
+                childUl.style.display = "none";
+                li.style.cursor = "pointer";
+                li.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    childUl.style.display = (childUl.style.display === "none") ? "block" : "none";
+                });
+            }
+        });
+
+        // 2. Gadget-meter highlight & tree expand
+        const gadgets = document.querySelectorAll(".gadget-item");
+        const meters = document.querySelectorAll(".meter-item");
+
+        // Helper: expand parents of a meter element to make it visible
+        function expandParents(meterElem) {
+            treeToggleBtn.innerHTML = `<i class="fa-solid fa-arrow-left"></i>`
+            let tree = document.getElementById('tree');
+            tree.style.display = "block";
+            let current = meterElem.parentElement; // the <ul> containing the meter
+            while (current && current.id !== "tree") {
+                if (current.tagName.toLowerCase() === "ul") {
+                    current.style.display = "block";
+                }
+                current = current.parentElement;
+            }
+        }
+
+        gadgets.forEach(gadget => {
+            treeToggleBtn.innerHTML = `<i class="fa-solid fa-arrow-left"></i>`
+            gadget.addEventListener("click", (event) => {
+                event.stopPropagation();
+
+                // Remove all highlights (but do NOT collapse tree)
+                gadgets.forEach(g => g.classList.remove("gadget-highlight"));
+                meters.forEach(m => m.classList.remove("text-info"));
+
+                // Highlight clicked gadget
+                gadget.classList.add("gadget-highlight");
+
+                // Get related meters (expects JSON array or comma-separated string)
+                const meterIdsStr = gadget.getAttribute("data-meter-ids");
+                if (!meterIdsStr) return;
+
+                let meterIds = [];
+                try {
+                    meterIds = JSON.parse(meterIdsStr);
+                } catch (e) {
+                    meterIds = meterIdsStr.split(",").map(id => id.trim());
+                }
+
+                // Highlight meters and expand their parents
+                meterIds.forEach(id => {
+                    const meterElem = document.getElementById(`meter-${id}`);
+                    if (meterElem) {
+                        meterElem.classList.add("text-info");
+                        expandParents(meterElem);
+                    }
+                });
+            });
+        });
+
+        // Clicking outside gadgets clears highlights ONLY (not tree)
+        document.addEventListener("click", () => {
+            gadgets.forEach(g => g.classList.remove("gadget-highlight"));
+            meters.forEach(m => m.classList.remove("text-info"));
+
+        });
+    });
+</script>
+
+
+{% endblock %}

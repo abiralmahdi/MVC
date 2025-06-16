@@ -82,13 +82,13 @@
                                 data-bs-parent="#industrySubAccordion">
                                 <div class="accordion-body p-0">
                                     <ul class="list-unstyled ms-3">
-                                        <li><a href="#" class="text-white d-block py-1">Billing Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Billing Summary Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Billing Verification Report</a>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('billingReport')">Billing Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('billingSummaryReport')">Billing Summary Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('billingVerificationReport')">Billing Verification Report</a>
                                         </li>
-                                        <li><a href="#" class="text-white d-block py-1">Energy by IT Customer Report</a>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('energyByITCustomerReport')">Energy by IT Customer Report</a>
                                         </li>
-                                        <li><a href="#" class="text-white d-block py-1">Multiple Billing Export
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('MultipleBillingReport')">Multiple Billing Export
                                                 Report</a></li>
                                     </ul>
                                 </div>
@@ -108,9 +108,9 @@
                                 data-bs-parent="#industrySubAccordion">
                                 <div class="accordion-body p-0">
                                     <ul class="list-unstyled ms-3">
-                                        <li><a href="#" class="text-white d-block py-1">Circuit Breaker Aging Report</a>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('circuitBreakerAgingReport')">Circuit Breaker Aging Report</a>
                                         </li>
-                                        <li><a href="#" class="text-white d-block py-1">Circuit Breaker Settings
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('circuitBreakerSettingsReport')">Circuit Breaker Settings
                                                 Report</a></li>
                                     </ul>
                                 </div>
@@ -130,13 +130,14 @@
                                 data-bs-parent="#industrySubAccordion">
                                 <div class="accordion-body p-0">
                                     <ul class="list-unstyled ms-3">
-                                        <li><a href="#" class="text-white d-block py-1">Branch Circuit Power Report</a>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('branchCircuitPowerReport')">Branch Circuit Power Report</a>
                                         </li>
-                                        <li><a href="#" class="text-white d-block py-1">Equipment Capacity Report</a>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('equipmentCapacityReport')">Equipment Capacity Report</a>
                                         </li>
-                                        <li><a href="#" class="text-white d-block py-1">Generator Power Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Power Losses Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">UPS Power Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('generatorCapacityReport')">Generator Capacity Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('generatorPowerReport')">Generator Power Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('powerLossesReport')">Power Losses Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('UPSPowerReport')">UPS Power Report</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -155,20 +156,20 @@
                                 data-bs-parent="#industrySubAccordion">
                                 <div class="accordion-body p-0">
                                     <ul class="list-unstyled ms-3">
-                                        <li><a href="#" class="text-white d-block py-1">Create Model Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Use Model Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Duration Curve Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Energy Regression Analysis
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('createModelReport')">Create Model Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('useModelReport')">Use Model Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('durationCurveReport')">Duration Curve Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('energyRegressionAnalysis')">Energy Regression Analysis
                                                 Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Energy Usage Per State
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('energyUsagePerStateReport')">Energy Usage Per State
                                                 Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">KPI Engine Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Multi Equipment Operation
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('KPIEngineReport')">KPI Engine Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('MultiEquipmentOperationReport')">Multi Equipment Operation
                                                 Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Power Usage Per State Report</a>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('PowerUsagePerStateReport')">Power Usage Per State Report</a>
                                         </li>
-                                        <li><a href="#" class="text-white d-block py-1">PUE Summary Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Single Equipment Operation
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('PUESummaryReport')">PUE Summary Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('SingleEquipmentOperationReport')">Single Equipment Operation
                                                 Report</a></li>
                                     </ul>
                                 </div>
@@ -188,23 +189,23 @@
                                 data-bs-parent="#industrySubAccordion">
                                 <div class="accordion-body p-0">
                                     <ul class="list-unstyled ms-3">
-                                        <li><a href="#" class="text-white d-block py-1">Calendar Trend Month Report</a>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('calendarTrendMonthReport')">Calendar Trend Month Report</a>
                                         </li>
-                                        <li><a href="#" class="text-white d-block py-1">Consumption Ranking Report</a>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('consumptionRankingReport')">Consumption Ranking Report</a>
                                         </li>
-                                        <li><a href="#" class="text-white d-block py-1">Energy Comparison Report</a>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('energyComparisonReport')">Energy Comparison Report</a>
                                         </li>
-                                        <li><a href="#" class="text-white d-block py-1">Energy Cost Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Energy Period Over Period
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('energyCostReport')">Energy Cost Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('energyPeriodOverPeriodReport')">Energy Period Over Period
                                                 Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Energy Usage by Shift Report</a>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('energyUsageByShiftReport')">Energy Usage by Shift Report</a>
                                         </li>
-                                        <li><a href="#" class="text-white d-block py-1">Energy Usage by TOU Report</a>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('energyUsageByTOUReport')">Energy Usage by TOU Report</a>
                                         </li>
-                                        <li><a href="#" class="text-white d-block py-1">Energy Usage Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Hourly Usage Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Load Profile Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Measurement Aggregation
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('energyUsageReport')">Energy Usage Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('hourlyUsageReport')">Hourly Usage Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('loadProfileReport')">Load Profile Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('measurementAggregationReport')">Measurement Aggregation
                                                 Report</a></li>
                                     </ul>
                                 </div>
@@ -224,13 +225,12 @@
                                 data-bs-parent="#industrySubAccordion">
                                 <div class="accordion-body p-0">
                                     <ul class="list-unstyled ms-3">
-                                        <li><a href="#" class="text-white d-block py-1">100ms Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Dashboard Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Data Export Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Event History Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">System Configuration Report</a>
-                                        </li>
-                                        <li><a href="#" class="text-white d-block py-1">Tabular Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('report100ms')">100ms Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('dashboardReport')">Dashboard Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('dataExportReport')">Data Export Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('eventHistoryReport')">Event History Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('systemConfigurationReport')">System Configuration Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('tabularReport')">Tabular Report</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -241,7 +241,7 @@
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed bg-dark text-white" type="button"
                                     data-bs-toggle="collapse" data-bs-target="#insulationCollapse">
-                                    insulation Monitoring
+                                    Insulation Monitoring
                                     <i class="fa-solid fa-plus ms-auto  toggle-icon"></i> 
                                 </button>
                             </h2>
@@ -249,10 +249,8 @@
                                 data-bs-parent="#industrySubAccordion">
                                 <div class="accordion-body p-0">
                                     <ul class="list-unstyled ms-3">
-                                        <li><a href="#" class="text-white d-block py-1">Operating Room Isolated Power
-                                                Report (ANSI)</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Operating Room Isolated Power
-                                                Report (IEC)</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('operatingRoomAnsiReport')">Operating Room Isolated Power Report (ANSI)</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('operatingRoomIecReport')">Operating Room Isolated Power Report (IEC)</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -271,17 +269,14 @@
                                 data-bs-parent="#industrySubAccordion">
                                 <div class="accordion-body p-0">
                                     <ul class="list-unstyled ms-3">
-                                        <li><a href="#" class="text-white d-block py-1">EN50160:2000 Mains Signaling
-                                                Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">EN50160:2000 Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">EN50160:2010 Mains Signaling
-                                                Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Harmonic Compliance 2014
-                                                Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Harmonic Compliance Report</a>
-                                        </li>
-                                        <li><a href="#" class="text-white d-block py-1">IEC61000-3-30 Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Power Quality Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('en50160_2000MainsSignalingReport')">EN50160:2000 Mains Signaling Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('en50160_2000Report')">EN50160:2000 Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('en50160_2010MainsSignalingReport')">EN50160:2010 Mains Signaling Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('en50160_2010Report')">EN50160:2010 Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('harmonicCompliance2014Report')">Harmonic Compliance 2014 Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('harmonicComplianceReport')">Harmonic Compliance Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('iec61000_3_30Report')">IEC61000-3-30 Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('powerQualityReport')">Power Quality Report</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -300,9 +295,9 @@
                                 data-bs-parent="#industrySubAccordion">
                                 <div class="accordion-body p-0">
                                     <ul class="list-unstyled ms-3">
-                                        <li><a href="#" class="text-white d-block py-1">Power Quality Analysis
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('powerQualityAnalysisReport')">Power Quality Analysis
                                                 Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Power Quality Impact Report</a>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('powerQualityImpactReport')">Power Quality Impact Report</a>
                                         </li>
                                     </ul>
                                 </div>
@@ -322,12 +317,10 @@
                                 data-bs-parent="#industrySubAccordion">
                                 <div class="accordion-body p-0">
                                     <ul class="list-unstyled ms-3">
-                                        <li><a href="#" class="text-white d-block py-1">Multi Device Usage Report</a>
-                                        </li>
-                                        <li><a href="#" class="text-white d-block py-1">Multiple Trend Report</a></li>
-                                        <li><a href="#" class="text-white d-block py-1">Single Device Usage Report</a>
-                                        </li>
-                                        <li><a href="#" class="text-white d-block py-1">Trend Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('multiDeviceUsageReport')">Multi Device Usage Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('multipleTrendReport')">Multiple Trend Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('singleDeviceUsageReport')">Single Device Usage Report</a></li>
+                                        <li><a href="#" class="text-white d-block py-1" onclick="showForm('trendReport')">Trend Report</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -449,6 +442,7 @@
                                         </li>
                                         <li><a href="#" class="text-white d-block py-1">Equipment Capacity Report</a>
                                         </li>
+                                        <li><a href="#" class="text-white d-block py-1">Generator Capacity Report</a></li>
                                         <li><a href="#" class="text-white d-block py-1">Generator Power Report</a></li>
                                         <li><a href="#" class="text-white d-block py-1">Power Losses Report</a></li>
                                         <li><a href="#" class="text-white d-block py-1">UPS Power Report</a></li>
@@ -1367,8 +1361,8 @@
     </div>
 
 
-    <div id="generatorActivityReport" class="form-section d-none shadow p-5"
-        style="width: 500px; margin-left: 400px; margin-top: 60px; border-radius: 10px;">
+    <div id="generatorActivityReport" class="form-section d-none shadow p-3"
+        style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
         <h4 class="text-info mb-4 text-center">Generator Activity Report</h4>
         <form>
             <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
@@ -1384,7 +1378,7 @@
             
             <div class="mb-3 d-flex">
                 <label>Threshold Hours:</label>
-                <input class="form-control" type="int">
+                <input class="form-control" type="number">
             </div>
             <div class="mb-3 d-flex">
                 <label>Include Activity Details:</label>
@@ -1398,8 +1392,8 @@
         </form>
     </div>
 
-    <div id="generatorBatteryHealthReport" class="form-section d-none shadow p-5"
-        style="width: 500px; margin-left: 400px; margin-top: 60px; border-radius: 10px;">
+    <div id="generatorBatteryHealthReport" class="form-section d-none shadow p-3"
+        style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
         <h4 class="text-info mb-4 text-center">Generator Battery Health Report</h4>
         <form>
             <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
@@ -1421,7 +1415,7 @@
             
             <div class="mb-3 d-flex">
                 <label>Cumulative Degradation Threshold:</label>
-                <input class="form-control" type="int">
+                <input class="form-control" type="number">
             </div>
             
             <div class="d-flex">
@@ -1431,8 +1425,8 @@
         </form>
     </div>
 
-    <div id="generatorLoadSummaryReport" class="form-section d-none shadow p-5"
-        style="width: 500px; margin-left: 400px; margin-top: 60px; border-radius: 10px;">
+    <div id="generatorLoadSummaryReport" class="form-section d-none shadow p-3"
+        style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
         <h4 class="text-info mb-4 text-center">Generator Load Summary Report</h4>
         <form>
             <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
@@ -1461,8 +1455,8 @@
     </div>
 
 
-    <div id="generatorTestEPSSReport" class="form-section d-none shadow p-5"
-        style="width: 500px; margin-left: 400px; margin-top: 60px; border-radius: 10px;">
+    <div id="generatorTestEPSSReport" class="form-section d-none shadow p-3"
+        style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
         <h4 class="text-info mb-4 text-center">Generator Test EPSS Report</h4>
         <form>
             <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
@@ -1505,8 +1499,8 @@
     </div>
 
 
-    <div id="UPSAutoTestReport" class="form-section d-none shadow p-5"
-        style="width: 500px; margin-left: 400px; margin-top: 60px; border-radius: 10px;">
+    <div id="UPSAutoTestReport" class="form-section d-none shadow p-3"
+        style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
         <h4 class="text-info mb-4 text-center">UPS Auto Test Report</h4>
         <form>
             <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
@@ -1536,8 +1530,8 @@
         </form>
     </div>
 
-    <div id="UPSBatteryHealthReport" class="form-section d-none shadow p-5"
-        style="width: 500px; margin-left: 400px; margin-top: 60px; border-radius: 10px;">
+    <div id="UPSBatteryHealthReport" class="form-section d-none shadow p-3"
+        style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
         <h4 class="text-info mb-4 text-center">UPS Battery Health Report</h4>
         <form>
             <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
@@ -1577,7 +1571,1332 @@
         </form>
     </div>
 
+
+    <div id="billingReport" class="form-section d-none shadow p-3"
+        style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+        <h4 class="text-info mb-4 text-center">Billing Report</h4>
+        <form>
+            <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"></div>
+            <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+            <div class="mb-3">
+                <label>Tenant:</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Rate</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>All Line Items</option>
+                    <option>Blank Rate</option>
+                    <option>Example Rate Advanced</option>
+                    <option>Example Rate Basic</option>
+                </select>
+            </div>
+            <div class="d-flex">
+                <button class="btn btn-info">Generate Report </button>
+            </div>
+        </form>
+    </div>
+
+
+    <div id="billingSummaryReport" class="form-section d-none shadow p-3"
+        style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+        <h4 class="text-info mb-4 text-center">Billing Summary Report</h4>
+        <form>
+            <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"></div>
+            <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+            <div class="mb-3">
+                <label>Tenant:</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Rate</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>All Line Items</option>
+                    <option>Blank Rate</option>
+                    <option>Example Rate Advanced</option>
+                    <option>Example Rate Basic</option>
+                </select>
+            </div>
+            <div class="mb-3"><label>Tenant Filter:</label> <input class="form-control"></div>
+            <div class="mb-3"><label>Line Item Filter:</label> <input class="form-control"></div>
+            <div class="mb-3 d-flex">
+                <label>Saving Billing Totals:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Keep True Totals (regardless of filtering):</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3">
+                <label>Order By</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Tenant</option>
+                    <option>Rate</option>
+                </select>
+            </div>
+            <div class="d-flex">
+                <button class="btn btn-info">Generate Report </button>
+            </div>
+        </form>
+    </div>
+
+
+    <div id="billingVerificationReport" class="form-section d-none shadow p-3"
+        style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+        <h4 class="text-info mb-4 text-center">Billing Verification Report</h4>
+        <form>
+            <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"></div>
+            <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+            <div class="mb-3">
+                <label>Private Source:</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Check Source</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>All Line Items</option>
+                    <option>Blank Rate</option>
+                    <option>Example Rate Advanced</option>
+                    <option>Example Rate Basic</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Rate</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>All Line Items</option>
+                    <option>Blank Rate</option>
+                    <option>Example Rate Advanced</option>
+                    <option>Example Rate Basic</option>
+                </select>
+            </div>
+            <div class="mb-3"><label>Actual Billing Cost:</label> <input class="form-control"></div>
+            <div class="mb-3"><label>Alarm Threshold - Check Source vs Actual Total:</label> <input class="form-control"></div>
+            <div class="mb-3"><label>Alarm Threshold - Check Source vs Private Source:</label> <input class="form-control"></div>
+            <div class="mb-3 d-flex">
+                <label>Show Billing Details:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3">
+                <label>Notify On</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Do Not Notify</option>
+                    <option>None</option>
+                    <option>Check Source vs Actual Total</option>
+                    <option>Check Source vs Private Source</option>
+                </select>
+            </div>
+            <div class="mb-3"><label>Email Address:</label> <input class="form-control"></div>
+            <div class="mb-3"><label>Email Subject:</label> <input class="form-control"></div>
+
+            <div class="d-flex">
+                <button class="btn btn-info">Generate Report </button>
+            </div>
+        </form>
+    </div>
+
+
+    <div id="energyByITCustomerReport" class="form-section d-none shadow p-3"
+        style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+        <h4 class="text-info mb-4 text-center">Energy by IT Customer Report</h4>
+        <form>
+            <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"></div>
+            <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+            <div class="mb-3"><label>Facility Name:</label> <input class="form-control"></div>
+            <div class="mb-3"><label>Facility Location:</label> <input class="form-control"></div>
+            <div class="mb-3">
+                <label>Customers:</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Report Type</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Summary</option>
+                    <option>Detail</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Timestamp Coincidence</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>With Customer Peak</option>
+                    <option>With Data Center Peak</option>
+                </select>
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Display Billing ID:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Include Data Notifications:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="d-flex">
+                <button class="btn btn-info">Generate Report </button>
+            </div>
+        </form>
+    </div>
+
+
+
+    <div id="MultipleBillingReport" class="form-section d-none shadow p-3"
+        style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+        <h4 class="text-info mb-4 text-center">Multiple Billing Export Report</h4>
+        <form>
+            <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"></div>
+            <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+            <div class="mb-3">
+                <label>Tenants</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>All Line Items</option>
+                    <option>Blank Rate</option>
+                    <option>Example Rate Advanced</option>
+                    <option>Example Rate Basic</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Rate</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>All Line Items</option>
+                    <option>Blank Rate</option>
+                    <option>Example Rate Advanced</option>
+                    <option>Example Rate Basic</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>XML Transform File</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Basic Default Export</option>
+                    <option>CSV</option>
+                    <option>Export Pass Through</option>
+                </select>
+            </div>            
+            <div class="mb-3"><label>XML Export FIle:</label> <input class="form-control"></div>
+            <div class="mb-3 d-flex">
+                <label>Override XML Export:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Save Billing Totals:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Email XML Export:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3"><label>Email Recipients:</label> <input class="form-control"></div>
+
+            <div class="mb-3">
+                <label>Order By</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Tenant</option>
+                    <option>Rate</option>
+                </select>
+            </div>
+
+            <div class="d-flex">
+                <button class="btn btn-info">Generate Report </button>
+            </div>
+        </form>
+    </div>
+
+
+    <div id="circuitBreakerAgingReport" class="form-section d-none shadow p-3"
+    style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+    <h4 class="text-info mb-4 text-center">Circuit Breaker Aging Report</h4>
+    <form>
+        
+        <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+        <div class="mb-3">
+            <label>Select Group</label>
+            <select class="form-select form-select-sm mb-2 ms-auto">
+                <option>All Line Items</option>
+                <option>Blank Rate</option>
+                <option>Example Rate Advanced</option>
+                <option>Example Rate Basic</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label>Grouped By</label>
+            <select class="form-select form-select-sm mb-2 ms-auto">
+                <option>Switchboard Name first and Threshold Level last</option>
+                <option>Threshold Level first and Switchboard Name last</option>
+            </select>
+        </div>       
+        <div class="mb-3"><label>XML Export FIle:</label> <input class="form-control"></div>
+        <div class="mb-3 d-flex">
+            <label>Include Breakers with Minor Aging and Wear:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <div class="mb-3 d-flex">
+            <label>Include Data Notifications:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <div class="d-flex">
+            <button class="btn btn-info">Generate Report </button>
+        </div>
+    </form>
+</div>
+
+<div id="circuitBreakerSettingsReport" class="form-section d-none shadow p-3"
+    style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+    <h4 class="text-info mb-4 text-center">Circuit Breaker Settings Report</h4>
+    <form>
+        
+        <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+        <div class="mb-3">
+            <label>Select Group</label>
+            <select class="form-select form-select-sm mb-2 ms-auto">
+                <option>All Line Items</option>
+                <option>Blank Rate</option>
+                <option>Example Rate Advanced</option>
+                <option>Example Rate Basic</option>
+            </select>
+        </div>
+        <div class="mb-3 d-flex">
+            <label>Include Unassociated Breakers:</label>
+            <input class="ms-2" type="checkbox">
+        </div>  
+        <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+            class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+            class="form-control w-25 mx-2"></div>    
+        <div class="mb-3 d-flex">
+            <label>Circuit Breaker Inventory:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <div class="mb-3 d-flex">
+            <label>Trip Settings:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <div class="mb-3 d-flex">
+            <label>Protection Modes:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <div class="mb-3 d-flex">
+            <label>Maintenance Status:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <div class="mb-3 d-flex">
+            <label>Change Summary:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <div class="mb-3 d-flex">
+            <label>Include Data Notifications:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <div class="d-flex">
+            <button class="btn btn-info">Generate Report </button>
+        </div>
+    </form>
+</div>
+
+
+
+<div id="branchCircuitPowerReport" class="form-section d-none shadow p-3"
+        style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+        <h4 class="text-info mb-4 text-center">Branch Circuit Power Report</h4>
+        <form>
+            <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"></div>
+            <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+            <div class="mb-3"><label>Facility Name:</label> <input class="form-control"></div>
+            <div class="mb-3"><label>Facility Location:</label> <input class="form-control"></div>
+            <div class="mb-3">
+                <label>Customers:</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Primary Sort</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Summary</option>
+                    <option>Detail</option>
+                </select>
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Include Data Notifications:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="d-flex">
+                <button class="btn btn-info">Generate Report </button>
+            </div>
+        </form>
+    </div>
+
+
+    <div id="equipmentCapacityReport" class="form-section d-none shadow p-3"
+    style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+    <h4 class="text-info mb-4 text-center">Equipment Capacity Report</h4>
+    <form>
+        <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                class="form-control w-25 mx-2"></div>
+        <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+        <div class="mb-3">
+            <label>EPSS Group:</label>
+            <select class="form-select form-select-sm mb-2 ms-auto">
+                <option>Backup Generator</option>
+            </select>
+        </div>
+        
+        <div class="mb-3 d-flex">
+            <label>Threshold %:</label>
+            <input class="form-control" type="number">
+        </div>
+        <div class="mb-3 d-flex">
+            <label>Show Daily Rollups:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <div class="mb-3 d-flex">
+            <label>Include Data Table:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <div class="mb-3 d-flex">
+            <label>Include Data Notifications:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <button class="btn btn-info">Generate Report </button>
+    </form>
+</div>
+
+
+<div id="generatorCapacityReport" class="form-section d-none shadow p-3"
+    style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+    <h4 class="text-info mb-4 text-center">Generator Capacity Report</h4>
+    <form>
+        <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                class="form-control w-25 mx-2"></div>
+        <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+        <div class="mb-3">
+            <label>EPSS Group:</label>
+            <select class="form-select form-select-sm mb-2 ms-auto">
+                <option>Backup Generator</option>
+            </select>
+        </div>
+        
+        <div class="mb-3 d-flex">
+            <label>Aggregation Period:</label>
+            <select class="form-select form-select-sm mb-2 ms-auto">
+                <option>Daily</option>
+                <option>Weekly</option>
+                <option>Monthly</option>
+            </select>
+        </div>
+        <div class="mb-3 d-flex">
+            <label>Include Data Table:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <div class="mb-3 d-flex">
+            <label>Include Data Notifications:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <button class="btn btn-info">Generate Report </button>
+    </form>
+</div>
+
+
+<div id="generatorPowerReport" class="form-section d-none shadow p-3"
+        style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+        <h4 class="text-info mb-4 text-center">Generator Power Report</h4>
+        <form>
+            <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"></div>
+            <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+            <div class="mb-3"><label>Facility Name:</label> <input class="form-control"></div>
+            <div class="mb-3"><label>Facility Location:</label> <input class="form-control"></div>
+            <div class="mb-3">
+                <label>Report Data (Generator Systems):</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Aggregation Period</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Daily</option>
+                    <option>Weekly</option>
+                    <option>Monthly</option>
+                </select>
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Include Data Tables:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Show Data Notifications:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="d-flex">
+                <button class="btn btn-info">Generate Report </button>
+            </div>
+        </form>
+    </div>
+
+    <div id="powerLossesReport" class="form-section d-none shadow p-3"
+        style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+        <h4 class="text-info mb-4 text-center">Power Losses Report</h4>
+        <form>
+            <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"></div>
+            <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+            <div class="mb-3"><label>Facility Name:</label> <input class="form-control"></div>
+            <div class="mb-3"><label>Facility Location:</label> <input class="form-control"></div>
+            <div class="mb-3">
+                <label>Aggregation Period</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Daily</option>
+                    <option>Weekly</option>
+                    <option>Monthly</option>
+                </select>
+            </div>
+            <div class="mb-3"><label>Energy Cost (per kWh) in $:</label> <input class="form-control" type="number"></div>
+
+            <div class="mb-3 d-flex">
+                <label>Include Data Tables:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Show Data Notifications:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="d-flex">
+                <button class="btn btn-info">Generate Report </button>
+            </div>
+        </form>
+    </div>
+
+
+    <div id="UPSPowerReport" class="form-section d-none shadow p-3"
+        style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+        <h4 class="text-info mb-4 text-center">UPS Power Report</h4>
+        <form>
+            <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"></div>
+            <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+            <div class="mb-3"><label>Facility Name:</label> <input class="form-control"></div>
+            <div class="mb-3"><label>Facility Location:</label> <input class="form-control"></div>
+            <div class="mb-3">
+                <label>Report Data (UPS Systems):</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Aggregation Period</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Daily</option>
+                    <option>Weekly</option>
+                    <option>Monthly</option>
+                </select>
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Include Data Tables:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Show Data Notifications:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="d-flex">
+                <button class="btn btn-info">Generate Report </button>
+            </div>
+        </form>
+    </div>
+
+
+
+    <div id="trendReport" class="form-section d-none shadow p-3"
+        style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+        <h4 class="text-info mb-4 text-center">Trend Report</h4>
+        <form>
+            <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                    class="form-control w-25 mx-2"></div>
+            <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+            <div class="mb-3">
+                <label>Sources:</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                    <option>Billing Totals.Bottling Line</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Measurements</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Air</option>
+                    <option>Alarm</option>
+                    <option>Breaker</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Chart Type</label>
+                <select class="form-select form-select-sm mb-2 ms-auto">
+                    <option>Line</option>
+                    <option>Bar</option>
+                    <option>Column</option>
+                    <option>Pie</option>
+                    <option>Stacked Bar</option>
+                    <option>Stacked Column</option>
+                </select>
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Auto-scale Y-axis:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Include Data Table:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Include Duplicates:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="mb-3 d-flex">
+                <label>Show Data Notifications:</label>
+                <input class="ms-2" type="checkbox">
+            </div>
+            <div class="d-flex">
+                <button class="btn btn-info">Generate Report </button>
+            </div>
+        </form>
+    </div>
+
+
+
+    <div id="singleDeviceUsageReport" class="form-section d-none shadow p-3"
+    style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+    <h4 class="text-info mb-4 text-center">Single Device Usage Report</h4>
+    <form>
+        <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+                class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+                class="form-control w-25 mx-2"></div>
+        <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+        <div class="mb-3">
+            <label>Source:</label>
+            <select class="form-select form-select-sm mb-2 ms-auto">
+                <option>Billing Totals.Bottling Line</option>
+                <option>Billing Totals.Bottling Line</option>
+                <option>Billing Totals.Bottling Line</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label>Measurements</label>
+            <select class="form-select form-select-sm mb-2 ms-auto">
+                <option>Air</option>
+                <option>Alarm</option>
+                <option>Breaker</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label>Rollup</label>
+            <select class="form-select form-select-sm mb-2 ms-auto">
+                <option>Daily</option>
+                <option>Weekly</option>
+                <option>Monthly</option>
+                <option>Yearly</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label>Chart Type</label>
+            <select class="form-select form-select-sm mb-2 ms-auto">
+                <option>Line</option>
+                <option>Bar</option>
+                <option>Column</option>
+                <option>Pie</option>
+                <option>Stacked Bar</option>
+                <option>Stacked Column</option>
+            </select>
+        </div>
+        <div class="mb-3 d-flex">
+            <label>Show Start & End Periods Only:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <div class="mb-3 d-flex">
+            <label>Align Day of Week for Months:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <div class="mb-3 d-flex">
+            <label>Auto-scale Y-axis:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <div class="mb-3 d-flex">
+            <label>Show Data Notifications:</label>
+            <input class="ms-2" type="checkbox">
+        </div>
+        <div class="d-flex">
+            <button class="btn btn-info">Generate Report </button>
+        </div>
+    </form>
+</div>
+
+
+
+
+<div id="multipleTrendReport" class="form-section d-none shadow p-3"
+style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+<h4 class="text-info mb-4 text-center">Multiple Trend Report</h4>
+<form>
     
+    <div class="mb-3">
+        <label>Sources Left:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Billing Totals.Bottling Line</option>
+            <option>Billing Totals.Bottling Line</option>
+            <option>Billing Totals.Bottling Line</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Measurements Left</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Air</option>
+            <option>Alarm</option>
+            <option>Breaker</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label> Sources Right</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Billing Totals.Bottling Line</option>
+            <option>Billing Totals.Bottling Line</option>
+            <option>Billing Totals.Bottling Line</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label> Measurements Right</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Air</option>
+            <option>Alarm</option>
+            <option>Breaker</option>
+        </select>
+    </div>
+    
+    <div class="d-flex">
+        <button class="btn btn-info">Generate Report </button>
+    </div>
+</form>
+</div>
+
+
+
+
+
+<div id="multiDeviceUsageReport" class="form-section d-none shadow p-3"
+style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+<h4 class="text-info mb-4 text-center">Multi Device Usage Report</h4>
+<form>
+    <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+            class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+            class="form-control w-25 mx-2"></div>
+    <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+    <div class="mb-3">
+        <label>Sources:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Billing Totals.Bottling Line</option>
+            <option>Billing Totals.Bottling Line</option>
+            <option>Billing Totals.Bottling Line</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Measurements</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Air</option>
+            <option>Alarm</option>
+            <option>Breaker</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Rollup</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Daily</option>
+            <option>Weekly</option>
+            <option>Monthly</option>
+            <option>Yearly</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Chart Type</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Line</option>
+            <option>Bar</option>
+            <option>Column</option>
+            <option>Pie</option>
+            <option>Stacked Bar</option>
+            <option>Stacked Column</option>
+        </select>
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Show Start & End Periods Only:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+
+    <div class="mb-3 d-flex">
+        <label>Auto-scale Y-axis:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Include Data Table:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Show Data Notifications:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="d-flex">
+        <button class="btn btn-info">Generate Report </button>
+    </div>
+</form>
+</div>
+
+
+
+
+
+
+
+<div id="powerQualityAnalysisReport" class="form-section d-none shadow p-3"
+style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+<h4 class="text-info mb-4 text-center">Power Quality Analysis Report</h4>
+<form>
+    <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+            class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+            class="form-control w-25 mx-2"></div>
+    <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+    <div class="mb-3">
+        <label>Sources:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Billing Totals.Bottling Line</option>
+            <option>Billing Totals.Bottling Line</option>
+            <option>Billing Totals.Bottling Line</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Incidents and Disturbances</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Air</option>
+            <option>Alarm</option>
+            <option>Breaker</option>
+        </select>
+    </div>
+    <div class="mb-3"><label>Power Factor Target:</label> <input class="form-control" type="number"></div>
+
+    <div class="mb-3 d-flex">
+        <label>Include Non Impacting Incidents:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Include Data Table:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Show Data Notifications:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="d-flex">
+        <button class="btn btn-info">Generate Report </button>
+    </div>
+</form>
+</div>
+
+
+
+
+<div id="powerQualityImpactReport" class="form-section d-none shadow p-3"
+style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+<h4 class="text-info mb-4 text-center">Power Quality Impact Report</h4>
+<form>
+    <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+            class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+            class="form-control w-25 mx-2"></div>
+    <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+    <div class="mb-3">
+        <label>Group:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Bottling</option>
+            <option>All Groups</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Location</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>External and Internal</option>
+            <option>External</option>
+            <option>Internal</option>
+        </select>
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Include Undetermined Incidents:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Show Data Notifications:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="d-flex">
+        <button class="btn btn-info">Generate Report </button>
+    </div>
+</form>
+</div>
+
+
+
+
+
+<div id="en50160_2000MainsSignalingReport" class="form-section d-none shadow p-3"
+style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+<h4 class="text-info mb-4 text-center">EN50160:2000 Mains Signaling Report</h4>
+<form>
+    <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+            class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+            class="form-control w-25 mx-2"></div>
+    <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+    <div class="mb-3">
+        <label>Sources:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Bottling</option>
+            <option>Other Sources (to be completed in while doing backend)</option>
+        </select>
+    </div>
+    <div class="mb-3"><label>Signaling Voltage 1 Eval Limit (%):</label> <input class="form-control"></div>
+
+    <div class="mb-3"><label>Signaling Voltage 2 Eval Limit (%):</label> <input class="form-control"></div>
+
+    <div class="mb-3"><label>Signaling Voltage 3 Eval Limit (%):</label> <input class="form-control"></div>
+
+    <div class="mb-3 d-flex">
+        <label>Show Data Notifications:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="d-flex">
+        <button class="btn btn-info">Generate Report </button>
+    </div>
+</form>
+</div>
+
+
+
+
+
+<div id="en50160_2000Report" class="form-section d-none shadow p-3"
+style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+<h4 class="text-info mb-4 text-center">EN50160:2000 Report</h4>
+<form>
+    <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+            class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+            class="form-control w-25 mx-2"></div>
+    <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+    <div class="mb-3">
+        <label>Sources:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Bottling</option>
+            <option>Other Sources (to be completed in while doing backend)</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Evaluation Limits:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>To Be Done with Backend</option>
+        </select>
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Include EN50160 Configuration Parameters:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Include Data Notifications:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="d-flex">
+        <button class="btn btn-info">Generate Report </button>
+    </div>
+</form>
+</div>
+
+
+
+
+<div id="en50160_2010MainsSignalingReport" class="form-section d-none shadow p-3"
+style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+<h4 class="text-info mb-4 text-center">EN50160:2010 Mains Signaling Report</h4>
+<form>
+    <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+            class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+            class="form-control w-25 mx-2"></div>
+    <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+    <div class="mb-3">
+        <label>Sources:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Bottling</option>
+            <option>Other Sources (to be completed in while doing backend)</option>
+        </select>
+    </div>
+    <div class="mb-3"><label>Signaling Voltage 1 Eval Limit (%):</label> <input class="form-control"></div>
+
+    <div class="mb-3"><label>Signaling Voltage 2 Eval Limit (%):</label> <input class="form-control"></div>
+
+    <div class="mb-3"><label>Signaling Voltage 3 Eval Limit (%):</label> <input class="form-control"></div>
+
+    <div class="mb-3 d-flex">
+        <label>Show Data Notifications:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="d-flex">
+        <button class="btn btn-info">Generate Report </button>
+    </div>
+</form>
+</div>
+
+
+
+
+
+<div id="en50160_2010Report" class="form-section d-none shadow p-3"
+style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+<h4 class="text-info mb-4 text-center">EN50160:2000 Report</h4>
+<form>
+    <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+            class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+            class="form-control w-25 mx-2"></div>
+    <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+    <div class="mb-3">
+        <label>Sources:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Bottling</option>
+            <option>Other Sources (to be completed in while doing backend)</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Evaluation Limits:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>To Be Done with Backend</option>
+        </select>
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Include EN50160 Configuration Parameters:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Include Data Notifications:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="d-flex">
+        <button class="btn btn-info">Generate Report </button>
+    </div>
+</form>
+</div>
+
+
+
+
+
+<div id="harmonicCompliance2014Report" class="form-section d-none shadow p-3"
+style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+<h4 class="text-info mb-4 text-center">Harmonic Compliance 2014 Report</h4>
+<form>
+    <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+            class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+            class="form-control w-25 mx-2"></div>
+    <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+    <div class="mb-3">
+        <label>Source:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Bottling</option>
+            <option>Other Sources (to be completed in while doing backend)</option>
+        </select>
+    </div>
+    <div class="mb-3"><label>Comments:</label> <input class="form-control"></div>
+
+    <div class="mb-3 d-flex">
+        <label>Include THD/TDD Charts:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Include Average Harmonic Charts:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Include Harmonic Detail Charts:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div classs="mb-3 d-flex">
+        <label>Lock Chart Sales at Zero:</label>
+        <input class="ms-2" type="checkbox">
+        </div>
+    <div class="mb-3 d-flex">
+        <label>Show Data Notifications:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="d-flex">
+        <button class="btn btn-info">Generate Report </button>
+    </div>
+</form>
+</div>
+
+
+
+
+
+
+<div id="harmonicComplianceReport" class="form-section d-none shadow p-3"
+style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+<h4 class="text-info mb-4 text-center">Harmonic Compliance 2014 Report</h4>
+<form>
+    <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+            class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+            class="form-control w-25 mx-2"></div>
+    <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+    <div class="mb-3">
+        <label>Source:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Bottling</option>
+            <option>Other Sources (to be completed in while doing backend)</option>
+        </select>
+    </div>
+    <div class="mb-3"><label>Comments:</label> <input class="form-control"></div>
+
+    <div class="mb-3 d-flex">
+        <label>Include THD/TDD Charts:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Include Average Harmonic Charts:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Include Harmonic Detail Charts:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Lock Chart Sales at Zero:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Show Data Notifications:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="d-flex">
+        <button class="btn btn-info">Generate Report </button>
+    </div>
+</form>
+</div>
+
+
+
+
+<div id="iec61000_3_30Report" class="form-section d-none shadow p-3"
+style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+<h4 class="text-info mb-4 text-center">IEC61000-4-30 Report</h4>
+<form>
+    <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+            class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+            class="form-control w-25 mx-2"></div>
+    <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+    <div class="mb-3">
+        <label>Source:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Bottling</option>
+            <option>Other Sources (to be completed in while doing backend)</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Measurement Interval:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>2 hours</option>
+            <option>10 mins</option>
+            <option>3 seconds</option>
+        </select>
+    </div>
+    <div class="mb-3"><label>Voltage Nominal (V):</label> <input class="form-control"></div>
+    <div class="mb-3"><label>Frequency Nominal (Hz):</label> <input class="form-control"></div>
+    <div class="mb-3"><label>Voltage Baseline (%):</label> <input class="form-control"></div>
+    <div class="mb-3"><label>THD Baseline (%):</label> <input class="form-control"></div>
+    <div class="mb-3"><label>Frequency Baseline (%):</label> <input class="form-control"></div>
+    <div class="mb-3"><label>Unbalance Baseline (%):</label> <input class="form-control"></div>
+    <div class="mb-3"><label>Unbalance Baseline - High:</label> <input class="form-control"></div>
+    <div class="mb-3"><label>Flicker Baseline - Low:</label> <input class="form-control"></div>
+
+    <div class="mb-3 d-flex">
+        <label>Show Data Notifications:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="d-flex">
+        <button class="btn btn-info">Generate Report </button>
+    </div>
+</form>
+</div>
+
+
+
+
+
+<div id="powerQualityReport" class="form-section d-none shadow p-3"
+style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+<h4 class="text-info mb-4 text-center">Power Quality Report</h4>
+<form>
+    <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+            class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+            class="form-control w-25 mx-2"></div>
+    <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+    <div class="mb-3">
+        <label>Sources:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Bottling</option>
+            <option>Other Sources (to be completed in while doing backend)</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Incident Interval:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>2 hours</option>
+            <option>10 mins</option>
+            <option>3 seconds</option>
+        </select>
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Show CBEMA (1996) Curve:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Show CBEMA Updated Curve:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Show ITIC Curve:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Show Semi F47 Curve:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3">
+        <label>Y-Axis Max Value (% Nominal):</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>500%</option>
+            <option>125%</option>
+        </select>
+    </div>
+
+    <div class="mb-3 d-flex">
+        <label>Show Data Notifications:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="d-flex">
+        <button class="btn btn-info">Generate Report </button>
+    </div>
+</form>
+</div>
+
+
+
+
+
+
+<div id="operatingRoomAnsiReport" class="form-section d-none shadow p-3"
+style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+<h4 class="text-info mb-4 text-center">Operating Room Isolated Power Report (ANSI)</h4>
+<form>
+    <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+            class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+            class="form-control w-25 mx-2"></div>
+    <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+    <div class="mb-3">
+        <label>Area:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Bottling</option>
+            <option>Other Sources (to be completed in while doing backend)</option>
+        </select>
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Include Data Table:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Include Data Notifications:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="d-flex">
+        <button class="btn btn-info">Generate Report </button>
+    </div>
+</form>
+</div>
+
+
+
+
+<div id="operatingRoomIecReport" class="form-section d-none shadow p-3"
+style="width: 600px; margin-left: 400px; margin-top: 20px; border-radius: 10px;">
+<h4 class="text-info mb-4 text-center">Operating Room Isolated Power Report (IEC)</h4>
+<form>
+    <div class="mb-3 d-flex"><label class="mt-2">Start Date:</label> <input type="date"
+            class="form-control w-25 mx-2"> <label class="mt-2">End Date:</label> <input type="date"
+            class="form-control w-25 mx-2"></div>
+    <div class="mb-3"><label>Title:</label> <input class="form-control"></div>
+    <div class="mb-3">
+        <label>Area:</label>
+        <select class="form-select form-select-sm mb-2 ms-auto">
+            <option>Bottling</option>
+            <option>Other Sources (to be completed in while doing backend)</option>
+        </select>
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Include Data Table:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="mb-3 d-flex">
+        <label>Include Data Notifications:</label>
+        <input class="ms-2" type="checkbox">
+    </div>
+    <div class="d-flex">
+        <button class="btn btn-info">Generate Report </button>
+    </div>
+</form>
+</div>
+
+
+
+
+
+
+
+
+
+
 </div>
 
 

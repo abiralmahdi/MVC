@@ -1,0 +1,69 @@
+
+
+{% extends 'layout.html' %}
+{% block body %}
+
+<style>
+
+
+/* graph */
+.graph-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: space-between;
+        }
+
+        .graph-card {
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            padding: 1rem;
+            flex: 1 1 calc(50% - 1rem);
+            /* Two per row */
+            min-width: 300px;
+            max-width: 48%;
+        }
+
+        .graph-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .graph-header h5 {
+            margin: 0;
+        }
+
+</style>
+
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column">
+    <div class="d-flex mt-5">
+        <h3 class="h5 text-info fw-bold mx-2">MARKS</h3><h3 class="h5"> Vision Center</h3>
+      </div>
+    <form action="" class="form p-3">
+        <div class="form-group mb-1">
+            <input type="text" class="form-control" placeholder="Search..." >
+        </div>
+    </form>
+    <a href="/dashboard/plantSummary" class="text-white">Plant Summary</a>
+    <a href="/dashboard/allUtilities" class="text-white">Energy - All Utilities</a>
+    <a href="/dashboard/energyCostComparison" class="text-white">Energy - Cost Comparison</a>
+    <a href="/dashboard/plantHeatMaps" class="text-white">Plant - Heat Maps</a>
+    <a href="/dashboard/sankeyDiagram" class="text-white">Plant - Sankey Diagram</a>
+    <a href="/dashboard/statusTable" class="text-white">Plant - Status Table</a>
+  </div>
+
+  <!-- Overlay -->
+  <div id="overlay" class="overlay"></div>
+
+    <div class="container-fluid" id="main-content">
+        
+        
+    </div>
+
+  
+{% endblock %}
+
