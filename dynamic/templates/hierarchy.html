@@ -602,7 +602,7 @@
                 <label for="areaSelect" class="form-label">Select Area</label>
                 <select class="form-select" name="area_id" required>
                   {% for area in areas %}
-                  <option value="{{ area.id }}">{{ area.name }}</option>
+                  <option value="{{ area.id }}">{{ area.name }} - {{area.building.name}} - {{area.building.site.name}}</option>
                   {% endfor %}
                 </select>
               </div>

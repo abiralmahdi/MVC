@@ -23,3 +23,11 @@ class Gadgets(models.Model):
     measurement = models.ForeignKey(Measurements, related_name='gadgets', on_delete=models.CASCADE)
     def __str__(self):
         return self.name
+    
+class Files(models.Model):
+    name = models.CharField(max_length=100)
+    file = models.FileField(upload_to='data/')
+    created_at = models.DateTimeField(auto_now_add=True)
+    meter = models.ForeignKey(Meters, related_name='files', on_delete=models.CASCADE)
+    def __str__(self):
+        return self.name + " - " + self.meter.name + " - " + self.meter.area.name + " - " + self.meter.area.building.name + " - " + self.meter.area.building.site.name
