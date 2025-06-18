@@ -264,7 +264,7 @@
                 <div class="d-flex">
                     <!-- Tree Sidebar -->
                     <div id="tree" class="me-1 border-end border-dark text-secondary"
-                        style="width: 300px; overflow-y: auto; height: 75vh; font-size: small;">
+                        style="min-width: 225px; overflow-y: auto; height: 75vh; font-size: small;">
                         <ul class="list-group text-secondary">
                             {% for site in sites %}
                             <li class="list-group-item bg-dark border-dark text-secondary">
@@ -317,12 +317,37 @@
                         {% for gadget in gadgets %}
                         <div>
                             <div class="p-3 shadow mb-1 mx-1 gadget-item" id="gadget-wrapper-{{ gadget.id }}"
-                                style="height: 270px;"
+                                style="height: 270px; width: 350px;"
                                 data-meter-ids='[{% for m in gadget.meters.all %}{{ m.id }}{% if not forloop.last %},{% endif %}{% endfor %}]'>
                                 <div class="d-flex">
                                     <h5 class="h6">{{ gadget.name }}</h5>
-                                    <i class="fa-solid fa-window-maximize ms-auto maximizeGadget" data-bs-toggle="modal"
-                                        data-bs-target="#maximizeModal{{gadget.id}}"></i>
+                                    
+                                    {% if gadget.gadget_type == 'pie' %}
+                                    <!-- Hidden Date Input -->
+                                    <input type="date" id="datepicker-{{ gadget.id }}" class="form-control form-control-sm d-none" />
+                                    <!-- Clickable Icon -->
+                                    <i class="fa fa-calendar-alt ms-auto" style="cursor: pointer;" onclick="document.getElementById('datepicker-{{ gadget.id }}').showPicker()"></i>
+                                    {% elif gadget.gadget_type == 'bar' %}
+                                    <div class="dropdown ms-auto" style="margin-top: -5px;">
+                                        <i class="fa fa-calendar-alt ms-auto" style="cursor: pointer;" data-bs-toggle="dropdown"></i>
+                                        <ul class="dropdown-menu">
+                                          <li><a class="dropdown-item" href="#" onclick="selectRange(7)">Last 7 Days</a></li>
+                                          <li><a class="dropdown-item" href="#" onclick="selectRange(14)">Last 14 Days</a></li>
+                                          <li><a class="dropdown-item" href="#" onclick="selectRange(30)">Last 30 Days</a></li>
+                                          <li><a class="dropdown-item" href="#" onclick="selectRange('all')">All</a></li>
+                                        </ul>
+                                      </div>
+                                      
+                                      <script>
+                                      function selectRange(value) {
+                                          console.log("Selected range:", value);
+                                          // Your logic to handle selection
+                                      }
+                                      </script>
+                                    {% endif %}
+
+                                    <i class="fa-solid fa-up-right-and-down-left-from-center ms-1 maximizeGadget" data-bs-toggle="modal"
+                                    data-bs-target="#maximizeModal{{gadget.id}}"></i>
                                 </div>
                                 
                                 <!-- Maximize Gadget Modal -->
@@ -354,7 +379,6 @@
                                         {% endfor %}
                                     ];
                                 
-                                    // Create an array of meter names for the current gadget
                                     const meterNames{{ gadget.id }} = [
                                         {% for meter in gadget.meters.all %}
                                         "{{ meter.name }}",
@@ -373,16 +397,31 @@
                                                 }).data
                                             );
                                 
+                                            const measurementName = "{{ gadget.measurement.name }}".toLowerCase();
+                                
                                             const dateToValueMapArray = parsedData.map(data => {
                                                 const map = {};
                                                 data.forEach(row => {
-                                                    const date = row['Timestamp'].split(' ')[0];  // e.g. '16-06-25'
-                                                    const value = parseFloat(row['{{ gadget.measurement.name }}']) || 0;
+                                                    const timestamp = row['Timestamp'];
+                                                    if (!timestamp) return;
+                                
+                                                    const date = timestamp.split(' ')[0];
+                                                    const rawValue = row['{{ gadget.measurement.name }}'];
+                                                    const value = parseFloat(rawValue);
+                                
+                                                    if (isNaN(value)) return;
+                                
                                                     if (!map[date]) {
-                                                        map[date] = { total: 0, count: 0 };
+                                                        map[date] = {
+                                                            total: 0,
+                                                            count: 0,
+                                                            last: value
+                                                        };
                                                     }
+                                
                                                     map[date].total += value;
                                                     map[date].count += 1;
+                                                    map[date].last = value;
                                                 });
                                                 return map;
                                             });
@@ -391,20 +430,30 @@
                                             dateToValueMapArray.forEach(map => {
                                                 Object.keys(map).forEach(date => allDatesSet.add(date));
                                             });
-                                
                                             const allDates = Array.from(allDatesSet).sort();
+                                
+                                            const colorPalette = [
+                                                '#4dc9f6', '#f67019', '#f53794', '#537bc4',
+                                                '#acc236', '#166a8f', '#00a950', '#58595b'
+                                            ];
                                 
                                             const datasets = dateToValueMapArray.map((map, idx) => {
                                                 const values = allDates.map(date => {
                                                     const entry = map[date];
-                                                    return entry ? (entry.total / entry.count).toFixed(2) : null;
+                                                    if (!entry) return null;
+                                
+                                                    if (measurementName.includes("energy")) {
+                                                        return entry.last;
+                                                    } else {
+                                                        return entry.total / entry.count;
+                                                    }
                                                 });
                                 
                                                 return {
-                                                    label: meterNames{{ gadget.id }}[idx] + ' - {{gadget.measurement.name}}' || `File ${idx + 1}`,  // <-- replaced here
+                                                    label: meterNames{{ gadget.id }}[idx] + ' - {{ gadget.measurement.name }}',
                                                     data: values,
-                                                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                                    backgroundColor: colorPalette[idx % colorPalette.length],
+                                                    borderColor: colorPalette[idx % colorPalette.length],
                                                     borderWidth: 1
                                                 };
                                             });
@@ -423,14 +472,16 @@
                                                         labels: {
                                                             font: { size: 10 },
                                                             boxWidth: 10,
-                                                            boxHeight: 10,
-                                                            borderWidth: 0
+                                                            boxHeight: 10
                                                         }
                                                     }
                                                 },
                                                 scales: {
                                                     y: {
                                                         beginAtZero: true
+                                                    },
+                                                    x: {
+                                                        stacked: false
                                                     }
                                                 }
                                             };
@@ -451,84 +502,143 @@
                                             });
                                         });
                                 </script>
+                                                                                                
                                 
 
                                 {% elif gadget.gadget_type == 'pie' %}
                                 <canvas id="gadget-{{ gadget.id }}" style="max-height: 200px;"></canvas>
                                 <script>
+                                    const csvUrls{{ gadget.id }} = [
+                                        {% for file in gadget_files|get_item:gadget.id %}
+                                        "/media/{{ file.file }}",
+                                        {% endfor %}
+                                    ];
+                                    
+                                    const meterNames{{ gadget.id }} = [
+                                        {% for meter in gadget.meters.all %}
+                                        "{{ meter.name }}",
+                                        {% endfor %}
+                                    ];
+                                    
+                                    const measurementName{{ gadget.id }} = "{{ gadget.measurement.name }}".toLowerCase();
+                                    
                                     const ctxPie{{ gadget.id }} = document.getElementById("gadget-{{ gadget.id }}").getContext('2d');
                                     const ctxPie2{{ gadget.id }} = document.getElementById("gadget-{{ gadget.id }}-max").getContext('2d');
-                                    new Chart(ctxPie{{ gadget.id }}, {
-                                        type: 'pie',
-                                        data: {
-                                            labels: [{% for meter in gadget.meters.all %}'{{ meter.name }}',{% endfor %}],
-                                        datasets: [{
-                                            label: '{{ gadget.name }}',
-                                            data: Array.from({ length: +'{{ gadget.meters.all|length }}' }, () => Math.floor(Math.random() * 101)),
-                                            backgroundColor: Array.from({ length: +'{{ gadget.meters.all|length }}' }, () => '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0'))
-                                        }]
-                                    },
-                                        options: {
-                                        responsive: true,
-                                        maintainAspectRatio: false,
-                                        plugins: {
-                                            legend: {
-                                                position: 'top',
-                                                align: 'start',
-                                                labels: {
-                                                    font: {
-                                                        size: 10  // Smaller font
-                                                    },
-                                                    boxWidth: 10,   // Smaller color block width
-                                                    boxHeight: 10,   // Optional: smaller height
-                                                    borderWidth: 0
+                                    
+                                    let pieChartInstance{{ gadget.id }} = null;
+                                    let pieChartMaxInstance{{ gadget.id }} = null;
+                                    
+                                    // Store parsed CSV data
+                                    let parsedDataArray{{ gadget.id }} = [];
+                                    
+                                    Promise.all(csvUrls{{ gadget.id }}.map(url => fetch(url).then(res => res.text())))
+                                        .then(texts => {
+                                            parsedDataArray{{ gadget.id }} = texts.map(txt =>
+                                                Papa.parse(txt, {
+                                                    header: true,
+                                                    skipEmptyLines: true
+                                                }).data
+                                            );
+                                    
+                                            // Set initial date as the first date found
+                                            const firstDate = parsedDataArray{{ gadget.id }}[0]?.[0]?.Timestamp?.split(' ')[0];
+                                            if (firstDate) {
+                                                document.getElementById("datepicker-{{ gadget.id }}").value = formatToDateInput(firstDate);
+                                                renderPieChart{{ gadget.id }}(firstDate);
+                                            }
+                                        });
+                                    
+                                    // Format 'DD-MM-YY' to 'YYYY-MM-DD' for <input type="date">
+                                    function formatToDateInput(dateStr) {
+                                        const parts = dateStr.split('-');
+                                        return `20${parts[2]}-${parts[1]}-${parts[0]}`;
+                                    }
+                                    
+                                    // Format 'YYYY-MM-DD' back to 'DD-MM-YY'
+                                    function formatToCsvDate(dateStr) {
+                                        const [year, month, day] = dateStr.split('-');
+                                        return `${day}-${month}-${year.slice(2)}`;
+                                    }
+                                    
+                                    // Render chart for selected date
+                                    function renderPieChart{{ gadget.id }}(selectedDateStr) {
+                                        const selectedDate = formatToCsvDate(selectedDateStr);
+                                    
+                                        const values = parsedDataArray{{ gadget.id }}.map(data => {
+                                            let total = 0, count = 0, lastValue = null;
+                                    
+                                            data.forEach(row => {
+                                                const timestamp = row['Timestamp'];
+                                                if (!timestamp || !timestamp.startsWith(selectedDate)) return;
+                                    
+                                                const value = parseFloat(row['{{ gadget.measurement.name }}']);
+                                                if (isNaN(value)) return;
+                                    
+                                                total += value;
+                                                count++;
+                                                lastValue = value;
+                                            });
+                                    
+                                            if (count === 0) return 0;
+                                            if (measurementName{{ gadget.id }}.includes("energy")) return lastValue;
+                                            return (total / count).toFixed(2);
+                                        });
+                                    
+                                        const backgroundColors = meterNames{{ gadget.id }}.map(() =>
+                                            '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0')
+                                        );
+                                    
+                                        const data = {
+                                            labels: meterNames{{ gadget.id }},
+                                            datasets: [{
+                                                label: '{{ gadget.name }}',
+                                                data: values,
+                                                backgroundColor: backgroundColors
+                                            }]
+                                        };
+                                    
+                                        const options = {
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            plugins: {
+                                                legend: {
+                                                    position: 'top',
+                                                    align: 'start',
+                                                    labels: {
+                                                        font: { size: 10 },
+                                                        boxWidth: 10,
+                                                        boxHeight: 10,
+                                                        borderWidth: 0
+                                                    }
                                                 }
                                             }
-                                        }
+                                        };
+                                    
+                                        if (pieChartInstance{{ gadget.id }}) pieChartInstance{{ gadget.id }}.destroy();
+                                        if (pieChartMaxInstance{{ gadget.id }}) pieChartMaxInstance{{ gadget.id }}.destroy();
+                                    
+                                        pieChartInstance{{ gadget.id }} = new Chart(ctxPie{{ gadget.id }}, {
+                                            type: 'pie',
+                                            data: data,
+                                            options: options
+                                        });
+                                    
+                                        pieChartMaxInstance{{ gadget.id }} = new Chart(ctxPie2{{ gadget.id }}, {
+                                            type: 'pie',
+                                            data: data,
+                                            options: options
+                                        });
                                     }
-                                });
-                                    new Chart(ctxPie2{{ gadget.id }}, {
-                                        type: 'pie',
-                                        data: {
-                                            labels: [{% for meter in gadget.meters.all %}'{{ meter.name }}',{% endfor %}],
-                                        datasets: [{
-                                            label: '{{ gadget.name }}',
-                                            data: Array.from({ length: +'{{ gadget.meters.all|length }}' }, () => Math.floor(Math.random() * 101)),
-                                            backgroundColor: Array.from({ length: +'{{ gadget.meters.all|length }}' }, () => '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0'))
-                                        }]
-                                    },
-                                        options: {
-                                        responsive: true,
-                                        maintainAspectRatio: false,
-                                        plugins: {
-                                            legend: {
-                                                position: 'top',
-                                                align: 'start',
-                                                labels: {
-                                                    font: {
-                                                        size: 10  // Smaller font
-                                                    },
-                                                    boxWidth: 10,   // Smaller color block width
-                                                    boxHeight: 10,   // Optional: smaller height
-                                                    borderWidth: 0
-                                                }
-                                            }
+                                    
+                                    // Listen to date changes
+                                    document.getElementById("datepicker-{{ gadget.id }}").addEventListener('change', function () {
+                                        const selectedDate = this.value;
+                                        if (selectedDate) {
+                                            renderPieChart{{ gadget.id }}(selectedDate);
                                         }
-                                    }
-                                });
-                                </script>
-                                            const colors = [
-                                                '#FF6384',
-                                                '#36A2EB',
-                                                '#FFCE56',
-                                                '#4BC0C0',
-                                                '#9966FF',
-                                                '#FF9F40',
-                                                '#FF5733',
-                                                '#33FF57',
-                                                '#3357FF',
-                                                '#FF33A1'
-                                                ]; 
+                                    });
+                                    </script>
+                                
 
                                 {% elif gadget.gadget_type == 'line' %}
                                 <canvas id="gadget-{{ gadget.id }}" style="max-height: 200px;"></canvas>
@@ -663,11 +773,11 @@
                                 {% elif gadget.gadget_type == 'table' %}
                                 
                                 <script>
-                                    document.getElementById('gadget-{{ gadget.id }}').style.display = 'none';
-                                    let maxModal = document.getElementById('maximizeModalBody{{gadget.id}}')
+                                    document.getElementById('gadget-{{ gadget.id }}-max').style.display = 'none';
+                                    let maxModal = document.getElementById('maximizeModalBody{{gadget.id}}');
                                     maxModal.innerHTML = `
                                     <div style="overflow-y: auto;">
-                                    <table class="table table-sm table-striped table-dark text-light" style="font-size: 12px; width: 100%;">
+                                    <table class="table table-striped table-dark text-light" style="font-size: 12px; width: 100%;">
                                         {% if gadget.id in gadget_csv_data %}
                                             {% for row in gadget_csv_data|get_item:gadget.id %}
                                                 <tr>
@@ -683,7 +793,7 @@
                                 </div>
                                 `
                                 </script>
-                                <div style="max-height: 200px; max-width: 450px; overflow-y: auto;">
+                                <div style="max-height: 200px; min-width: 300px; max-width: 450px; overflow-y: auto;">
                                     <table class="table table-sm table-striped table-dark text-light" style="font-size: 12px; width: 100%;">
                                         {% if gadget.id in gadget_csv_data %}
                                             {% for row in gadget_csv_data|get_item:gadget.id %}
