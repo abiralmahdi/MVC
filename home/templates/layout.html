@@ -17,8 +17,16 @@
     <link href="{% static 'fontawesomefree/css/solid.css' %}" rel="stylesheet" type="text/css">
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+
+
 
     <style>
+
+
+/* Fullscreen overlay for loading spinner */
+
+
         .bd-placeholder-img {
             font-size: 1.125rem;
             text-anchor: middle;
@@ -237,6 +245,8 @@
 </head>
 
 <body class="bg-dark text-white">
+
+
     <nav class="navbar navbar-expand-lg navbar-dark bg-black sticky-top">
         <div class="container-fluid">
             <button class="btn btn-outline-light" id="toggleSidebar">☰</button>
@@ -294,7 +304,16 @@
       {% block body %}{% endblock %}
 
 
-    
+      <script>
+        // Wait until the entire page (including images, stylesheets, etc) has loaded
+        window.addEventListener('load', function() {
+          // Hide the spinner overlay
+          const spinner = document.getElementById('loading-spinner');
+          if (spinner) {
+            spinner.style.display = 'none';
+          }
+        });
+      </script>
 
     
     
@@ -318,6 +337,8 @@
   </script>
 
     <script src="/static/style/bootstrap.bundle.min.js" class="astro-vvvwv3sm"></script>
+
+
 
 </body>
 

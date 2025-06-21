@@ -6,7 +6,7 @@ import random
 start_time = datetime.strptime("17-06-25 00:00", "%d-%m-%y %H:%M")
 
 # Output file
-filename = "mfm3.csv"
+filename = "mfm1.csv"
 
 # Column headers
 headers = [
@@ -19,7 +19,7 @@ headers = [
 ]
 
 # Initial energy value
-energy = 13527.6
+energy = 9415.6
 
 # Generate and write rows
 with open(filename, mode="w", newline="") as file:
@@ -28,7 +28,7 @@ with open(filename, mode="w", newline="") as file:
 
     current_time = start_time
 
-    for i in range(80640):
+    for i in range(1051200):
         # Simulate each parameter with small variations
         V1 = round(random.uniform(229, 231), 1)
         V2 = round(random.uniform(229, 231), 1)

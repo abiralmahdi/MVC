@@ -4,9 +4,11 @@
 {% block body %}
 
 <style>
+
+
     /* Highlight for selected gadget */
     .gadget-highlight {
-        border: 2px solid #00eaff;
+        border: 1px solid #00eaff;
         /* Indigo border */
     }
 
@@ -43,7 +45,13 @@
     ::-webkit-scrollbar-button {
         display: none;
     }
+
+    canvas{
+        background-color: #212529 !important;
+        box-shadow: 0px 10px 50px rgb(27, 27, 27) !important;
+    }
 </style>
+
 
 
 <!-- Dashboard generation modal -->
@@ -179,6 +187,8 @@
         });
     });
 </script>
+
+
 
 
 <!-- Sidebar -->
@@ -317,37 +327,55 @@
                         {% for gadget in gadgets %}
                         <div>
                             <div class="p-3 shadow mb-1 mx-1 gadget-item" id="gadget-wrapper-{{ gadget.id }}"
-                                style="height: 270px; width: 350px;"
+                                style="height: 290px; width: 350px;"
                                 data-meter-ids='[{% for m in gadget.meters.all %}{{ m.id }}{% if not forloop.last %},{% endif %}{% endfor %}]'>
                                 <div class="d-flex">
-                                    <h5 class="h6">{{ gadget.name }}</h5>
+                                    <p class="" style="font-size: smaller;">{{ gadget.name }}</p>
                                     
                                     {% if gadget.gadget_type == 'pie' %}
                                     <!-- Hidden Date Input -->
                                     <input type="date" id="datepicker-{{ gadget.id }}" class="form-control form-control-sm d-none" />
+
                                     <!-- Clickable Icon -->
                                     <i class="fa fa-calendar-alt ms-auto" style="cursor: pointer;" onclick="document.getElementById('datepicker-{{ gadget.id }}').showPicker()"></i>
-                                    {% elif gadget.gadget_type == 'bar' %}
-                                    <div class="dropdown ms-auto" style="margin-top: -5px;">
-                                        <i class="fa fa-calendar-alt ms-auto" style="cursor: pointer;" data-bs-toggle="dropdown"></i>
-                                        <ul class="dropdown-menu">
-                                          <li><a class="dropdown-item" href="#" onclick="selectRange(7)">Last 7 Days</a></li>
-                                          <li><a class="dropdown-item" href="#" onclick="selectRange(14)">Last 14 Days</a></li>
-                                          <li><a class="dropdown-item" href="#" onclick="selectRange(30)">Last 30 Days</a></li>
-                                          <li><a class="dropdown-item" href="#" onclick="selectRange('all')">All</a></li>
-                                        </ul>
-                                      </div>
-                                      
-                                      <script>
-                                      function selectRange(value) {
-                                          console.log("Selected range:", value);
-                                          // Your logic to handle selection
-                                      }
-                                      </script>
-                                    {% endif %}
-
                                     <i class="fa-solid fa-up-right-and-down-left-from-center ms-1 maximizeGadget" data-bs-toggle="modal"
                                     data-bs-target="#maximizeModal{{gadget.id}}"></i>
+
+                                    {% elif gadget.gadget_type == 'line' %}
+                                    <!-- Hidden Date Input -->
+                                    <input type="date" id="datepicker-{{ gadget.id }}" class="form-control form-control-sm d-none" onchange="renderLineGraph()"/>
+
+                                    <!-- Clickable Icon -->
+                                    <i class="fa fa-calendar-alt ms-auto" style="cursor: pointer;" onclick="document.getElementById('datepicker-{{ gadget.id }}').showPicker()"></i>
+                                    <i class="fa-solid fa-up-right-and-down-left-from-center ms-1 maximizeGadget" data-bs-toggle="modal"
+                                    data-bs-target="#maximizeModal{{gadget.id}}"></i>
+                                    
+                                    {% elif gadget.gadget_type == 'bar' %}
+                                    <!-- Range Selection Dropdown -->
+                                    <select id="range-selector-{{ gadget.id }}" class="form-select form-select-sm ms-auto" style="max-width: 100px; height: 30px; font-size: small;">
+                                        <option value="7">Last 7 Days</option>
+                                        <option value="30" selected>Last 30 Days</option>
+                                        <option value="90">Last 90 Days</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                        <option value="yearly">Yearly</option>
+                                        <option value="all">All</option>
+                                    </select>
+                                      <i class="fa-solid fa-up-right-and-down-left-from-center ms-1 maximizeGadget" data-bs-toggle="modal"
+                                    data-bs-target="#maximizeModal{{gadget.id}}"></i>
+                                                                        
+                                    <script>
+                                        function selectRange{{ gadget.id }}(range) {
+                                            renderBarChart{{ gadget.id }}(range);
+                                        }
+                                    </script>
+                                        
+                                        {% else %}
+                                        <i class="fa-solid fa-up-right-and-down-left-from-center ms-auto maximizeGadget" data-bs-toggle="modal"
+                                    data-bs-target="#maximizeModal{{gadget.id}}"></i>
+                                    {% endif %}
+
+                                    
                                 </div>
                                 
                                 <!-- Maximize Gadget Modal -->
@@ -370,144 +398,289 @@
                                 </div>
 
                                 {% if gadget.gadget_type == 'bar' %}
+                                <div id="spinner-{{ gadget.id }}" style="
+                                    position: absolute;
+                                    top: 0; left: 0;
+                                    width: 100%;
+                                    height: 100%;
+                                    background: #24252a;
+                                    display: flex;
+                                    justify-content: center;
+                                    align-items: center;
+                                    z-index: 999;
+                                ">
+                                    <div class="spinner" style="
+                                        width: 40px;
+                                        height: 40px;
+                                        border: 4px solid #ccc;
+                                        border-top: 4px solid #3498db;
+                                        border-radius: 50%;
+                                        animation: spin 1s linear infinite;
+                                    "></div>
+                                </div>
+                                <style>
+                                    @keyframes spin {
+                                      0% { transform: rotate(0deg); }
+                                      100% { transform: rotate(360deg); }
+                                    }
+                                </style>
                                 <canvas id="gadget-{{ gadget.id }}" style="max-height: 200px;"></canvas>
 
-                                <script>
+                                  <script>
                                     const csvUrls{{ gadget.id }} = [
-                                        {% for file in gadget_files|get_item:gadget.id %}
+                                      {% for file in gadget_files|get_item:gadget.id %}
                                         "/media/{{ file.file }}",
-                                        {% endfor %}
+                                      {% endfor %}
                                     ];
-                                
+                                    
                                     const meterNames{{ gadget.id }} = [
-                                        {% for meter in gadget.meters.all %}
+                                      {% for meter in gadget.meters.all %}
                                         "{{ meter.name }}",
-                                        {% endfor %}
+                                      {% endfor %}
                                     ];
-                                
+                                    
                                     let chartBarInstance{{ gadget.id }} = null;
                                     let chartBarMaxInstance{{ gadget.id }} = null;
-                                
-                                    Promise.all(csvUrls{{ gadget.id }}.map(url => fetch(url).then(res => res.text())))
+                                    
+                                    function parseDateString(dateStr) {
+                                      const [dd, mm, yy] = dateStr.split('-');
+                                      return new Date(`20${yy}-${mm}-${dd}`);
+                                    }
+                                    
+                                    function renderBarChart{{ gadget.id }}(rangeType) {
+                                        const spinner = document.getElementById("spinner-{{ gadget.id }}");
+                                      Promise.all(csvUrls{{ gadget.id }}.map(url => fetch(url).then(res => res.text())))
                                         .then(texts => {
-                                            const parsedData = texts.map(txt =>
-                                                Papa.parse(txt, {
-                                                    header: true,
-                                                    skipEmptyLines: true
-                                                }).data
-                                            );
-                                
-                                            const measurementName = "{{ gadget.measurement.name }}".toLowerCase();
-                                
-                                            const dateToValueMapArray = parsedData.map(data => {
-                                                const map = {};
-                                                data.forEach(row => {
-                                                    const timestamp = row['Timestamp'];
-                                                    if (!timestamp) return;
-                                
-                                                    const date = timestamp.split(' ')[0];
-                                                    const rawValue = row['{{ gadget.measurement.name }}'];
-                                                    const value = parseFloat(rawValue);
-                                
-                                                    if (isNaN(value)) return;
-                                
-                                                    if (!map[date]) {
-                                                        map[date] = {
-                                                            total: 0,
-                                                            count: 0,
-                                                            last: value
-                                                        };
-                                                    }
-                                
-                                                    map[date].total += value;
-                                                    map[date].count += 1;
-                                                    map[date].last = value;
-                                                });
-                                                return map;
+                                          const parsedData = texts.map(txt =>
+                                            Papa.parse(txt, {
+                                              header: true,
+                                              skipEmptyLines: true
+                                            }).data
+                                          );
+                                    
+                                          const measurementName = "{{ gadget.measurement.name }}".toLowerCase();
+                                    
+                                          const dateToValueMapArray = parsedData.map(data => {
+                                            const map = {};
+                                            data.forEach(row => {
+                                              const timestamp = row['Timestamp'];
+                                              if (!timestamp) return;
+                                    
+                                              const date = timestamp.split(' ')[0];
+                                              const rawValue = row['{{ gadget.measurement.name }}'];
+                                              const value = parseFloat(rawValue);
+                                              if (isNaN(value)) return;
+                                    
+                                              if (!map[date]) {
+                                                map[date] = { total: 0, count: 0, last: value };
+                                              }
+                                              map[date].total += value;
+                                              map[date].count += 1;
+                                              map[date].last = value;
                                             });
-                                
-                                            const allDatesSet = new Set();
-                                            dateToValueMapArray.forEach(map => {
-                                                Object.keys(map).forEach(date => allDatesSet.add(date));
+                                            return map;
+                                          });
+                                    
+                                          let dateObjects = new Set();
+                                          dateToValueMapArray.forEach(map => {
+                                            Object.keys(map).forEach(date => dateObjects.add(date));
+                                          });
+                                    
+                                          dateObjects = Array.from(dateObjects).map(d => ({
+                                            original: d,
+                                            dateObj: parseDateString(d)
+                                          }));
+                                    
+                                          dateObjects.sort((a, b) => a.dateObj - b.dateObj);
+                                    
+                                          let aggregatedLabels = [];
+                                          let aggregatedDataArrays = [];
+                                    
+                                          if (["weekly", "monthly", "yearly"].includes(rangeType)) {
+                                            const groupKeyFunc = {
+                                              weekly: (d) => {
+                                                const date = new Date(d.dateObj);
+                                                const year = date.getFullYear();
+                                                const firstJan = new Date(year, 0, 1);
+                                                const week = Math.ceil((((date - firstJan) / 86400000) + firstJan.getDay() + 1) / 7);
+                                                return `${year}-W${week.toString().padStart(2, '0')}`;
+                                              },
+                                              monthly: (d) => {
+                                                const date = new Date(d.dateObj);
+                                                return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                                              },
+                                              yearly: (d) => `${new Date(d.dateObj).getFullYear()}`
+                                            }[rangeType];
+                                    
+                                            const groupMapArray = dateToValueMapArray.map(map => {
+                                              const grouped = {};
+                                              Object.entries(map).forEach(([dateStr, val]) => {
+                                                const groupKey = groupKeyFunc({ dateObj: parseDateString(dateStr) });
+                                                if (!grouped[groupKey]) grouped[groupKey] = { total: 0, count: 0 };
+                                                grouped[groupKey].total += val.total;
+                                                grouped[groupKey].count += val.count;
+                                              });
+                                              return grouped;
                                             });
-                                            const allDates = Array.from(allDatesSet).sort();
-                                
-                                            const colorPalette = [
-                                                '#4dc9f6', '#f67019', '#f53794', '#537bc4',
-                                                '#acc236', '#166a8f', '#00a950', '#58595b'
-                                            ];
-                                
-                                            const datasets = dateToValueMapArray.map((map, idx) => {
-                                                const values = allDates.map(date => {
-                                                    const entry = map[date];
-                                                    if (!entry) return null;
-                                
-                                                    if (measurementName.includes("energy")) {
-                                                        return entry.last;
-                                                    } else {
-                                                        return entry.total / entry.count;
-                                                    }
-                                                });
-                                
-                                                return {
-                                                    label: meterNames{{ gadget.id }}[idx] + ' - {{ gadget.measurement.name }}',
-                                                    data: values,
-                                                    backgroundColor: colorPalette[idx % colorPalette.length],
-                                                    borderColor: colorPalette[idx % colorPalette.length],
-                                                    borderWidth: 1
-                                                };
+                                    
+                                            const allGroupKeys = new Set();
+                                            groupMapArray.forEach(map => Object.keys(map).forEach(k => allGroupKeys.add(k)));
+                                            aggregatedLabels = Array.from(allGroupKeys).sort();
+                                    
+                                            aggregatedDataArrays = groupMapArray.map(map => {
+                                              return aggregatedLabels.map(label => {
+                                                const entry = map[label];
+                                                if (!entry) return null;
+                                                return parseFloat((entry.total / entry.count).toFixed(2));
+                                              });
                                             });
-                                
-                                            const chartData = {
-                                                labels: allDates,
-                                                datasets: datasets
-                                            };
-                                
-                                            const chartOptions = {
-                                                responsive: true,
-                                                maintainAspectRatio: false,
-                                                plugins: {
-                                                    legend: {
-                                                        position: 'top',
-                                                        labels: {
-                                                            font: { size: 10 },
-                                                            boxWidth: 10,
-                                                            boxHeight: 10
-                                                        }
-                                                    }
-                                                },
-                                                scales: {
-                                                    y: {
-                                                        beginAtZero: true
-                                                    },
-                                                    x: {
-                                                        stacked: false
-                                                    }
+                                    
+                                          } else {
+                                            if (rangeType !== 'all') {
+                                              const latest = dateObjects[dateObjects.length - 1].dateObj;
+                                              const range = parseInt(rangeType);
+                                              dateObjects = dateObjects.filter(({ dateObj }) => {
+                                                const diffDays = (latest - dateObj) / (1000 * 60 * 60 * 24);
+                                                return diffDays <= range;
+                                              });
+                                            }
+                                    
+                                            aggregatedLabels = dateObjects.map(d => d.original);
+                                    
+                                            aggregatedDataArrays = dateToValueMapArray.map(map => {
+                                              return aggregatedLabels.map(date => {
+                                                const entry = map[date];
+                                                if (!entry) return null;
+                                                return measurementName.includes("energy")
+                                                  ? entry.last
+                                                  : parseFloat((entry.total / entry.count).toFixed(2));
+                                              });
+                                            });
+                                          }
+                                    
+                                          const colorPalette = [
+                                            '#4dc9f6', '#f67019', '#f53794', '#537bc4',
+                                            '#acc236', '#166a8f', '#00a950', '#58595b'
+                                          ];
+                                    
+                                          const datasets = aggregatedDataArrays.map((values, idx) => ({
+                                            label: meterNames{{ gadget.id }}[idx] + ' - {{ gadget.measurement.name }}',
+                                            data: values,
+                                            backgroundColor: colorPalette[idx % colorPalette.length],
+                                            borderColor: colorPalette[idx % colorPalette.length],
+                                            borderWidth: 1
+                                          }));
+                                    
+                                          const allValues = datasets.flatMap(ds => ds.data).filter(v => v !== null);
+                                          const minY = Math.min(...allValues);
+                                          const maxY = Math.max(...allValues);
+                                          const padding = (maxY - minY) * 0.1 || 1;
+                                    
+                                          const chartOptions = {
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            plugins: {
+                                              legend: {
+                                                position: 'top',
+                                                labels: {
+                                                  font: { size: 10 },
+                                                  boxWidth: 10,
+                                                  boxHeight: 10
                                                 }
-                                            };
-                                
-                                            const ctx1 = document.getElementById("gadget-{{ gadget.id }}").getContext('2d');
-                                            const ctx2 = document.getElementById("gadget-{{ gadget.id }}-max").getContext('2d');
-                                
-                                            chartBarInstance{{ gadget.id }} = new Chart(ctx1, {
-                                                type: 'bar',
-                                                data: structuredClone(chartData),
-                                                options: chartOptions
-                                            });
-                                
+                                              }
+                                            },
+                                            scales: {
+                                              y: {
+                                                min: minY - padding,
+                                                max: maxY + padding,
+                                                ticks: { precision: 2 }
+                                              },
+                                              x: {
+                                                stacked: false,
+                                                ticks: {
+                                                  autoSkip: true,
+                                                  maxRotation: 45,
+                                                  minRotation: 0
+                                                }
+                                              }
+                                            }
+                                          };
+                                    
+                                          const ctx1 = document.getElementById("gadget-{{ gadget.id }}").getContext('2d');
+                                          const ctx2 = document.getElementById("gadget-{{ gadget.id }}-max")?.getContext('2d');
+                                    
+                                          if (chartBarInstance{{ gadget.id }}) chartBarInstance{{ gadget.id }}.destroy();
+                                          if (ctx2 && chartBarMaxInstance{{ gadget.id }}) chartBarMaxInstance{{ gadget.id }}.destroy();
+                                    
+                                          chartBarInstance{{ gadget.id }} = new Chart(ctx1, {
+                                            type: 'bar',
+                                            data: {
+                                              labels: aggregatedLabels,
+                                              datasets: structuredClone(datasets)
+                                            },
+                                            options: chartOptions
+                                          });
+                                    
+                                          if (ctx2) {
                                             chartBarMaxInstance{{ gadget.id }} = new Chart(ctx2, {
-                                                type: 'bar',
-                                                data: structuredClone(chartData),
-                                                options: chartOptions
+                                              type: 'bar',
+                                              data: {
+                                                labels: aggregatedLabels,
+                                                datasets: structuredClone(datasets)
+                                              },
+                                              options: chartOptions
                                             });
+                                          }
+                                    // ✅ Hide spinner after everything is loaded
+                                    spinner.style.display = "none";
+
                                         });
-                                </script>
+                                    }
+                                    
+                                    // Initial load
+                                    renderBarChart{{ gadget.id }}("7");
+                                    
+                                    // On dropdown change
+                                    document.getElementById("range-selector-{{ gadget.id }}").addEventListener("change", function () {
+                                      renderBarChart{{ gadget.id }}(this.value);
+                                    });
+                                    </script>
+                                    
+
+                                    
                                                                                                 
                                 
 
                                 {% elif gadget.gadget_type == 'pie' %}
+                                <div id="spinner-{{ gadget.id }}" style="
+                                    position: absolute;
+                                    top: 0; left: 0;
+                                    width: 100%;
+                                    height: 100%;
+                                    background: #24252a;
+                                    display: flex;
+                                    justify-content: center;
+                                    align-items: center;
+                                    z-index: 999;
+                                ">
+                                    <div class="spinner" style="
+                                        width: 40px;
+                                        height: 40px;
+                                        border: 4px solid #ccc;
+                                        border-top: 4px solid #3498db;
+                                        border-radius: 50%;
+                                        animation: spin 1s linear infinite;
+                                    "></div>
+                                </div>
+                                <style>
+                                    @keyframes spin {
+                                      0% { transform: rotate(0deg); }
+                                      100% { transform: rotate(360deg); }
+                                    }
+                                </style>
                                 <canvas id="gadget-{{ gadget.id }}" style="max-height: 200px;"></canvas>
                                 <script>
+                                    
                                     const csvUrls{{ gadget.id }} = [
                                         {% for file in gadget_files|get_item:gadget.id %}
                                         "/media/{{ file.file }}",
@@ -562,6 +735,7 @@
                                     
                                     // Render chart for selected date
                                     function renderPieChart{{ gadget.id }}(selectedDateStr) {
+                                        const spinner = document.getElementById("spinner-{{ gadget.id }}");
                                         const selectedDate = formatToCsvDate(selectedDateStr);
                                     
                                         const values = parsedDataArray{{ gadget.id }}.map(data => {
@@ -600,16 +774,40 @@
                                         const options = {
                                             responsive: true,
                                             maintainAspectRatio: false,
+                                            layout: {
+                                                padding: {
+                                                bottom: 10 // ✅ Increase this value to add more space
+                                                }
+                                            },
                                             plugins: {
                                                 legend: {
-                                                    position: 'top',
-                                                    align: 'start',
-                                                    labels: {
-                                                        font: { size: 10 },
-                                                        boxWidth: 10,
-                                                        boxHeight: 10,
-                                                        borderWidth: 0
+                                                position: 'top',
+                                                align: 'start',
+                                                labels: {
+                                                    color:'#6c757d',
+                                                    font: { size: 10 },
+                                                    boxWidth: 10,
+                                                    boxHeight: 10,
+                                                    generateLabels: function(chart) {
+                                                    const data = chart.data;
+                                                    if (data.labels.length && data.datasets.length) {
+                                                        return data.labels.map((label, i) => {
+                                                        const backgroundColor = data.datasets[0].backgroundColor[i];
+                                                        const value = data.datasets[0].data[i];
+                                                        return {
+                                                            text: `${label} (${value})`,
+                                                            fillStyle: backgroundColor,
+                                                            strokeStyle: undefined,
+                                                            lineWidth: 0,
+                                                            fontColor: '#6c757d', // ✅ For older Chart.js
+                                                            color: '#6c757d',     // ✅ For Chart.js v4+
+                                                            index: i,
+                                                        };
+                                                        });
                                                     }
+                                                    return [];
+                                                    }
+                                                }
                                                 }
                                             }
                                         };
@@ -628,6 +826,8 @@
                                             data: data,
                                             options: options
                                         });
+                                        // ✅ Hide spinner after everything is loaded
+                                        spinner.style.display = "none";
                                     }
                                     
                                     // Listen to date changes
@@ -638,136 +838,198 @@
                                         }
                                     });
                                     </script>
+
+
+
+
                                 
 
                                 {% elif gadget.gadget_type == 'line' %}
-                                <canvas id="gadget-{{ gadget.id }}" style="max-height: 200px;"></canvas>
+                                <div id="spinner-{{ gadget.id }}" style="
+                                    position: absolute;
+                                    top: 0; left: 0;
+                                    width: 100%;
+                                    height: 100%;
+                                    background: #24252a;
+                                    display: flex;
+                                    justify-content: center;
+                                    align-items: center;
+                                    z-index: 999;
+                                ">
+                                    <div class="spinner" style="
+                                        width: 40px;
+                                        height: 40px;
+                                        border: 4px solid #ccc;
+                                        border-top: 4px solid #3498db;
+                                        border-radius: 50%;
+                                        animation: spin 1s linear infinite;
+                                    "></div>
+                                </div>
+                                <style>
+                                    @keyframes spin {
+                                      0% { transform: rotate(0deg); }
+                                      100% { transform: rotate(360deg); }
+                                    }
+                                </style>
+
+                                <canvas id="gadget-{{ gadget.id }}" style="max-height: 220px;"></canvas>
                                 <script>
-                                    const csvUrls{{ gadget.id }} = [
-                                        {% for file in gadget_files|get_item:gadget.id %}
-                                        "/media/{{ file.file }}",
-                                        {% endfor %}
-                                    ];
-                                
-                                    const meterNames{{ gadget.id }} = [
-                                        {% for meter in gadget.meters.all %}
-                                        "{{ meter.name }}",
-                                        {% endfor %}
-                                    ];
-                                
-                                    let chartInstance{{ gadget.id }} = null;
-                                    let maxChartInstance{{ gadget.id }} = null;
-                                
-                                    Promise.all(csvUrls{{ gadget.id }}.map(url => fetch(url).then(res => res.text())))
-                                        .then(texts => {
-                                            const parsedData = texts.map(txt =>
-                                                Papa.parse(txt, {
-                                                    header: true,
-                                                    skipEmptyLines: true
-                                                }).data
-                                            );
-                                
-                                            // Step 1: Build a unified sorted timestamp list
-                                            const allTimestampsSet = new Set();
-                                            parsedData.forEach(data => {
-                                                data.forEach(row => allTimestampsSet.add(row['Timestamp']));
-                                            });
-                                            const allTimestamps = Array.from(allTimestampsSet).sort();
-                                
-                                            // Step 2: Map each file's data to the timestamps
-                                            const valuesArray = parsedData.map(data => {
-                                                const timeValueMap = {};
-                                                data.forEach(row => {
-                                                    const ts = row['Timestamp'];
-                                                    const val = parseFloat(row['{{ gadget.measurement.name }}']);
-                                                    if (!isNaN(val)) timeValueMap[ts] = val;
-                                                });
-                                                return allTimestamps.map(ts => timeValueMap[ts] ?? null);
-                                            });
-                                
-                                            let visibleLabels = allTimestamps.slice(0, 10);
-                                            let currentIndex = 10;
-                                            const visibleDataSets = valuesArray.map(values => values.slice(0, 10));
-                                
-                                            const colors = ['#818cf8', '#34d399', '#f87171', '#fbbf24', '#06b6d4', '#8b5cf6'];
-                                
-                                            const chartData = {
-                                                labels: visibleLabels,
-                                                datasets: visibleDataSets.map((data, index) => ({
-                                                    label: meterNames{{ gadget.id }}[index] + ' - {{ gadget.measurement.name }}',
-                                                    data: data,
-                                                    borderColor: colors[index % colors.length],
-                                                    tension: 0.3
-                                                }))
-                                            };
-                                
-                                            const chartOptions = {
-                                                responsive: true,
-                                                maintainAspectRatio: false,
-                                                animation: false,
-                                                plugins: {
-                                                    legend: {
-                                                        position: 'top',
-                                                        align: 'start',
-                                                        labels: {
-                                                            font: { size: 10 },
-                                                            boxWidth: 10,
-                                                            boxHeight: 10,
-                                                            borderWidth: 0
+                                    function renderLineGraph(){
+                                        const spinner = document.getElementById("spinner-{{ gadget.id }}");
+                                        // spinner.style.display = "flex"; // Show spinner
+
+                                                const csvUrls{{ gadget.id }} = [
+                                                {% for file in gadget_files|get_item:gadget.id %}
+                                                "/media/{{ file.file }}",
+                                                {% endfor %}
+                                            ];
+                                        
+                                            const meterNames{{ gadget.id }} = [
+                                                {% for meter in gadget.meters.all %}
+                                                "{{ meter.name }}",
+                                                {% endfor %}
+                                            ];
+                                        
+                                            let chartInstance{{ gadget.id }} = null;
+                                            let maxChartInstance{{ gadget.id }} = null;
+                                        
+                                            Promise.all(csvUrls{{ gadget.id }}.map(url => fetch(url).then(res => res.text())))
+                                                .then(texts => {
+                                                    const parsedData = texts.map(txt =>
+                                                        Papa.parse(txt, {
+                                                            header: true,
+                                                            skipEmptyLines: true
+                                                        }).data
+                                                    );
+                                        
+                                                    // Step 1: Build a unified sorted timestamp list
+                                                    const allTimestampsSet = new Set();
+                                                    parsedData.forEach(data => {
+                                                        data.forEach(row => allTimestampsSet.add(row['Timestamp']));
+                                                    });
+                                                    const allTimestamps = Array.from(allTimestampsSet).sort();
+                                        
+                                                    // Step 2: Map each file's data to the timestamps
+                                                    const valuesArray = parsedData.map(data => {
+                                                        const timeValueMap = {};
+                                                        data.forEach(row => {
+                                                            const ts = row['Timestamp'];
+                                                            const val = parseFloat(row['{{ gadget.measurement.name }}']);
+                                                            if (!isNaN(val)) timeValueMap[ts] = val;
+                                                        });
+                                                        return allTimestamps.map(ts => timeValueMap[ts] ?? null);
+                                                    });
+                                                    
+                                                    let visibleLabels = allTimestamps.slice(0, 10).map(ts => ts.split(' ')[1]);
+                                                    let currentIndex = 10;
+                                                    const visibleDataSets = valuesArray.map(values => values.slice(0, 10));
+                                        
+                                                    const colors = ['#818cf8', '#34d399', '#f87171', '#fbbf24', '#06b6d4', '#8b5cf6'];
+                                        
+                                                    const chartData = {
+                                                        labels: visibleLabels,
+                                                        datasets: visibleDataSets.map((data, index) => ({
+                                                            label: meterNames{{ gadget.id }}[index] + ' - {{ gadget.measurement.name }}',
+                                                            data: data,
+                                                            borderColor: colors[index % colors.length],
+                                                            borderWidth: 1, // 👈 Line thickness reduced here
+                                                            tension: 0.3
+                                                        }))
+                                                    };
+                                        
+                                                    const chartOptions = {
+                                                        responsive: true,
+                                                        maintainAspectRatio: false,
+                                                        animation: false,
+                                                        plugins: {
+                                                            legend: {
+                                                                position: 'top',
+                                                                align: 'start',
+                                                                labels: {
+                                                                    font: { size: 10 },
+                                                                    boxWidth: 10,
+                                                                    boxHeight: 10,
+                                                                    borderWidth: 0
+                                                                }
+                                                            }
+                                                        },
+                                                        scales: {
+                                                            x: {
+                                                                ticks: { maxRotation: 45, minRotation: 0 }
+                                                            }
                                                         }
-                                                    }
-                                                },
-                                                scales: {
-                                                    x: {
-                                                        ticks: { maxRotation: 45, minRotation: 0 }
-                                                    }
-                                                }
-                                            };
-                                
-                                            const ctxLine = document.getElementById("gadget-{{ gadget.id }}").getContext('2d');
-                                            const ctxLine2 = document.getElementById("gadget-{{ gadget.id }}-max").getContext('2d');
-                                
-                                            chartInstance{{ gadget.id }} = new Chart(ctxLine, {
-                                                type: 'line',
-                                                data: structuredClone(chartData),
-                                                options: chartOptions
-                                            });
-                                
-                                            maxChartInstance{{ gadget.id }} = new Chart(ctxLine2, {
-                                                type: 'line',
-                                                data: structuredClone(chartData),
-                                                options: chartOptions
-                                            });
-                                
-                                            // Real-time updates
-                                            setInterval(() => {
-                                                if (currentIndex >= allTimestamps.length) return;
-                                
-                                                chartInstance{{ gadget.id }}.data.labels.push(allTimestamps[currentIndex]);
-                                                chartInstance{{ gadget.id }}.data.labels.shift();
-                                
-                                                maxChartInstance{{ gadget.id }}.data.labels.push(allTimestamps[currentIndex]);
-                                                maxChartInstance{{ gadget.id }}.data.labels.shift();
-                                
-                                                valuesArray.forEach((values, idx) => {
-                                                    chartInstance{{ gadget.id }}.data.datasets[idx].data.push(values[currentIndex]);
-                                                    chartInstance{{ gadget.id }}.data.datasets[idx].data.shift();
-                                
-                                                    maxChartInstance{{ gadget.id }}.data.datasets[idx].data.push(values[currentIndex]);
-                                                    maxChartInstance{{ gadget.id }}.data.datasets[idx].data.shift();
+                                                    };
+                                        
+                                                    const ctxLine = document.getElementById("gadget-{{ gadget.id }}").getContext('2d');
+                                                    const ctxLine2 = document.getElementById("gadget-{{ gadget.id }}-max").getContext('2d');
+                                        
+                                                    chartInstance{{ gadget.id }} = new Chart(ctxLine, {
+                                                        type: 'line',
+                                                        data: structuredClone(chartData),
+                                                        options: chartOptions
+                                                    });
+                                        
+                                                    maxChartInstance{{ gadget.id }} = new Chart(ctxLine2, {
+                                                        type: 'line',
+                                                        data: structuredClone(chartData),
+                                                        options: chartOptions
+                                                    });
+
+                                                    // ✅ Hide spinner after everything is loaded
+                                                       spinner.style.display = "none";
+                                        
+                                                    // Real-time updates
+                                                    setInterval(() => {
+                                                        if (currentIndex >= allTimestamps.length) return;
+                                        
+                                                        chartInstance{{ gadget.id }}.data.labels.push(allTimestamps[currentIndex].split(' ')[1]);
+                                                        chartInstance{{ gadget.id }}.data.labels.shift();
+                                        
+                                                        maxChartInstance{{ gadget.id }}.data.labels.push(allTimestamps[currentIndex].split(' ')[1]);
+                                                        maxChartInstance{{ gadget.id }}.data.labels.shift();
+                                        
+                                                        valuesArray.forEach((values, idx) => {
+                                                            chartInstance{{ gadget.id }}.data.datasets[idx].data.push(values[currentIndex]);
+                                                            chartInstance{{ gadget.id }}.data.datasets[idx].data.shift();
+                                        
+                                                            maxChartInstance{{ gadget.id }}.data.datasets[idx].data.push(values[currentIndex]);
+                                                            maxChartInstance{{ gadget.id }}.data.datasets[idx].data.shift();
+                                                        });
+                                        
+                                                        chartInstance{{ gadget.id }}.update();
+                                                        maxChartInstance{{ gadget.id }}.update();
+                                                        currentIndex++;
+                                                    }, 1000);
                                                 });
-                                
-                                                chartInstance{{ gadget.id }}.update();
-                                                maxChartInstance{{ gadget.id }}.update();
-                                                currentIndex++;
-                                            }, 1000);
-                                        });
+                                            }
+
+                                            renderLineGraph();
+
+                                        </script>
+
+                                        <script>
+                                            document.addEventListener('DOMContentLoaded', function () {
+                                                const dateInput = document.getElementById("datepicker-{{ gadget.id }}");
+
+                                                dateInput.addEventListener("change", function () {
+                                                    const selectedDate = this.value; // 'YYYY-MM-DD'
+                                                    const formattedDate = formatDateToDDMMYY(selectedDate);
+                                                    myFunction(formattedDate);
+                                                });
+
+                                                function formatDateToDDMMYY(dateStr) {
+                                                    const [year, month, day] = dateStr.split("-");
+                                                    const shortYear = year.slice(-2);
+                                                    return `${day}-${month}-${shortYear}`;
+                                                }
+
+                                                function myFunction(date) {
+                                                    console.log("Formatted date:", date);
+                                                    // Use the formatted date here
+                                                }
+                                    });
                                 </script>
                                 
-                                
-                                
-                                
-                            
 
 
                                 {% elif gadget.gadget_type == 'table' %}
@@ -823,7 +1085,7 @@
     </div>
 </div>
 
-<!-- maximuze gadget script [TO BE FIXED] -->
+<!-- maximuze gadget script -->
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const maximizeIcons = document.querySelectorAll(".maximizeGadget");
