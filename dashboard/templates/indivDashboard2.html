@@ -1,0 +1,981 @@
+{% extends 'layout.html' %}
+{% load custom_tags %}
+
+{% block body %}
+
+<style>
+
+    /* Highlight for selected gadget */
+    .gadget-highlight {
+        border: 1px solid #00eaff;
+        /* Indigo border */
+    }
+
+    a {
+        text-decoration: none;
+    }
+
+    .maximizeGadget:hover {
+        color: #00eaff;
+        cursor: pointer;
+    }
+
+    ::-webkit-scrollbar {
+        width: 2px !important;
+        /* For vertical scrollbars */
+        height: 2px !important;
+        /* For horizontal scrollbars */
+    }
+
+    /* Track (background of scrollbar) */
+    ::-webkit-scrollbar-track {
+        background: #24252a;
+        /* dark grey */
+    }
+
+    /* Handle (scroll thumb) */
+    ::-webkit-scrollbar-thumb {
+        background: #085f67;
+        /* black */
+        border-radius: 4px;
+    }
+
+    /* Optional: Hide scrollbar arrows */
+    ::-webkit-scrollbar-button {
+        display: none;
+    }
+
+    canvas{
+        background-color: #212529 !important;
+        box-shadow: 0px 10px 50px rgb(27, 27, 27) !important;
+    }
+</style>
+
+
+
+<!-- Dashboard generation modal -->
+<div class="modal fade" id="addDashboardModal" tabindex="-1" aria-labelledby="addDashboardModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" action="/dashboard/newDashboard">
+            {% csrf_token %}
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header border-dark">
+                    <h5 class="modal-title" id="addDashboardModalLabel">Create New Dashboard</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Dashboard Title</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="site" class="form-label">Select Site</label>
+                        <select class="form-select" id="site" name="site" required>
+                            <option value="">-- Select Site --</option>
+                            {% for site in sites %}
+                            <option value="{{ site.id }}">{{ site.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-dark">
+                    <button type="submit" class="btn btn-primary">Create Dashboard</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- New Gadget Modal -->
+<div class="modal fade" id="addGadgetModal" tabindex="-1" aria-labelledby="addGadgetModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" action="/dashboard/{{dashboard.id}}/newGadget">
+            {% csrf_token %}
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header border-dark">
+                    <h5 class="modal-title" id="addGadgetModalLabel">Create New Gadget</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Gadget Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="gadget_type" class="form-label">Gadget Type</label>
+                        <select class="form-select" id="gadget_type" name="gadget_type" required>
+                            <option value="">-- Select Type --</option>
+                            <option value="pie">Pie Chart</option>
+                            <option value="bar">Bar Chart</option>
+                            <option value="line">Trend Graph</option>
+                            <option value="table" id="table-option">Table</option>
+                            <option value="tool" id="tool-option">Tool</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meters" class="form-label">Meters</label>
+                        <select class="form-select" id="meters" name="meters" multiple required>
+                            {% for area in areas %}
+                            <optgroup label="{{ area.name }}">
+                                {% for meter in area.meters.all %}
+                                <option value="{{ meter.id }}">{{ meter.name }}</option>
+                                {% endfor %}
+                            </optgroup>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text text-light">Hold Ctrl (Windows) or Cmd (Mac) to select multiple meters.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="measurement" class="form-label">Measurements</label>
+                        <select class="form-select" id="measurement" name="measurement" required>
+                            {% for measurement in measurements %}
+                            <option value="{{ measurement.id }}">{{ measurement.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-dark">
+                    <button type="submit" class="btn btn-info">Add Gadget</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const metersSelect = document.getElementById('meters');
+        const gadgetTypeSelect = document.getElementById('gadget_type');
+        const tableOption = document.getElementById('table-option');
+        const measurementSelect = document.getElementById('measurement');
+
+        // Handle meter selection changes
+        metersSelect.addEventListener('change', function () {
+            const selectedMeters = Array.from(this.selectedOptions);
+            const moreThanOne = selectedMeters.length > 1;
+
+            // Disable "Table" option if more than one meter is selected
+            tableOption.disabled = moreThanOne;
+
+            // If "Table" is selected and it becomes disabled, reset the selection
+            if (moreThanOne && gadgetTypeSelect.value === 'table') {
+                gadgetTypeSelect.value = '';
+                measurementSelect.disabled = false;
+            }
+        });
+
+        // Handle gadget type selection changes
+        gadgetTypeSelect.addEventListener('change', function () {
+            const type = this.value;
+
+            if (type === 'table') {
+                measurementSelect.disabled = true;
+            } else {
+                measurementSelect.disabled = false;
+            }
+
+            if (type === 'tool') {
+                // Change meters to single-select
+                metersSelect.multiple = false;
+                metersSelect.selectedIndex = -1;
+
+                // Change measurements to multi-select
+                measurementSelect.multiple = true;
+                measurementSelect.selectedIndex = -1;
+            } else {
+                // Reset to default (meters multi-select, measurement single-select)
+                metersSelect.multiple = true;
+                measurementSelect.multiple = false;
+                metersSelect.selectedIndex = -1;
+                measurementSelect.selectedIndex = -1;
+            }
+        });
+    });
+</script>
+
+
+
+<!-- Sidebar -->
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
+    style="overflow-y: auto;">
+    <div class="d-flex m-3">
+        <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
+        <h3 class="h6">Vision Center</h3>
+    </div>
+
+    <form class="form m-3">
+        <div class="form-group">
+            <input type="text" class="form-control" placeholder="Search...">
+        </div>
+    </form>
+
+    <div class="accordion accordion-flush" id="sidebarAccordion">
+        <button class="btn btn-block btn-info ms-3 fw-bold" data-bs-toggle="modal"
+            data-bs-target="#addDashboardModal"><i class="fa-solid me-2 fa-plus"></i>Create a new Dashboard</button>
+        {% for site in sites %}
+        <!-- Industry Accordion -->
+        <div class="accordion-item bg-dark border-0">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#industryCollapse{{forloop.counter}}">
+                    <i class="fa-solid fa-folder"></i>
+                    <span class="mx-2">{{site.name}}</span>
+                </button>
+            </h2>
+            <div id="industryCollapse{{forloop.counter}}" class="accordion-collapse collapse"
+                data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body pl-3">
+
+                    <ul class="list-unstyled">
+                        {% for dashboard in site.dashboard.all %}
+                        <li>
+                            <a href="/dashboard/{{dashboard.id}}" class="text-white text-decoration-none">
+                                {{ dashboard.title }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+
+    </div>
+</div>
+
+
+<!-- Overlay -->
+<div id="overlay" class="overlay"></div>
+
+<div class="" id="main-content">
+
+    <div class="row">
+        <main class="">
+            {% if gadgets == None %}
+            <div id="noDocument">
+                <h1 class="h1 text-center mt-5 pt-5 text-secondary"><i class="fa-solid fa-signal fa-2x"></i></h1>
+                <h3 class="text-center mt-5 text-secondary">No Gadgets Configured</h3>
+                <p class="text-center text-secondary">No Gadgets were configured for this dashboard. <br> Click below to
+                    configure gadgets.</p>
+                <p class="text-center"><button class="btn btn-info" data-bs-toggle="modal"
+                        data-bs-target="#addGadgetModal"><i class="fa-solid fa-plus me-2"></i>Add Gadget</button></p>
+            </div>
+            {% else %}
+            <div class="">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h1 class="h5">
+                        <button class="btn btn-info btn-sm ps-2 me-2" id="treeToggleBtn" style="border-radius: 1000px;"
+                            onclick="toggleTree()"><i class="fa-solid fa-arrow-left"></i></button>
+                        {{ dashboard.title }}
+
+                    </h1>
+                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#addGadgetModal"><i
+                            class="fa-solid fa-plus me-2"></i>Add Gadget</button>
+                </div>
+                <div class="d-flex">
+                    <!-- Tree Sidebar -->
+                    <div id="tree" class="me-1 border-end border-dark text-secondary"
+                        style="min-width: 225px; overflow-y: auto; height: 75vh; font-size: small;">
+                        <ul class="list-group text-secondary">
+                            {% for site in sites %}
+                            <li class="list-group-item bg-dark border-dark text-secondary">
+                                <strong>
+                                    <a class="text-secondary" href="#site-{{ site.id }}" data-bs-toggle="collapse"
+                                        role="button" aria-expanded="false" aria-controls="site-{{ site.id }}">
+                                        {{ site.name }}
+                                    </a>
+                                </strong>
+                                <ul class="list-group bg-dark border-dark text-secondary collapse ms-1"
+                                    id="site-{{ site.id }}">
+                                    {% for building in site.buildings.all %}
+                                    <li class="list-group-item bg-dark border-dark text-secondary">
+                                        <a class="text-secondary" href="#building-{{ building.id }}"
+                                            data-bs-toggle="collapse" role="button" aria-expanded="false"
+                                            aria-controls="building-{{ building.id }}">
+                                            {{ building.name }}
+                                        </a>
+                                        <ul class="list-group bg-dark border-dark text-secondary collapse ms-1"
+                                            id="building-{{ building.id }}">
+                                            {% for area in building.areas.all %}
+                                            <li class="list-group-item bg-dark border-dark text-secondary">
+                                                <a class="text-secondary" href="#area-{{ area.id }}"
+                                                    data-bs-toggle="collapse" role="button" aria-expanded="false"
+                                                    aria-controls="area-{{ area.id }}">
+                                                    {{ area.name }}
+                                                </a>
+                                                <ul class="list-group bg-dark border-dark text-secondary collapse ms-1"
+                                                    style="font-size: smaller; width: 150px;" id="area-{{ area.id }}">
+                                                    {% for meter in area.meters.all %}
+                                                    <li class="list-group-item bg-dark border-dark text-secondary meter-item"
+                                                        id="meter-{{ meter.id }}">
+                                                        {{ meter.name }}
+                                                    </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+
+                    <div class=" d-flex flex-wrap ">
+                        {% for gadget in gadgets %}
+                        <div>
+                            <div class="p-3 shadow mb-1 mx-1 gadget-item" id="gadget-wrapper-{{ gadget.id }}"
+                                style="height: 290px; width: 350px;"
+                                data-meter-ids='[{% for m in gadget.meters.all %}{{ m.id }}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+                                <div class="d-flex">
+                                    <p class="" style="font-size: smaller;">{{ gadget.name }}</p>
+                                    
+                                    {% if gadget.gadget_type == 'pie' %}
+                                    <!-- Hidden Date Input -->
+                                    <input type="date" id="datepicker-{{ gadget.id }}" class="form-control form-control-sm d-none"/>
+
+                                    <!-- Clickable Icon -->
+                                    <i class="fa fa-calendar-alt ms-auto" style="cursor: pointer;" onclick="document.getElementById('datepicker-{{ gadget.id }}').showPicker()"></i>
+
+                                    <i class="fa-solid fa-up-right-and-down-left-from-center ms-1 maximizeGadget" data-bs-toggle="modal"
+                                    data-bs-target="#maximizeModal{{gadget.id}}"></i>
+
+                                    {% elif gadget.gadget_type == 'line' %}
+                                    <!-- Hidden Date Input -->
+                                    <input type="datetime-local" id="datepicker-{{ gadget.id }}" class="form-control form-control-sm d-none"/>
+
+                                    <!-- Clickable Icon -->
+                                    <i class="fa fa-calendar-alt ms-auto" style="cursor: pointer;" onclick="document.getElementById('datepicker-{{ gadget.id }}').showPicker()"></i>
+                                    <i class="fa-solid fa-up-right-and-down-left-from-center ms-1 maximizeGadget" data-bs-toggle="modal"
+                                    data-bs-target="#maximizeModal{{gadget.id}}"></i>
+                                    
+                                    {% elif gadget.gadget_type == 'bar' %}
+                                    <!-- Range Selection Dropdown -->
+                                    <select id="interval-select-{{ gadget.id }}" class="form-select form-select-sm ms-auto" style="max-width: 100px; height: 30px; font-size: small;">
+                                        <option value="today">Today</option>
+                                        <option value="1w">1 Week</option>
+                                        <option value="1m">1 Month</option>
+                                        <option value="3m">3 Months</option>
+                                        <option value="6m">6 Months</option>
+                                        <option value="1y">1 Year</option>
+                                    </select>
+                                      <i class="fa-solid fa-up-right-and-down-left-from-center ms-1 maximizeGadget" data-bs-toggle="modal"
+                                    data-bs-target="#maximizeModal{{gadget.id}}"></i>
+                                                                        
+                                    <script>
+                                        
+                                    </script>
+                                        
+                                        {% else %}
+                                        <i class="fa-solid fa-up-right-and-down-left-from-center ms-auto maximizeGadget" data-bs-toggle="modal"
+                                    data-bs-target="#maximizeModal{{gadget.id}}"></i>
+                                    {% endif %}
+
+                                    
+                                </div>
+                                
+                                <!-- Maximize Gadget Modal -->
+                                <div class="modal fade" id="maximizeModal{{gadget.id}}" tabindex="-1"
+                                    aria-labelledby="maximizeModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                                        <div class="modal-content bg-dark text-white">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="maximizeModalLabel">{{gadget.name}}</h5>
+                                                <button type="button" class="btn-close btn-close-white"
+                                                    data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body" id="maximizeModalBody{{gadget.id}}">
+                                                <canvas id="gadget-{{ gadget.id }}-max"
+                                                                    style="max-height: 500px;"></canvas>
+                                                <!-- Gadget will be injected here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {% if gadget.gadget_type == 'line' %}
+
+                                <canvas id="gadget-{{ gadget.id }}" width="300" height="200"></canvas>
+
+                                <script>
+                                (function () {
+                                    const canvasId = 'gadget-{{ gadget.id }}';
+                                    const gadgetId = {{ gadget.id }};
+                                    const selectedMeasurement = "{{ gadget.measurement.all.0 }}";
+                                    const dashboardId = {{ dashboard.id }};
+                                    const ctx = document.getElementById(canvasId).getContext('2d');
+                                    let chartInstance = null;
+
+                                    function generateColor(index) {
+                                        return `hsl(${(index * 137) % 360}, 70%, 50%)`;
+                                    }
+                                    const meterNames = {
+                                        {% for meter in gadget.meters.all %}
+                                            {{ meter.id }}: "{{ meter.name }}",
+                                        {% endfor %}
+                                    };
+
+                                    function updateChart(readingData) {
+                                        const meterGroups = {};
+
+                                        readingData.forEach(entry => {
+                                            const meterId = entry.meter_id;
+                                            const timestamp = entry.timestamp;
+                                            const value = entry.data[selectedMeasurement];
+
+                                            if (!meterGroups[meterId]) {
+                                                meterGroups[meterId] = [];
+                                            }
+
+                                            meterGroups[meterId].push({ timestamp, value });
+
+                                            if (meterGroups[meterId].length > 10) {
+                                                meterGroups[meterId].shift();
+                                            }
+                                        });
+
+                                        const datasets = Object.entries(meterGroups).map(([meterId, entries], index) => {
+                                        const meterName = meterNames[meterId] || `Meter ${meterId}`;
+                                        return {
+                                            label: meterName,
+                                            data: entries.map(e => e.value),
+                                            borderColor: generateColor(index),
+                                            borderWidth: 1.2,
+                                            pointRadius: 2,
+                                            tension: 0.3,
+                                            fill: false,
+                                        };
+                                    });
+
+                                        const labels = Object.values(meterGroups)[0]?.map(e => e.timestamp) || [];
+
+                                        const allValues = datasets.flatMap(ds => ds.data);
+                                        const minValue = Math.min(...allValues);
+                                        const maxValue = Math.max(...allValues);
+                                        const padding = (maxValue - minValue) * 0.05 || 1;
+                                        const yMin = minValue - padding;
+                                        const yMax = maxValue + padding;
+
+                                        if (chartInstance) chartInstance.destroy();
+
+                                        chartInstance = new Chart(ctx, {
+                                            type: 'line',
+                                            data: {
+                                                labels: labels,
+                                                datasets: datasets
+                                            },
+                                            options: {
+                                                responsive: true,
+                                                animation: false,
+                                                plugins: {
+                                                    legend: {
+                                                        position: 'top',
+                                                        labels: {
+                                                            boxWidth: 10,
+                                                            boxHeight: 10,
+                                                            font: { size: 10 },
+                                                            padding: 8
+                                                        }
+                                                    },
+                                                    title: {
+                                                        display: true,
+                                                        text: selectedMeasurement
+                                                    }
+                                                },
+                                                scales: {
+                                                    x: {
+                                                        title: {
+                                                            display: true,
+                                                            text: 'Time'
+                                                        }
+                                                    },
+                                                    y: {
+                                                        title: {
+                                                            display: true,
+                                                            text: selectedMeasurement
+                                                        },
+                                                        min: yMin,
+                                                        max: yMax
+                                                    }
+                                                }
+                                            }
+                                        });
+                                    }
+
+                                    // Event: DateTime change
+                                    document.getElementById("datepicker-{{ gadget.id }}").addEventListener("change", function () {
+                                        const selectedDatetime = this.value;
+                                        if (!selectedDatetime) return;
+
+                                        const url = `/dashboard/${dashboardId}/fetchDateTimeWindow/${gadgetId}/${selectedDatetime}/`;
+
+                                        axios.get(url)
+                                            .then(response => updateChart(response.data.readingData))
+                                            .catch(error => console.error("Error fetching windowed data:", error));
+                                    });
+
+                                    function fetchDataAndUpdateChart() {
+                                        axios.get(`/dashboard/${dashboardId}/fetchLatestReadings/${gadgetId}`)
+                                            .then(response => updateChart(response.data.readingData))
+                                            .catch(error => console.error("Error fetching data:", error));
+                                    }
+
+                                    fetchDataAndUpdateChart();
+                                    setInterval(fetchDataAndUpdateChart, 60000);
+                                })();
+                                </script>
+
+                                {% elif gadget.gadget_type == 'pie' %}
+
+                                <canvas id="gadget-{{ gadget.id }}" width="300" height="200"></canvas>
+
+                                <!-- <script>
+                                (function () {
+                                    const gadgetId = {{ gadget.id }};
+                                    const dashboardId = {{ dashboard.id }};
+                                    const pieCanvas = document.getElementById("gadget-{{ gadget.id }}");
+                                    let pieChart;
+
+                                    function fetchPieData() {
+                                        const interval = document.getElementById(`interval-select-${gadgetId}`).value;
+                                        const measurement = '{{ gadget.measurement.all.0.name }}';
+
+                                        axios.get(`/dashboard/${dashboardId}/pieData/${gadgetId}/${encodeURIComponent(measurement)}/${interval}/`)
+                                            .then(response => {
+                                                const data = response.data.data;
+                                                const labels = data.map(d => d.meter);
+                                                const values = data.map(d => d.value);
+                                                const colors = labels.map((_, i) => `hsl(${(i * 137) % 360}, 70%, 50%)`);
+
+                                                if (pieChart) pieChart.destroy();
+
+                                                pieChart = new Chart(pieCanvas, {
+                                                    type: 'pie',
+                                                    data: {
+                                                        labels: labels,
+                                                        datasets: [{
+                                                            data: values,
+                                                            backgroundColor: colors
+                                                        }]
+                                                    },
+                                                    options: {
+                                                        responsive: true,
+                                                        plugins: {
+                                                            legend: {
+                                                                position: 'bottom',
+                                                                labels: {
+                                                                    boxWidth: 10,
+                                                                    font: { size: 10 }
+                                                                }
+                                                            },
+                                                            title: {
+                                                                display: true,
+                                                                text: `${measurement} over ${interval}`
+                                                            }
+                                                        }
+                                                    }
+                                                });
+                                            })
+                                            .catch(error => {
+                                                console.error("Error fetching pie data:", error);
+                                            });
+                                    }
+
+                                    document.getElementById(`interval-select-${gadgetId}`).addEventListener("change", fetchPieData);
+
+                                    fetchPieData();  // Initial load
+                                })(); 
+                            </script> -->
+                            
+
+                            <script>
+                               (function() {
+                                const gadgetId = {{ gadget.id }};
+                                const dashboardId = {{ dashboard.id }};
+                                const pieCanvas = document.getElementById("gadget-{{ gadget.id }}");
+                                const dateInput = document.getElementById("datepicker-{{ gadget.id }}");
+                                let pieChart;
+
+                                function fetchDailyPieData() {
+                                    const date = dateInput.value;
+                                    const measurement = '{{ gadget.measurement.all.0.name }}';
+                                    if (!date) return;
+
+                                    const url = `/dashboard/${dashboardId}/pieData/${gadgetId}/${encodeURIComponent(measurement)}/${date}/`;
+
+                                    axios.get(url)
+                                        .then(response => {
+                                            const data = response.data.data;
+                                            const labels = data.map(d => d.meter);
+                                            const values = data.map(d => d.value);
+                                            const colors = labels.map((_, i) => `hsl(${(i * 137) % 360}, 70%, 50%)`);
+
+                                            if (pieChart) pieChart.destroy();
+
+                                            pieChart = new Chart(pieCanvas, {
+                                                type: 'pie',
+                                                data: {
+                                                    labels: labels,
+                                                    datasets: [{
+                                                        data: values,
+                                                        backgroundColor: colors
+                                                    }]
+                                                },
+                                                options: {
+                                                    responsive: false,
+                                                    layout: {
+                                                        padding: 0
+                                                    },
+                                                    plugins: {
+                                                        legend: {
+                                                            position: 'bottom',
+                                                            labels: {
+                                                                color:'#6c757d',
+                                                                font: { size: 10 },
+                                                                boxWidth: 10,
+                                                                boxHeight: 10,
+                                                                usePointStyle: true,
+                                                                generateLabels: function(chart) {
+                                                                    const dataset = chart.data.datasets[0];
+                                                                    return chart.data.labels.map((label, i) => ({
+                                                                        text: label,
+                                                                        textColor: '#6c757d',
+                                                                        fillStyle: '#222',
+                                                                        strokeStyle: dataset.backgroundColor[i],
+                                                                        lineWidth: 2,
+                                                                        pointStyle: 'rect',
+                                                                        hidden: false,
+                                                                        index: i
+                                                                    }));
+                                                                }
+                                                            }
+                                                        },
+                                                        title: {
+                                                            display: true,
+                                                            text: `${measurement} on ${date}`
+                                                        }
+                                                    }
+                                                }
+                                            });
+                                        })
+                                        .catch(error => {
+                                            console.error("Error fetching pie data:", error);
+                                        });
+                                }
+
+                                // Set today's date in input and trigger fetch
+                                const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+                                dateInput.value = today;
+                                dateInput.addEventListener("change", fetchDailyPieData);
+
+                                window.addEventListener("DOMContentLoaded", fetchDailyPieData);
+                            })();
+
+                            </script>
+
+                            
+                            {% elif gadget.gadget_type == 'tool' %}
+                            <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                <table id="gadget-{{ gadget.id }}" class="table table-dark border-none table-sm mb-0" style="border-collapse: collapse">
+                                    <thead >
+                                        <tr>
+                                            <th scope="col">Field</th>
+                                            <th scope="col">Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Rows will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <script>
+                                (function () {
+                                    const gadgetId = {{ gadget.id }};
+                                    const dashboardId = {{ dashboard.id }};
+                                    const meterId = {{ gadget.meters.all.0.id }};
+                                    const selectedMeasurementNames = [
+                                        {% for m in gadget.measurement.all %}
+                                            "{{ m.name }}",
+                                        {% endfor %}
+                                    ];
+                            
+                                    const tableBody = document.querySelector(`#gadget-{{ gadget.id }} tbody`);
+                            
+                                    function updateToolTable(reading) {
+                                        tableBody.innerHTML = ''; // Clear old rows
+                            
+                                        selectedMeasurementNames.forEach(measurement => {
+                                            const value = reading.data[measurement];
+                                            const row = document.createElement('tr');
+                                            row.innerHTML = `
+                                                <td style="border: none;">${measurement}</td>
+                                                <td style="border: none;">
+                                                    <input class="form-control form-control-sm" value="${value !== undefined ? value : 'N/A'}" style="width: 100px; height: 20px;">
+                                                </td>
+                                            `;
+                                            tableBody.appendChild(row);
+                                        });
+                                    }
+                            
+                                    function fetchAndUpdateToolData() {
+                                        axios.get(`/dashboard/${dashboardId}/fetchLatestToolData/${gadgetId}/`)
+                                            .then(response => {
+                                                updateToolTable(response.data.reading);
+                                                console.log("updated too data")
+                                            })
+                                            .catch(error => {
+                                                console.error("Error fetching tool data:", error);
+                                            });
+                                    }
+                            
+                                    // Initial load
+                                    fetchAndUpdateToolData();
+                            
+                                    // Update every 60 seconds
+                                    setInterval(fetchAndUpdateToolData, 60000);
+                                })();
+                            </script>
+                            
+                            
+
+
+                                
+
+                                {% elif gadget.gadget_type == 'line' %}
+                                <div id="spinner-{{ gadget.id }}" style="
+                                    position: absolute;
+                                    top: 0; left: 0;
+                                    width: 100%;
+                                    height: 100%;
+                                    background: #24252a;
+                                    display: flex;
+                                    justify-content: center;
+                                    align-items: center;
+                                    z-index: 999;
+                                ">
+                                    <div class="spinner" style="
+                                        width: 40px;
+                                        height: 40px;
+                                        border: 4px solid #ccc;
+                                        border-top: 4px solid #3498db;
+                                        border-radius: 50%;
+                                        animation: spin 1s linear infinite;
+                                    "></div>
+                                </div>
+                                <style>
+                                    @keyframes spin {
+                                      0% { transform: rotate(0deg); }
+                                      100% { transform: rotate(360deg); }
+                                    }
+                                </style>
+
+                                <canvas id="gadget-{{ gadget.id }}" style="max-height: 220px;"></canvas>
+                               
+                                {% elif gadget.gadget_type == 'table' %}
+                                
+                                <script>
+                                    document.getElementById('gadget-{{ gadget.id }}-max').style.display = 'none';
+                                    let maxModal = document.getElementById('maximizeModalBody{{gadget.id}}');
+                                    maxModal.innerHTML = `
+                                    <div style="overflow-y: auto;">
+                                    <table class="table table-striped table-dark text-light" style="font-size: 12px; width: 100%;">
+                                        {% if gadget.id in gadget_csv_data %}
+                                            {% for row in gadget_csv_data|get_item:gadget.id %}
+                                                <tr>
+                                                    {% for col in row %}
+                                                        <td>{{ col }}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr><td>No CSV data found</td></tr>
+                                        {% endif %}
+                                    </table>
+                                </div>
+                                `
+                                </script>
+                                <div style="max-height: 200px; min-width: 300px; max-width: 450px; overflow-y: auto;">
+                                    <table class="table table-sm table-striped table-dark text-light" style="font-size: 12px; width: 100%;">
+                                        {% if gadget.id in gadget_csv_data %}
+                                            {% for row in gadget_csv_data|get_item:gadget.id %}
+                                                <tr>
+                                                    {% for col in row %}
+                                                        <td>{{ col }}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr><td>No CSV data found</td></tr>
+                                        {% endif %}
+                                    </table>
+                                </div>
+
+                                
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </main>
+    </div>
+</div>
+
+<!-- maximuze gadget script -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const maximizeIcons = document.querySelectorAll(".maximizeGadget");
+        const modal = new bootstrap.Modal(document.getElementById('maximizeModal'));
+        const modalBody = document.getElementById('maximizeModalBody');
+
+        maximizeIcons.forEach(icon => {
+            icon.addEventListener("click", function (e) {
+                e.stopPropagation();
+
+                // Find the gadget card div
+                const gadgetCard = this.closest(".gadget-item");
+                if (!gadgetCard) return;
+
+                // Clone the gadget content (deep clone)
+                const clone = gadgetCard.cloneNode(true);
+
+                // Remove previous modal content
+                modalBody.innerHTML = "";
+                modalBody.appendChild(clone);
+
+                // Re-render any Chart.js instances
+                const canvas = clone.querySelector("canvas");
+                if (canvas) {
+                    const ctx = canvas.getContext("2d");
+                    const type = gadgetCard.querySelector("script").textContent.match(/type:\s*['"](\w+)['"]/)[1];
+                    const data = JSON.parse(gadgetCard.querySelector("script").textContent.match(/data:\s*({[\s\S]*?})\s*,\s*options/)[1]);
+                    const options = JSON.parse(gadgetCard.querySelector("script").textContent.match(/options:\s*({[\s\S]*?})\s*\)?;/)[1]);
+
+                    new Chart(ctx, {
+                        type: type,
+                        data: data,
+                        options: options
+                    });
+                }
+
+                modal.show();
+            });
+        });
+    });
+</script>
+
+
+
+<!-- Tree script -->
+<script>
+    let tree = document.getElementById('tree');
+    let treeToggleBtn = document.getElementById('treeToggleBtn');
+    function toggleTree() {
+
+        if (tree.style.display === "none" || tree.style.display === "") {
+            tree.style.display = "block";
+            treeToggleBtn.innerHTML = `<i class="fa-solid fa-arrow-left"></i>`
+        } else {
+            tree.style.display = "none";
+            treeToggleBtn.innerHTML = `<i class="fa-solid fa-arrow-right"></i>`
+        }
+    }
+    document.addEventListener("DOMContentLoaded", function () {
+        // 1. Tree toggle (show/hide child UL)
+        document.querySelectorAll("#tree li").forEach(function (li) {
+            const childUl = li.querySelector("ul");
+            if (childUl) {
+                childUl.style.display = "none";
+                li.style.cursor = "pointer";
+                li.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    childUl.style.display = (childUl.style.display === "none") ? "block" : "none";
+                });
+            }
+        });
+
+        // 2. Gadget-meter highlight & tree expand
+        const gadgets = document.querySelectorAll(".gadget-item");
+        const meters = document.querySelectorAll(".meter-item");
+
+        // Helper: expand parents of a meter element to make it visible
+        function expandParents(meterElem) {
+            treeToggleBtn.innerHTML = `<i class="fa-solid fa-arrow-left"></i>`
+            let tree = document.getElementById('tree');
+            tree.style.display = "block";
+            let current = meterElem.parentElement; // the <ul> containing the meter
+            while (current && current.id !== "tree") {
+                if (current.tagName.toLowerCase() === "ul") {
+                    current.style.display = "block";
+                }
+                current = current.parentElement;
+            }
+        }
+
+        gadgets.forEach(gadget => {
+            treeToggleBtn.innerHTML = `<i class="fa-solid fa-arrow-left"></i>`
+            gadget.addEventListener("click", (event) => {
+                event.stopPropagation();
+
+                // Remove all highlights (but do NOT collapse tree)
+                gadgets.forEach(g => g.classList.remove("gadget-highlight"));
+                meters.forEach(m => m.classList.remove("text-info"));
+
+                // Highlight clicked gadget
+                gadget.classList.add("gadget-highlight");
+
+                // Get related meters (expects JSON array or comma-separated string)
+                const meterIdsStr = gadget.getAttribute("data-meter-ids");
+                if (!meterIdsStr) return;
+
+                let meterIds = [];
+                try {
+                    meterIds = JSON.parse(meterIdsStr);
+                } catch (e) {
+                    meterIds = meterIdsStr.split(",").map(id => id.trim());
+                }
+
+                // Highlight meters and expand their parents
+                meterIds.forEach(id => {
+                    const meterElem = document.getElementById(`meter-${id}`);
+                    if (meterElem) {
+                        meterElem.classList.add("text-info");
+                        expandParents(meterElem);
+                    }
+                });
+            });
+        });
+
+        // Clicking outside gadgets clears highlights ONLY (not tree)
+        document.addEventListener("click", () => {
+            gadgets.forEach(g => g.classList.remove("gadget-highlight"));
+            meters.forEach(m => m.classList.remove("text-info"));
+
+        });
+    });
+</script>
+
+
+{% endblock %}

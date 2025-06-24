@@ -4,7 +4,6 @@ from . import views
 
 urlpatterns = [
     path('configureDashboard', views.configureDashboard, name='configureDashboard'),
-    path('configureDashboard/addGadget', views.addGadget, name='addGadget'),
     path('', views.settings, name='settings'),
     path('hierarchy', views.hierarchy, name='hierarchy'),
     path('hierarchy/addSite', views.addSite, name='addSite'),
@@ -15,3 +14,12 @@ urlpatterns = [
 
     
 ]
+
+
+
+
+
+'''
+
+
+'''

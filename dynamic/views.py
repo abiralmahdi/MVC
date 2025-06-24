@@ -8,8 +8,6 @@ from dashboard.models import *
 def configureDashboard(request):
     return render(request, "configureDashboard.html")
 
-def addGadget(reqeust):
-    return render(reqeust, "addGadget.html")
 
 def settings(request):
     return render(request, 'settings.html')
