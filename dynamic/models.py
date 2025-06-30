@@ -35,6 +35,13 @@ class Meters(models.Model):
 
 class Measurements(models.Model):
     name = models.CharField(max_length=100)
-    meter = models.ForeignKey(Meters, related_name='measurements', on_delete=models.CASCADE,)
+    meter = models.ForeignKey(Meters, related_name='measurements', on_delete=models.CASCADE)
+    meterType = models.CharField(max_length=100, default="")
+
+    def save(self, *args, **kwargs):
+        if self.meter:
+            self.meterType = self.meter.meterType
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name

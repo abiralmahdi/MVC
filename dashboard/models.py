@@ -49,23 +49,28 @@ class LatestMeterReading(models.Model):
         return f"{self.meter.name} - {self.timestamp.strftime('%d-%m-%y %H:%M:%S')}"
 
 
-# models.py
+
 class MeterReadingAggregate(models.Model):
     meter = models.ForeignKey(Meters, on_delete=models.CASCADE)
-    measurement = models.CharField(max_length=100)
     period_type = models.CharField(max_length=20, choices=[
-        ('daily', 'Daily'),
         ('weekly', 'Weekly'),
         ('monthly', 'Monthly'),
         ('3monthly', '3Monthly'),
         ('6monthly', '6Monthly'),
         ('yearly', 'Yearly'),
     ])
-    start_date = models.DateField()  # e.g., 2025-06-01
-    average_value = models.FloatField()
-
-    class Meta:
-        unique_together = ('meter', 'measurement', 'period_type', 'start_date')
+    start_date = models.DateField() 
+    aggregateData = models.JSONField()
 
     def __str__(self):
-        return f"{self.meter.name} - {self.measurement} - {self.period_type} - {self.start_date} - {self.average_value}"
+        return f"{self.meter.name} -  {self.period_type} - {self.start_date}"
+
+
+class HierarchyDataAggregate(models.Model):
+    site = models.ForeignKey(Site, on_delete=models.CASCADE)
+    period_type = models.CharField(max_length=20)
+    start_date = models.DateField()
+    data = models.JSONField()
+
+    def __str__(self):
+        return self.site.name + " - " + str(self.start_date) + " - " + self.period_type

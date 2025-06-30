@@ -25,59 +25,6 @@ def dashboard(request):
     return render(request, 'dashboard.html', context)
 
 
-
-import csv
-from django.conf import settings
-import os
-
-
-'''
-def indivDashboard(request, dashboardID):
-    dashboard_ = Dashboard.objects.get(id=dashboardID)
-    gadgets = Gadgets.objects.filter(dashboard=dashboard_).prefetch_related('meters')
-
-    site = dashboard_.site
-    areas = Areas.objects.filter(building__site=site).prefetch_related('meters')
-    meters = Meters.objects.filter(area__in=areas)
-    measurements = Measurements.objects.filter(meter__in=meters)
-    all_files = Files.objects.filter(meter__in=meters)
-
-    # Map gadget.id -> list of associated files
-    gadget_files = {}
-    gadget_csv_data = {}
-
-    for gadget in gadgets:
-        gadget_meters = gadget.meters.all()
-        files = all_files.filter(meter__in=gadget_meters)
-        gadget_files[gadget.id] = files
-
-        # Optional: Load only the first file for preview
-        if files.exists():
-            first_file = files.first()
-            file_path = os.path.join(settings.MEDIA_ROOT, str(first_file.file))
-            try:
-                with open(file_path, newline='') as csvfile:
-                    reader = csv.reader(csvfile)
-                    rows = list(reader)
-                    gadget_csv_data[gadget.id] = rows[:20]  # Preview first 20 rows
-            except Exception as e:
-                gadget_csv_data[gadget.id] = [['Error reading file:', str(e)]]
-
-
-    context = {
-        'sites': sites,
-        'dashboard': dashboard_,
-        'gadgets': gadgets,
-        'areas': areas,
-        'meters': meters,
-        'measurements': measurements,
-        'gadget_files': gadget_files,
-        'gadget_csv_data': gadget_csv_data
-    }
-
-    return render(request, 'indivDashboard2.html', context)
-    '''
-
 def indivDashboard(request, dashboardID):
     dashboard_ = get_object_or_404(Dashboard, id=dashboardID)
     gadgets = Gadgets.objects.filter(dashboard=dashboard_).prefetch_related('meters', 'measurement')
@@ -118,9 +65,8 @@ def fetchLatestReadings(request, dashboardID, gadget_id):
         meters = gadget.meters.all()
         measurements = gadget.measurement.all()
         measurement_names = [m.name for m in measurements]
-
+        
         readings = LatestMeterReading.objects.filter(meter__in=meters).order_by('timestamp')
-
         data = []
         for reading in readings:
             entry = {
@@ -129,6 +75,7 @@ def fetchLatestReadings(request, dashboardID, gadget_id):
                 'data': {k: v for k, v in reading.data.items() if k in measurement_names}
             }
             data.append(entry)
+            
 
         return JsonResponse({'readingData': data})
 
@@ -189,12 +136,29 @@ def fetchDateTimeWindow(request, dashboard_id, gadget_id, datetime_str):
     return JsonResponse({"readingData": readingData})
 
 
+def get_period_start(date, period_type):
+    from datetime import date as dt
+
+    if period_type == "weekly":
+        return date - timedelta(days=date.weekday())  # Monday
+    elif period_type == "monthly":
+        return date.replace(day=1)
+    elif period_type == "3monthly":
+        month = ((date.month - 1) // 3) * 3 + 1
+        return date.replace(month=month, day=1)
+    elif period_type == "6monthly":
+        month = 1 if date.month <= 6 else 7
+        return date.replace(month=month, day=1)
+    elif period_type == "yearly":
+        return date.replace(month=1, day=1)
+    else:
+        return date
 
 
 
+def getData(request, dashboard_id, gadget_id, measurement, date, period):
+    period_type = period  # optional query param: daily, weekly, monthly, etc.
 
-
-def getPieData(request, dashboard_id, gadget_id, measurement, date):
     try:
         selected_date = datetime.strptime(date, "%Y-%m-%d").date()
     except (ValueError, TypeError):
@@ -206,59 +170,176 @@ def getPieData(request, dashboard_id, gadget_id, measurement, date):
         return JsonResponse({'error': 'Gadget not found'}, status=404)
 
     meters = gadget.meters.all()
-    start_datetime = datetime.combine(selected_date, datetime.min.time())
-    end_datetime = datetime.combine(selected_date, datetime.max.time())
-
     meter_data = []
 
-    for meter in meters:
-        readings = MeterReading.objects.filter(
-            meter=meter,
-            timestamp__range=(start_datetime, end_datetime)
-        )
+    if period_type and period_type != "daily":
+        selected_date = get_period_start(selected_date, period_type)
+        for meter in meters:
+            agg = MeterReadingAggregate.objects.filter(
+                meter=meter,
+                period_type=period_type,
+                start_date=selected_date
+            ).first()
+            print(agg)
 
-        values = [r.data.get(measurement) for r in readings if r.data.get(measurement) is not None]
-        if values:
-            avg = sum(values) / len(values)
-            meter_data.append({
-                "meter": meter.name,
-                "value": round(avg, 2)
-            })
+            if agg and measurement in agg.aggregateData:
+                meter_data.append({
+                    "meter": meter.name,
+                    "value": round(agg.aggregateData[measurement], 2)
+                })
+    else:
+        # Daily average mode
+        start_datetime = datetime.combine(selected_date, datetime.min.time())
+        end_datetime = datetime.combine(selected_date, datetime.max.time())
+
+        for meter in meters:
+            readings = MeterReading.objects.filter(
+                meter=meter,
+                timestamp__range=(start_datetime, end_datetime)
+            )
+
+            values = [r.data.get(measurement) for r in readings if r.data.get(measurement) is not None]
+            if values:
+                avg = sum(values) / len(values)
+                meter_data.append({
+                    "meter": meter.name,
+                    "value": round(avg, 2)
+                })
 
     return JsonResponse({"data": meter_data})
 
 
 
+from collections import defaultdict
+def getMultiYearBarData(request, dashboard_id, gadget_id, measurement, date, period):
+    try:
+        selected_date = datetime.strptime(date, "%Y-%m-%d").date()
+    except Exception:
+        return JsonResponse({'error': 'Invalid date format'}, status=400)
 
+    selected_year = selected_date.year
 
+    try:
+        gadget = Gadgets.objects.get(id=gadget_id)
+    except Gadgets.DoesNotExist:
+        return JsonResponse({'error': 'Gadget not found'}, status=404)
 
-def getPieData2(request, dashboard_id, gadget_id, measurement, interval):
-    time_ranges = {
-        'today': timezone.now().replace(hour=0, minute=0, second=0, microsecond=0),
-        '1w': timezone.now() - timedelta(weeks=1),
-        '1m': timezone.now() - timedelta(days=30),
-        '3m': timezone.now() - timedelta(days=90),
-        '6m': timezone.now() - timedelta(days=180),
-        '1y': timezone.now() - timedelta(days=365),
-    }
-
-    if interval not in time_ranges:
-        return JsonResponse({'error': 'Invalid interval'}, status=400)
-
-    gadget = Gadgets.objects.get(id=gadget_id)
     meters = gadget.meters.all()
 
-    start_time = time_ranges[interval]
+    def get_period_labels(year, period):
+        import calendar
+        labels = []
+        if period == "monthly":
+            labels = [calendar.month_abbr[m] for m in range(1,13)]
+        elif period == "yearly":
+            labels = [str(year)]
+        elif period == "weekly":
+            labels = [f"W{i}" for i in range(1,53)]
+        elif period == "3monthly":
+            labels = ["Jan-Mar","Apr-Jun","Jul-Sep","Oct-Dec"]
+        elif period == "6monthly":
+            labels = ["Jan-Jun","Jul-Dec"]
+        elif period == "daily":
+            days_in_month = calendar.monthrange(year, selected_date.month)[1]
+            labels = [str(day) for day in range(1, days_in_month+1)]
+        return labels
 
-    # Prepare aggregated data
-    meter_data = []
+    labels = get_period_labels(selected_year, period)
+
+    # Parse optional start/end parameters from query params
+    start_param = request.GET.get('start', None)
+    end_param = request.GET.get('end', None)
+
+    # Helper function to convert start/end strings to dates or weeks or months
+    # For daily: parse date strings
+    # For weekly: parse ISO week strings "YYYY-Www"
+    # For monthly: parse "YYYY-MM"
+
+    def parse_period_value(value, period):
+        if not value:
+            return None
+        if period == 'daily':
+            try:
+                return datetime.strptime(value, "%Y-%m-%d").date()
+            except:
+                return None
+        elif period == 'weekly':
+            # value format: "YYYY-Www"
+            try:
+                year_str, week_str = value.split("-W")
+                year_i = int(year_str)
+                week_i = int(week_str)
+                # Get Monday date of the week
+                from isoweek import Week
+                return Week(year_i, week_i).monday()
+            except:
+                return None
+        elif period == 'monthly':
+            try:
+                return datetime.strptime(value, "%Y-%m").date().replace(day=1)
+            except:
+                return None
+        else:
+            return None
+
+    start_val = parse_period_value(start_param, period)
+    end_val = parse_period_value(end_param, period)
+
+    # Filter years to fetch - always current year and previous year
+    years_to_fetch = [selected_year-1, selected_year]
+
+    meter_year_values = defaultdict(lambda: defaultdict(lambda: [None]*len(labels)))
+
+    def get_label_index(dt, period, labels):
+        if period == "monthly":
+            return dt.month - 1
+        elif period == "yearly":
+            return 0
+        elif period == "weekly":
+            return dt.isocalendar()[1] - 1  # zero-based week number
+        elif period == "3monthly":
+            return (dt.month - 1) // 3
+        elif period == "6monthly":
+            return 0 if dt.month <= 6 else 1
+        elif period == "daily":
+            return dt.day - 1
+        else:
+            return 0
+
     for meter in meters:
-        readings = MeterReading.objects.filter(meter=meter, timestamp__gte=start_time)
-        values = [r.data.get(measurement, 0) for r in readings if r.data.get(measurement) is not None]
-        avg_val = sum(values) / len(values) if values else 0
-        meter_data.append({'meter': meter.name, 'value': avg_val})
+        for year in years_to_fetch:
+            aggs = MeterReadingAggregate.objects.filter(
+                meter=meter,
+                period_type=period,
+                start_date__year=year
+            )
 
-    return JsonResponse({'data': meter_data})
+            # If start_val and end_val are set, filter aggs accordingly
+            if start_val and end_val:
+                aggs = aggs.filter(start_date__gte=start_val, start_date__lte=end_val)
+
+            for agg in aggs:
+                idx = get_label_index(agg.start_date, period, labels)
+                if 0 <= idx < len(labels) and measurement in agg.aggregateData:
+                    meter_year_values[meter.name][year][idx] = round(agg.aggregateData[measurement], 2)
+
+    data = []
+    for meter_name, year_dict in meter_year_values.items():
+        for y in years_to_fetch:
+            year_values = year_dict[y]
+            year_dict[y] = [v if v is not None else 0 for v in year_values]
+        data.append({
+            "meter": meter_name,
+            "values": {
+                str(y): year_dict[y] for y in years_to_fetch
+            }
+        })
+
+    return JsonResponse({
+        "labels": labels,
+        "data": data,
+        "years": [str(y) for y in years_to_fetch]
+    })
 
 
 
@@ -284,6 +365,39 @@ def fetchLatestToolData(request, dashboard_id, gadget_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+
+def fetchTableData(request, dashboard_id, gadget_id):
+    gadget = Gadgets.objects.get(id=gadget_id)
+    meter = gadget.meters.first()
+    data = LatestMeterReading.objects.filter(meter=meter).order_by('-timestamp')[:20]  # Get last 20 rows for example
+
+    rows = []
+    for instance in data:
+        row = {'Timestamp': instance.timestamp.strftime("%H:%M")}
+        row.update(instance.data)
+        rows.append(row)
+
+    return JsonResponse({"rows": rows})
+
+
+
+def hierarchyAggView(request, site_id, period_type, start_date):
+    site = get_object_or_404(Site, id=site_id)
+    aggregate = get_object_or_404(
+        HierarchyDataAggregate,
+        site=site,
+        period_type=period_type,
+        start_date=start_date
+    )
+    context = {
+        "site": site,
+        "period_type": period_type,
+        "start_date": start_date,
+        "data": aggregate.data,
+        "hierarchy_data": aggregate.data,
+        "measurement": "Active Power L1"
+    }
+    return render(request, "hierarchyView.html", context)
 
 
 

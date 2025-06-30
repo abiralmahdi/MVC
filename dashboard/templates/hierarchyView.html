@@ -1,0 +1,143 @@
+{% extends "layout.html" %}
+{% block body %}
+<style>
+  .view{
+    color: aliceblue;
+  }
+</style>
+
+<div class="view">
+<h2>Hierarchy Aggregate for {{ site.name }}</h2>
+<p>Period: <strong>{{ period_type }}</strong> | Start Date: <strong>{{ start_date }}</strong></p>
+
+<h3>Site Total:</h3>
+<ul>
+  {% for key, value in data.site_total.items %}
+    <li>{{ key }}: {{ value }}</li>
+  {% endfor %}
+</ul>
+
+{% for building, building_data in data.buildings.items %}
+  <h4>Building: {{ building }}</h4>
+  <ul>
+    {% for key, value in building_data.building_total.items %}
+      <li>{{ key }}: {{ value }}</li>
+    {% endfor %}
+  </ul>
+
+  {% for area, area_data in building_data.areas.items %}
+    <h5>Area: {{ area }}</h5>
+    <ul>
+      {% for key, value in area_data.area_total.items %}
+        <li>{{ key }}: {{ value }}</li>
+      {% endfor %}
+    </ul>
+
+    <table class="table table-bordered table-striped table-sm">
+      <thead>
+        <tr>
+          <th>Meter</th>
+          {% for key in area_data.meters.values.0.data.keys %}
+            <th>{{ key }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for meter, meter_info in area_data.meters.items %}
+          <tr>
+            <td>{{ meter }}</td>
+            {% for val in meter_info.data.values %}
+              <td>{{ val }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  {% endfor %}
+{% endfor %}
+</div>
+
+<div id="sankey"></div>
+
+  <script>
+    const hierarchy = {{ hierarchy_data|safe }};
+    const measurement = "{{ measurement }}";
+    const siteName = "{{ site.name }}";
+
+    const nodes = [];
+    const nodeIndex = {};
+    const links = [];
+
+    function getIndex(name) {
+      if (!(name in nodeIndex)) {
+        nodeIndex[name] = nodes.length;
+        nodes.push(name);
+      }
+      return nodeIndex[name];
+    }
+
+    // Add Site → Buildings
+    const siteIdx = getIndex(siteName);
+
+    for (const [buildingName, buildingData] of Object.entries(hierarchy.buildings)) {
+      const buildingVal = buildingData.building_total[measurement] || 0;
+      const bIdx = getIndex(buildingName);
+      links.push({ source: siteIdx, target: bIdx, value: buildingVal });
+
+        for (const [areaName, areaData] of Object.entries(buildingData.areas)) {
+          const areaVal = areaData.area_total[measurement] || 0;
+          const aIdx = getIndex(areaName);
+          links.push({ source: bIdx, target: aIdx, value: areaVal });
+
+            for (const [meterName, meterData] of Object.entries(areaData.meters)) {
+              const meterVal = meterData.data[measurement] || 0;
+              const mIdx = getIndex(meterName);
+              links.push({ source: aIdx, target: mIdx, value: meterVal+0.5 });
+            }
+          
+        }
+      
+    }
+    console.log(links)
+    console.log(nodeIndex)
+    console.log(nodes)
+
+    const data = [{
+      type: "sankey",
+      orientation: "h",
+      node: {
+        pad: 15,
+        thickness: 20,
+        line: {
+          color: "black",
+          width: 0.5
+        },
+        label: nodes,
+        color: "#3498db"
+      },
+      link: {
+        source: links.map(l => l.source),
+        target: links.map(l => l.target),
+        value: links.map(l => l.value),
+        color: "rgba(52, 152, 219, 0.6)",
+        hovertemplate:
+          "%{source.label} → %{target.label}<br>" +
+          "Value: %{value}<extra></extra>"
+      }
+    }];
+
+    const layout = {
+      title: `Sankey Diagram: ${measurement}`,
+      font: {
+        size: 12,
+        color: "#eee"
+      },
+      paper_bgcolor: "#111",
+      plot_bgcolor: "#111"
+    };
+
+    Plotly.newPlot('sankey', data, layout);
+
+  </script>
+{% endblock %}

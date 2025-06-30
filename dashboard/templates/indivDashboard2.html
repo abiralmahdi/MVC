@@ -5,6 +5,14 @@
 
 <style>
 
+.invisible-picker {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+        width: 0;
+        height: 0;
+    }
+
     /* Highlight for selected gadget */
     .gadget-highlight {
         border: 1px solid #00eaff;
@@ -351,6 +359,14 @@
                                     {% if gadget.gadget_type == 'pie' %}
                                     <!-- Hidden Date Input -->
                                     <input type="date" id="datepicker-{{ gadget.id }}" class="form-control form-control-sm d-none"/>
+                                    <select id="period-selector-{{ gadget.id }}" class="form-select form-select-sm me-1" style="height: 20px; width: 100px; padding: 0; font-size: smaller;">
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                        <option value="3monthly">3-Monthly</option>
+                                        <option value="6monthly">6-Monthly</option>
+                                        <option value="yearly">Yearly</option>
+                                    </select>
 
                                     <!-- Clickable Icon -->
                                     <i class="fa fa-calendar-alt ms-auto" style="cursor: pointer;" onclick="document.getElementById('datepicker-{{ gadget.id }}').showPicker()"></i>
@@ -369,14 +385,55 @@
                                     
                                     {% elif gadget.gadget_type == 'bar' %}
                                     <!-- Range Selection Dropdown -->
-                                    <select id="interval-select-{{ gadget.id }}" class="form-select form-select-sm ms-auto" style="max-width: 100px; height: 30px; font-size: small;">
-                                        <option value="today">Today</option>
-                                        <option value="1w">1 Week</option>
-                                        <option value="1m">1 Month</option>
-                                        <option value="3m">3 Months</option>
-                                        <option value="6m">6 Months</option>
-                                        <option value="1y">1 Year</option>
+                                    <input type="date" id="datepicker-{{ gadget.id }}" class="form-control form-control-sm d-none" />
+                                    <select id="period-selector-{{ gadget.id }}" class="form-select form-select-sm me-1 ms-auto" style="height: 20px; width: 100px; padding: 0; font-size: smaller;">
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                        <option value="3monthly">3-Monthly</option>
+                                        <option value="6monthly">6-Monthly</option>
+                                        <option value="yearly">Yearly</option>
                                     </select>
+
+
+                                    <!-- Hidden Inputs -->
+                                    <div class="d-flex align-items-center gap-2">
+                                        <!-- Hidden but functional pickers -->
+                                        <input type="date" id="start-date-{{ gadget.id }}" class="invisible-picker" />
+                                        <input type="date" id="end-date-{{ gadget.id }}" class="invisible-picker" />
+
+                                        <input type="week" id="start-week-{{ gadget.id }}" class="invisible-picker" />
+                                        <input type="week" id="end-week-{{ gadget.id }}" class="invisible-picker" />
+
+                                        <input type="month" id="start-month-{{ gadget.id }}" class="invisible-picker" />
+                                        <input type="month" id="end-month-{{ gadget.id }}" class="invisible-picker" />
+
+                                    </div>
+                                    
+                                    <!-- FontAwesome Pickers (VISIBLE) -->
+                                    <div id="range-selectors-{{ gadget.id }}" class="d-none" style="margin-top: -5px;">
+                                        <i id="open-start-picker-{{ gadget.id }}"
+                                           class="fas fa-calendar-alt"
+                                           style="cursor: pointer;"
+                                           data-bs-toggle="tooltip"
+                                           data-bs-placement="top"
+                                           title="Select Start Date"></i>
+                                      
+                                        <i id="open-end-picker-{{ gadget.id }}"
+                                           class="fas fa-calendar-check"
+                                           style="cursor: pointer;"
+                                           data-bs-toggle="tooltip"
+                                           data-bs-placement="top"
+                                           title="Select End Date"></i>
+                                    </div>
+                                  <script>
+                                    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+                                    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                                        new bootstrap.Tooltip(tooltipTriggerEl)
+                                    });
+                                  </script>
+
+                                    <!-- Clickable Icon -->
+                                    <i class="fa fa-calendar-alt" id="dateInputAlternate" style="cursor: pointer;" onclick="document.getElementById('datepicker-{{ gadget.id }}').showPicker()"></i>
                                       <i class="fa-solid fa-up-right-and-down-left-from-center ms-1 maximizeGadget" data-bs-toggle="modal"
                                     data-bs-target="#maximizeModal{{gadget.id}}"></i>
                                                                         
@@ -384,7 +441,7 @@
                                         
                                     </script>
                                         
-                                        {% else %}
+                                        {% elif gadget.gadget_type != 'tool' %}
                                         <i class="fa-solid fa-up-right-and-down-left-from-center ms-auto maximizeGadget" data-bs-toggle="modal"
                                     data-bs-target="#maximizeModal{{gadget.id}}"></i>
                                     {% endif %}
@@ -404,7 +461,7 @@
                                             </div>
                                             <div class="modal-body" id="maximizeModalBody{{gadget.id}}">
                                                 <canvas id="gadget-{{ gadget.id }}-max"
-                                                                    style="max-height: 500px;"></canvas>
+                                                width="700" height="300" style="width: 700px; height: 300px;"></canvas>
                                                 <!-- Gadget will be injected here -->
                                             </div>
                                         </div>
@@ -416,280 +473,253 @@
                                 <canvas id="gadget-{{ gadget.id }}" width="300" height="200"></canvas>
 
                                 <script>
-                                (function () {
-                                    const canvasId = 'gadget-{{ gadget.id }}';
-                                    const gadgetId = {{ gadget.id }};
-                                    const selectedMeasurement = "{{ gadget.measurement.all.0 }}";
-                                    const dashboardId = {{ dashboard.id }};
-                                    const ctx = document.getElementById(canvasId).getContext('2d');
-                                    let chartInstance = null;
-
-                                    function generateColor(index) {
-                                        return `hsl(${(index * 137) % 360}, 70%, 50%)`;
-                                    }
-                                    const meterNames = {
-                                        {% for meter in gadget.meters.all %}
-                                            {{ meter.id }}: "{{ meter.name }}",
-                                        {% endfor %}
-                                    };
-
-                                    function updateChart(readingData) {
-                                        const meterGroups = {};
-
-                                        readingData.forEach(entry => {
-                                            const meterId = entry.meter_id;
-                                            const timestamp = entry.timestamp;
-                                            const value = entry.data[selectedMeasurement];
-
-                                            if (!meterGroups[meterId]) {
-                                                meterGroups[meterId] = [];
-                                            }
-
-                                            meterGroups[meterId].push({ timestamp, value });
-
-                                            if (meterGroups[meterId].length > 10) {
-                                                meterGroups[meterId].shift();
-                                            }
-                                        });
-
-                                        const datasets = Object.entries(meterGroups).map(([meterId, entries], index) => {
-                                        const meterName = meterNames[meterId] || `Meter ${meterId}`;
-                                        return {
-                                            label: meterName,
-                                            data: entries.map(e => e.value),
-                                            borderColor: generateColor(index),
-                                            borderWidth: 1.2,
-                                            pointRadius: 2,
-                                            tension: 0.3,
-                                            fill: false,
+                                    (function () {
+                                        const gadgetId = {{ gadget.id }};
+                                        const selectedMeasurement = "{{ gadget.measurement.all.0 }}";
+                                        const dashboardId = {{ dashboard.id }};
+                                    
+                                        // Main canvas
+                                        const ctx = document.getElementById(`gadget-${gadgetId}`).getContext('2d');
+                                    
+                                        // Maximized canvas
+                                        const ctxMax = document.getElementById(`gadget-${gadgetId}-max`)?.getContext('2d');
+                                    
+                                        let chartInstance = null;
+                                        let chartInstanceMax = null;
+                                    
+                                        function generateColor(index) {
+                                            return `hsl(${(index * 137) % 360}, 70%, 50%)`;
+                                        }
+                                    
+                                        const meterNames = {
+                                            {% for meter in gadget.meters.all %}
+                                                {{ meter.id }}: "{{ meter.name }}",
+                                            {% endfor %}
                                         };
-                                    });
-
-                                        const labels = Object.values(meterGroups)[0]?.map(e => e.timestamp) || [];
-
-                                        const allValues = datasets.flatMap(ds => ds.data);
-                                        const minValue = Math.min(...allValues);
-                                        const maxValue = Math.max(...allValues);
-                                        const padding = (maxValue - minValue) * 0.05 || 1;
-                                        const yMin = minValue - padding;
-                                        const yMax = maxValue + padding;
-
-                                        if (chartInstance) chartInstance.destroy();
-
-                                        chartInstance = new Chart(ctx, {
-                                            type: 'line',
-                                            data: {
-                                                labels: labels,
-                                                datasets: datasets
-                                            },
-                                            options: {
-                                                responsive: true,
-                                                animation: false,
-                                                plugins: {
-                                                    legend: {
-                                                        position: 'top',
-                                                        labels: {
-                                                            boxWidth: 10,
-                                                            boxHeight: 10,
-                                                            font: { size: 10 },
-                                                            padding: 8
-                                                        }
-                                                    },
-                                                    title: {
-                                                        display: true,
-                                                        text: selectedMeasurement
-                                                    }
+                                    
+                                        function updateChart(readingData) {
+                                            const meterGroups = {};
+                                    
+                                            readingData.forEach(entry => {
+                                                const meterId = entry.meter_id;
+                                                const timestamp = entry.timestamp;
+                                                const value = entry.data[selectedMeasurement];
+                                    
+                                                if (!meterGroups[meterId]) {
+                                                    meterGroups[meterId] = [];
+                                                }
+                                    
+                                                meterGroups[meterId].push({ timestamp, value });
+                                    
+                                                if (meterGroups[meterId].length > 10) {
+                                                    meterGroups[meterId].shift();
+                                                }
+                                            });
+                                    
+                                            const datasets = Object.entries(meterGroups).map(([meterId, entries], index) => {
+                                                const meterName = meterNames[meterId] || `Meter ${meterId}`;
+                                                return {
+                                                    label: meterName,
+                                                    data: entries.map(e => e.value),
+                                                    borderColor: generateColor(index),
+                                                    borderWidth: 1.2,
+                                                    pointRadius: 2,
+                                                    tension: 0.3,
+                                                    fill: false,
+                                                };
+                                            });
+                                    
+                                            const labels = Object.values(meterGroups)[0]?.map(e => e.timestamp) || [];
+                                    
+                                            const allValues = datasets.flatMap(ds => ds.data);
+                                            const minValue = Math.min(...allValues);
+                                            const maxValue = Math.max(...allValues);
+                                            const padding = (maxValue - minValue) * 0.05 || 1;
+                                            const yMin = minValue - padding;
+                                            const yMax = maxValue + padding;
+                                    
+                                            // Destroy old chart(s)
+                                            if (chartInstance) chartInstance.destroy();
+                                            if (chartInstanceMax) chartInstanceMax.destroy();
+                                    
+                                            // Chart config
+                                            const config = {
+                                                type: 'line',
+                                                data: {
+                                                    labels: labels,
+                                                    datasets: datasets
                                                 },
-                                                scales: {
-                                                    x: {
-                                                        title: {
-                                                            display: true,
-                                                            text: 'Time'
-                                                        }
-                                                    },
-                                                    y: {
+                                                options: {
+                                                    responsive: true,
+                                                    animation: false,
+                                                    plugins: {
+                                                        legend: {
+                                                            position: 'top',
+                                                            labels: {
+                                                                boxWidth: 10,
+                                                                boxHeight: 10,
+                                                                font: { size: 10 },
+                                                                padding: 8
+                                                            }
+                                                        },
                                                         title: {
                                                             display: true,
                                                             text: selectedMeasurement
+                                                        }
+                                                    },
+                                                    scales: {
+                                                        x: {
+                                                            title: {
+                                                                display: true,
+                                                                text: 'Time'
+                                                            }
                                                         },
-                                                        min: yMin,
-                                                        max: yMax
+                                                        y: {
+                                                            title: {
+                                                                display: true,
+                                                                text: selectedMeasurement
+                                                            },
+                                                            min: yMin,
+                                                            max: yMax
+                                                        }
                                                     }
                                                 }
+                                            };
+                                    
+                                            // Render on both canvases
+                                            chartInstance = new Chart(ctx, config);
+                                    
+                                            if (ctxMax) {
+                                                chartInstanceMax = new Chart(ctxMax, config);
                                             }
+                                        }
+                                    
+                                        // Date picker event
+                                        document.getElementById("datepicker-{{ gadget.id }}").addEventListener("change", function () {
+                                            const selectedDatetime = this.value;
+                                            if (!selectedDatetime) return;
+                                    
+                                            const url = `/dashboard/${dashboardId}/fetchDateTimeWindow/${gadgetId}/${selectedDatetime}/`;
+                                    
+                                            axios.get(url)
+                                                .then(response => updateChart(response.data.readingData))
+                                                .catch(error => console.error("Error fetching windowed data:", error));
                                         });
-                                    }
-
-                                    // Event: DateTime change
-                                    document.getElementById("datepicker-{{ gadget.id }}").addEventListener("change", function () {
-                                        const selectedDatetime = this.value;
-                                        if (!selectedDatetime) return;
-
-                                        const url = `/dashboard/${dashboardId}/fetchDateTimeWindow/${gadgetId}/${selectedDatetime}/`;
-
-                                        axios.get(url)
-                                            .then(response => updateChart(response.data.readingData))
-                                            .catch(error => console.error("Error fetching windowed data:", error));
-                                    });
-
-                                    function fetchDataAndUpdateChart() {
-                                        axios.get(`/dashboard/${dashboardId}/fetchLatestReadings/${gadgetId}`)
-                                            .then(response => updateChart(response.data.readingData))
-                                            .catch(error => console.error("Error fetching data:", error));
-                                    }
-
-                                    fetchDataAndUpdateChart();
-                                    setInterval(fetchDataAndUpdateChart, 60000);
-                                })();
-                                </script>
+                                    
+                                        function fetchDataAndUpdateChart() {
+                                            axios.get(`/dashboard/${dashboardId}/fetchLatestReadings/${gadgetId}`)
+                                                .then(response => updateChart(response.data.readingData))
+                                                .catch(error => console.error("Error fetching data:", error));
+                                        }
+                                    
+                                        fetchDataAndUpdateChart();
+                                        setInterval(fetchDataAndUpdateChart, 60000);
+                                    })();
+                                    </script>
+                                    
 
                                 {% elif gadget.gadget_type == 'pie' %}
 
                                 <canvas id="gadget-{{ gadget.id }}" width="300" height="200"></canvas>
 
-                                <!-- <script>
-                                (function () {
-                                    const gadgetId = {{ gadget.id }};
-                                    const dashboardId = {{ dashboard.id }};
-                                    const pieCanvas = document.getElementById("gadget-{{ gadget.id }}");
-                                    let pieChart;
-
-                                    function fetchPieData() {
-                                        const interval = document.getElementById(`interval-select-${gadgetId}`).value;
-                                        const measurement = '{{ gadget.measurement.all.0.name }}';
-
-                                        axios.get(`/dashboard/${dashboardId}/pieData/${gadgetId}/${encodeURIComponent(measurement)}/${interval}/`)
-                                            .then(response => {
-                                                const data = response.data.data;
-                                                const labels = data.map(d => d.meter);
-                                                const values = data.map(d => d.value);
-                                                const colors = labels.map((_, i) => `hsl(${(i * 137) % 360}, 70%, 50%)`);
-
-                                                if (pieChart) pieChart.destroy();
-
-                                                pieChart = new Chart(pieCanvas, {
-                                                    type: 'pie',
-                                                    data: {
-                                                        labels: labels,
-                                                        datasets: [{
-                                                            data: values,
-                                                            backgroundColor: colors
-                                                        }]
-                                                    },
-                                                    options: {
-                                                        responsive: true,
-                                                        plugins: {
-                                                            legend: {
-                                                                position: 'bottom',
-                                                                labels: {
-                                                                    boxWidth: 10,
-                                                                    font: { size: 10 }
-                                                                }
-                                                            },
-                                                            title: {
-                                                                display: true,
-                                                                text: `${measurement} over ${interval}`
-                                                            }
-                                                        }
-                                                    }
-                                                });
-                                            })
-                                            .catch(error => {
-                                                console.error("Error fetching pie data:", error);
-                                            });
-                                    }
-
-                                    document.getElementById(`interval-select-${gadgetId}`).addEventListener("change", fetchPieData);
-
-                                    fetchPieData();  // Initial load
-                                })(); 
-                            </script> -->
-                            
-
-                            <script>
-                               (function() {
-                                const gadgetId = {{ gadget.id }};
-                                const dashboardId = {{ dashboard.id }};
-                                const pieCanvas = document.getElementById("gadget-{{ gadget.id }}");
-                                const dateInput = document.getElementById("datepicker-{{ gadget.id }}");
-                                let pieChart;
-
-                                function fetchDailyPieData() {
-                                    const date = dateInput.value;
-                                    const measurement = '{{ gadget.measurement.all.0.name }}';
-                                    if (!date) return;
-
-                                    const url = `/dashboard/${dashboardId}/pieData/${gadgetId}/${encodeURIComponent(measurement)}/${date}/`;
-
-                                    axios.get(url)
-                                        .then(response => {
-                                            const data = response.data.data;
-                                            const labels = data.map(d => d.meter);
-                                            const values = data.map(d => d.value);
-                                            const colors = labels.map((_, i) => `hsl(${(i * 137) % 360}, 70%, 50%)`);
-
-                                            if (pieChart) pieChart.destroy();
-
-                                            pieChart = new Chart(pieCanvas, {
-                                                type: 'pie',
-                                                data: {
-                                                    labels: labels,
-                                                    datasets: [{
-                                                        data: values,
-                                                        backgroundColor: colors
-                                                    }]
-                                                },
-                                                options: {
-                                                    responsive: false,
-                                                    layout: {
-                                                        padding: 0
-                                                    },
-                                                    plugins: {
-                                                        legend: {
-                                                            position: 'bottom',
-                                                            labels: {
-                                                                color:'#6c757d',
-                                                                font: { size: 10 },
-                                                                boxWidth: 10,
-                                                                boxHeight: 10,
-                                                                usePointStyle: true,
-                                                                generateLabels: function(chart) {
-                                                                    const dataset = chart.data.datasets[0];
-                                                                    return chart.data.labels.map((label, i) => ({
-                                                                        text: label,
-                                                                        textColor: '#6c757d',
-                                                                        fillStyle: '#222',
-                                                                        strokeStyle: dataset.backgroundColor[i],
-                                                                        lineWidth: 2,
-                                                                        pointStyle: 'rect',
-                                                                        hidden: false,
-                                                                        index: i
-                                                                    }));
-                                                                }
-                                                            }
+                                <script>
+                                    (function() {
+                                        const gadgetId = {{ gadget.id }};
+                                        const dashboardId = {{ dashboard.id }};
+                                        const pieCanvas = document.getElementById(`gadget-${gadgetId}`);
+                                        const pieCanvasMax = document.getElementById(`gadget-${gadgetId}-max`);
+                                        const dateInput = document.getElementById(`datepicker-{{ gadget.id }}`);
+                                        const periodSelector = document.getElementById(`period-selector-{{ gadget.id }}`);
+                                    
+                                        let pieChart = null;
+                                        let pieChartMax = null;
+                                    
+                                        function fetchPieData() {
+                                            const date = dateInput.value;
+                                            const measurement = '{{ gadget.measurement.all.0.name }}';
+                                            const period = periodSelector.value;
+                                    
+                                            if (!date) return;
+                                    
+                                            const url = `/dashboard/${dashboardId}/data/${gadgetId}/${encodeURIComponent(measurement)}/${date}/${period}`;
+                                    
+                                            axios.get(url)
+                                                .then(response => {
+                                                    const data = response.data.data;
+                                                    console.log(data);
+                                    
+                                                    const labels = data.map(d => d.meter);
+                                                    const values = data.map(d => d.value);
+                                                    const colors = labels.map((_, i) => `hsl(${(i * 137) % 360}, 70%, 50%)`);
+                                    
+                                                    const chartConfig = {
+                                                        type: 'pie',
+                                                        data: {
+                                                            labels: labels,
+                                                            datasets: [{
+                                                                data: values,
+                                                                backgroundColor: colors,
+                                                                borderWidth: 0,
+                                                                borderColor: 'transparent'
+                                                            }]
                                                         },
-                                                        title: {
-                                                            display: true,
-                                                            text: `${measurement} on ${date}`
+                                                        options: {
+                                                            responsive: false,
+                                                            maintainAspectRatio: false,
+                                                            layout: { padding: { bottom: 10 } },
+                                                            plugins: {
+                                                                legend: {
+                                                                    position: 'top',
+                                                                    align: 'start',
+                                                                    labels: {
+                                                                        color: '#6c757d',
+                                                                        font: { size: 10 },
+                                                                        boxWidth: 10,
+                                                                        boxHeight: 10,
+                                                                        generateLabels: function(chart) {
+                                                                            const data = chart.data;
+                                                                            return data.labels.map((label, i) => {
+                                                                                const backgroundColor = data.datasets[0].backgroundColor[i];
+                                                                                const value = data.datasets[0].data[i];
+                                                                                return {
+                                                                                    text: `${label} (${value})`,
+                                                                                    fillStyle: backgroundColor,
+                                                                                    strokeStyle: undefined,
+                                                                                    lineWidth: 0,
+                                                                                    color: '#6c757d',
+                                                                                    index: i,
+                                                                                };
+                                                                            });
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
                                                         }
+                                                    };
+                                    
+                                                    if (pieChart) pieChart.destroy();
+                                                    if (pieChartMax) pieChartMax.destroy();
+                                    
+                                                    pieChart = new Chart(pieCanvas, chartConfig);
+                                    
+                                                    if (pieCanvasMax) {
+                                                        pieChartMax = new Chart(pieCanvasMax, chartConfig);
                                                     }
-                                                }
-                                            });
-                                        })
-                                        .catch(error => {
-                                            console.error("Error fetching pie data:", error);
-                                        });
-                                }
-
-                                // Set today's date in input and trigger fetch
-                                const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
-                                dateInput.value = today;
-                                dateInput.addEventListener("change", fetchDailyPieData);
-
-                                window.addEventListener("DOMContentLoaded", fetchDailyPieData);
-                            })();
-
-                            </script>
+                                                })
+                                                .catch(error => {
+                                                    console.error("Error fetching pie data:", error);
+                                                });
+                                        }
+                                    
+                                        const today = new Date().toISOString().split("T")[0];
+                                        dateInput.value = today;
+                                    
+                                        dateInput.addEventListener("change", fetchPieData);
+                                        periodSelector.addEventListener("change", fetchPieData);
+                                        window.addEventListener("DOMContentLoaded", fetchPieData);
+                                    })();
+                                    </script>
+                                    
 
                             
                             {% elif gadget.gadget_type == 'tool' %}
@@ -697,8 +727,8 @@
                                 <table id="gadget-{{ gadget.id }}" class="table table-dark border-none table-sm mb-0" style="border-collapse: collapse">
                                     <thead >
                                         <tr>
-                                            <th scope="col">Field</th>
-                                            <th scope="col">Value</th>
+                                            <th scope="col" style="font-size: smaller;">Field</th>
+                                            <th scope="col" style="font-size: smaller;">Value</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -726,9 +756,9 @@
                                             const value = reading.data[measurement];
                                             const row = document.createElement('tr');
                                             row.innerHTML = `
-                                                <td style="border: none;">${measurement}</td>
+                                                <td style="border: none; font-size: smaller;">${measurement}</td>
                                                 <td style="border: none;">
-                                                    <input class="form-control form-control-sm" value="${value !== undefined ? value : 'N/A'}" style="width: 100px; height: 20px;">
+                                                    <input class="form-control form-control-sm" value="${value !== undefined ? value : 'N/A'}" style="width: 70px; height: 15px; font-size: smaller;">
                                                 </td>
                                             `;
                                             tableBody.appendChild(row);
@@ -756,80 +786,305 @@
                             
                             
 
+                                {% elif gadget.gadget_type == 'bar' %}
+                                <canvas id="gadget-{{ gadget.id }}" width="300" height="200"></canvas>
+                                <div class="form-check form-switch d-inline-block ms-2">
+                                    <input class="form-check-input" type="checkbox" id="toggle-current-year-{{ gadget.id }}" checked>
+                                    <label class="form-check-label small" for="toggle-current-year-{{ gadget.id }}">Show Only Current Year</label>
+                                  </div>
+                                  <script>
+                                    (function () {
+                                        const gadgetId = {{ gadget.id }};
+                                        const dashboardId = {{ dashboard.id }};
+                                        const barCanvas = document.getElementById(`gadget-{{ gadget.id }}`);
+                                        const barCanvasMax = document.getElementById(`gadget-{{ gadget.id }}-max`);
+                                        const dateInput = document.getElementById(`datepicker-{{ gadget.id }}`);
+                                        const periodSelector = document.getElementById(`period-selector-{{ gadget.id }}`);
+                                    
+                                        // Range inputs
+                                        const startDateInput = document.getElementById(`start-date-${gadgetId}`);
+                                        const endDateInput = document.getElementById(`end-date-${gadgetId}`);
+                                        const startWeekInput = document.getElementById(`start-week-${gadgetId}`);
+                                        const endWeekInput = document.getElementById(`end-week-${gadgetId}`);
+                                        const startMonthInput = document.getElementById(`start-month-${gadgetId}`);
+                                        const endMonthInput = document.getElementById(`end-month-${gadgetId}`);
+                                    
+                                        let barChart = null;
+                                        let barChartMax = null;
+                                    
+                                        function updateRangeSelectorsVisibility() {
+                                            const period = periodSelector.value;
+                                            const iconContainer = document.getElementById(`range-selectors-${gadgetId}`);
+                                    
+                                            [
+                                                startDateInput, endDateInput,
+                                                startWeekInput, endWeekInput,
+                                                startMonthInput, endMonthInput
+                                            ].forEach(input => input.classList.add('d-none'));
+                                    
+                                            if (['daily', 'weekly', 'monthly'].includes(period)) {
+                                                iconContainer.classList.remove('d-none');
+                                                document.getElementById('dateInputAlternate').classList.add('d-none');
+                                            } else {
+                                                iconContainer.classList.add('d-none');
+                                                document.getElementById('dateInputAlternate').classList.remove('d-none');
+                                            }
+                                        }
+                                    
+                                        function generateYearColors(baseHue) {
+                                            return {
+                                                older: `hsl(${baseHue}, 70%, 80%)`,   // pale
+                                                latest: `hsl(${baseHue}, 70%, 50%)`   // vivid
+                                            };
+                                            }
+                                    
+                                        function fetchGroupedBarData() {
+                                            const date = dateInput.value;
+                                            const measurement = '{{ gadget.measurement.all.0.name }}';
+                                            const period = periodSelector.value;
+                                            if (!date) return;
+                                    
+                                            let url = `/dashboard/${dashboardId}/multiYearBarData/${gadgetId}/${encodeURIComponent(measurement)}/${date}/${period}`;
+                                    
+                                            let start = null;
+                                            let end = null;
+                                    
+                                            if (period === 'daily') {
+                                                start = startDateInput.value;
+                                                end = endDateInput.value;
+                                            } else if (period === 'weekly') {
+                                                start = startWeekInput.value;
+                                                end = endWeekInput.value;
+                                            } else if (period === 'monthly') {
+                                                start = startMonthInput.value;
+                                                end = endMonthInput.value;
+                                            }
+                                    
+                                            const params = new URLSearchParams();
+                                            if (start) params.append('start', start);
+                                            if (end) params.append('end', end);
+                                    
+                                            if ([...params].length) {
+                                                url += `?${params.toString()}`;
+                                            }
+                                    
+                                            axios.get(url)
+                                                .then(response => {
+                                                    const labels = response.data.labels;
+                                                    const years = response.data.years;
+                                                    const latestYear = new Date(date).getFullYear().toString();
+                                                    const data = response.data.data;
+                                    
+                                                    if (barChart) barChart.destroy();
+                                                    if (barChartMax) barChartMax.destroy();
+                                    
+                                                    const datasets = [];
+                                                    data.forEach((meterData, meterIndex) => {
+                                                        const baseHue = (meterIndex * 137) % 360;
+                                                        const colors = generateYearColors(baseHue);
 
-                                
+                                                        years.forEach(year => {
+                                                            const isLatest = year === latestYear;
+                                                            const values = meterData.values[year] || []; // fallback empty
 
-                                {% elif gadget.gadget_type == 'line' %}
-                                <div id="spinner-{{ gadget.id }}" style="
-                                    position: absolute;
-                                    top: 0; left: 0;
-                                    width: 100%;
-                                    height: 100%;
-                                    background: #24252a;
-                                    display: flex;
-                                    justify-content: center;
-                                    align-items: center;
-                                    z-index: 999;
-                                ">
-                                    <div class="spinner" style="
-                                        width: 40px;
-                                        height: 40px;
-                                        border: 4px solid #ccc;
-                                        border-top: 4px solid #3498db;
-                                        border-radius: 50%;
-                                        animation: spin 1s linear infinite;
-                                    "></div>
-                                </div>
-                                <style>
-                                    @keyframes spin {
-                                      0% { transform: rotate(0deg); }
-                                      100% { transform: rotate(360deg); }
-                                    }
-                                </style>
+                                                            // Only push if there's actual data
+                                                            if (!values.length || values.every(v => v === 0 || v === null)) {
+                                                            return;
+                                                            }
 
-                                <canvas id="gadget-{{ gadget.id }}" style="max-height: 220px;"></canvas>
-                               
-                                {% elif gadget.gadget_type == 'table' %}
-                                
-                                <script>
-                                    document.getElementById('gadget-{{ gadget.id }}-max').style.display = 'none';
-                                    let maxModal = document.getElementById('maximizeModalBody{{gadget.id}}');
-                                    maxModal.innerHTML = `
-                                    <div style="overflow-y: auto;">
-                                    <table class="table table-striped table-dark text-light" style="font-size: 12px; width: 100%;">
-                                        {% if gadget.id in gadget_csv_data %}
-                                            {% for row in gadget_csv_data|get_item:gadget.id %}
-                                                <tr>
-                                                    {% for col in row %}
-                                                        <td>{{ col }}</td>
-                                                    {% endfor %}
-                                                </tr>
-                                            {% endfor %}
-                                        {% else %}
-                                            <tr><td>No CSV data found</td></tr>
-                                        {% endif %}
-                                    </table>
-                                </div>
-                                `
-                                </script>
-                                <div style="max-height: 200px; min-width: 300px; max-width: 450px; overflow-y: auto;">
-                                    <table class="table table-sm table-striped table-dark text-light" style="font-size: 12px; width: 100%;">
-                                        {% if gadget.id in gadget_csv_data %}
-                                            {% for row in gadget_csv_data|get_item:gadget.id %}
-                                                <tr>
-                                                    {% for col in row %}
-                                                        <td>{{ col }}</td>
-                                                    {% endfor %}
-                                                </tr>
-                                            {% endfor %}
-                                        {% else %}
-                                            <tr><td>No CSV data found</td></tr>
-                                        {% endif %}
-                                    </table>
-                                </div>
+                                                            datasets.push({
+                                                            label: `${meterData.meter} ${year}`,
+                                                            data: values,
+                                                            backgroundColor: isLatest ? colors.latest : colors.older,
+                                                            borderWidth: 0,
+                                                            customYear: year,
+                                                            });
+                                                        });
+                                                    });
 
-                                
-                                {% endif %}
+                                    
+                                                    const chartConfig = {
+                                                        type: 'bar',
+                                                        data: {
+                                                            labels: labels,
+                                                            datasets: datasets
+                                                        },
+                                                        options: {
+                                                            responsive: true,
+                                                            maintainAspectRatio: true,
+                                                            layout: { padding: { bottom: 10 } },
+                                                            plugins: {
+                                                                legend: {
+                                                                    position: 'bottom',
+                                                                    labels: {
+                                                                        color: '#6c757d',
+                                                                        font: { size: 10 },
+                                                                        boxWidth: 10,
+                                                                        boxHeight: 10,
+                                                                        filter: function (item) {
+                                                                            return item.text !== '';
+                                                                        }
+                                                                    }
+                                                                },
+                                                                title: {
+                                                                    display: true,
+                                                                    text: `${measurement} - ${period.charAt(0).toUpperCase() + period.slice(1)}`
+                                                                },
+                                                                tooltip: {
+                                                                    callbacks: {
+                                                                        label: function (context) {
+                                                                            const value = context.parsed.y;
+                                                                            const year = context.dataset.customYear;
+                                                                            return `${year} - ${value}`;
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            scales: {
+                                                                x: {
+                                                                    stacked: false,
+                                                                    ticks: {
+                                                                        color: '#6c757d',
+                                                                        font: { size: 10 }
+                                                                    },
+                                                                    grid: { display: false }
+                                                                },
+                                                                y: {
+                                                                    beginAtZero: true,
+                                                                    ticks: {
+                                                                        color: '#6c757d',
+                                                                        font: { size: 10 }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    };
+                                    
+                                                    barChart = new Chart(barCanvas, chartConfig);
+                                                    barChartMax = new Chart(barCanvasMax, chartConfig);
+                                                })
+                                                .catch(error => {
+                                                    console.error("Error fetching grouped bar chart data:", error);
+                                                });
+                                        }
+                                    
+                                        const today = new Date().toISOString().split("T")[0];
+                                        dateInput.value = today;
+                                    
+                                        updateRangeSelectorsVisibility();
+                                        fetchGroupedBarData();
+                                    
+                                        function updateDateInputFromRange() {
+                                            if (startDateInput.value) {
+                                                dateInput.value = startDateInput.value;
+                                            } else if (startWeekInput.value) {
+                                                const [year, week] = startWeekInput.value.split('-W');
+                                                const simpleDate = new Date(year, 0, (week - 1) * 7 + 1);
+                                                dateInput.value = simpleDate.toISOString().slice(0, 10);
+                                            } else if (startMonthInput.value) {
+                                                dateInput.value = startMonthInput.value + "-01";
+                                            }
+                                            dateInput.dispatchEvent(new Event('change'));
+                                        }
+                                    
+                                        startDateInput.addEventListener('change', updateDateInputFromRange);
+                                        startWeekInput.addEventListener('change', updateDateInputFromRange);
+                                        startMonthInput.addEventListener('change', updateDateInputFromRange);
+                                    
+                                        dateInput.addEventListener("change", fetchGroupedBarData);
+                                        periodSelector.addEventListener("change", () => {
+                                            updateRangeSelectorsVisibility();
+                                            fetchGroupedBarData();
+                                        });
+                                    
+                                        [startDateInput, endDateInput, startWeekInput, endWeekInput, startMonthInput, endMonthInput]
+                                            .forEach(input => input.addEventListener("change", fetchGroupedBarData));
+                                    
+                                        document.getElementById(`toggle-current-year-{{ gadget.id }}`).addEventListener("change", fetchGroupedBarData);
+                                    
+                                        const openStartIcon = document.getElementById(`open-start-picker-{{ gadget.id }}`);
+                                        const openEndIcon = document.getElementById(`open-end-picker-{{ gadget.id }}`);
+                                    
+                                        openStartIcon.addEventListener("click", () => {
+                                            const period = periodSelector.value;
+                                            if (period === "daily") startDateInput.showPicker();
+                                            else if (period === "weekly") startWeekInput.showPicker();
+                                            else if (period === "monthly") startMonthInput.showPicker();
+                                        });
+                                    
+                                        openEndIcon.addEventListener("click", () => {
+                                            const period = periodSelector.value;
+                                            if (period === "daily") endDateInput.showPicker();
+                                            else if (period === "weekly") endWeekInput.showPicker();
+                                            else if (period === "monthly") endMonthInput.showPicker();
+                                        });
+                                    
+                                    })();
+                                    </script>
+                                    
+                                    {% elif gadget.gadget_type == 'table' %}
+
+                                    <!-- Table container -->
+                                    <div style="max-height: 200px; min-width: 300px; max-width: 450px; overflow-y: auto;">
+                                      <table id="gadget-{{ gadget.id }}" class="table table-sm table-striped table-dark text-light" style="font-size: 12px; width: 100%;">
+                                        <thead style="margin-top: 0;">
+                                          <tr id="table-head-{{ gadget.id }}"></tr>
+                                        </thead>
+                                        <tbody id="table-body-{{ gadget.id }}"></tbody>
+                                      </table>
+                                    </div>
+                                    
+                                    
+                                    <script>
+                                    (function() {
+                                      const gadgetId = {{ gadget.id }};
+                                      const dashboardId = {{ dashboard.id }};
+                                      const tableHead = document.getElementById(`table-head-${gadgetId}`);
+                                      const tableBody = document.getElementById(`table-body-${gadgetId}`);
+                                      const modalBody = document.getElementById(`maximizeModalBody${gadgetId}`);
+                                    
+                                      function updateTable(rows) {
+                                        if (!rows.length) return;
+                                    
+                                        // Determine unique fields
+                                        const fields = Object.keys(rows[0]);
+                                    
+                                        // Build header
+                                        tableHead.innerHTML = fields.map(f => `<th>${f}</th>`).join('');
+                                    
+                                        // Build body
+                                        tableBody.innerHTML = rows.map(row => {
+                                          const tds = fields.map(f => `<td>${row[f] !== undefined ? row[f] : ''}</td>`).join('');
+                                          return `<tr>${tds}</tr>`;
+                                        }).join('');
+                                    
+                                        // Same for modal
+                                        const modalTable = `
+                                          <div style="overflow-y: auto;">
+                                            <table class="table table-striped table-dark text-light" style="font-size: 12px; width: 100%;">
+                                              <thead><tr>${fields.map(f => `<th>${f}</th>`).join('')}</tr></thead>
+                                              <tbody>
+                                                ${rows.map(row => `<tr>${fields.map(f => `<td>${row[f] !== undefined ? row[f] : ''}</td>`).join('')}</tr>`).join('')}
+                                              </tbody>
+                                            </table>
+                                          </div>
+                                        `;
+                                        modalBody.innerHTML = modalTable;
+                                      }
+                                    
+                                      function fetchTableData() {
+                                        axios.get(`/dashboard/${dashboardId}/fetchTableData/${gadgetId}`)
+                                          .then(response => updateTable(response.data.rows))
+                                          .catch(error => console.error('Error fetching table data:', error));
+                                      }
+                                    
+                                      fetchTableData();
+                                      setInterval(fetchTableData, 60000);
+                                    })();
+                                    </script>
+                                    
+                                    {% endif %}
+                                    
                             </div>
                         </div>
                         {% endfor %}
