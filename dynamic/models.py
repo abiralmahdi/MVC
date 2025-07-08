@@ -33,6 +33,7 @@ class Meters(models.Model):
     def __str__(self):
         return self.name
 
+
 class Measurements(models.Model):
     name = models.CharField(max_length=100)
     meter = models.ForeignKey(Meters, related_name='measurements', on_delete=models.CASCADE)

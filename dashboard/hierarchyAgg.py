@@ -14,7 +14,7 @@ TARGET_MEASUREMENTS = [
     "Reactive Power L3",
     "Apparent Power L1",
     "Apparent Power L2",
-    "Apparent Power L3",
+    "Apparent Power L3", 
     "Total Volume",
     "Air Flow"
 ]
@@ -84,7 +84,7 @@ def create_hierarchy_aggregate(site, period_type, start_date):
                     # Accumulate area total
                     area_total[name] = area_total.get(name, 0) + diff
 
-                area_data["meters"][meter.name] = {"data": meter_data}
+                area_data["meters"][meter.name] = {"data": meter_data, "loadType": meter.loadType.name}
 
             for name, value in area_total.items():
                 building_total[name] = building_total.get(name, 0) + value

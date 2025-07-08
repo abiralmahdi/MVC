@@ -127,6 +127,8 @@
                             <option value="line">Trend Graph</option>
                             <option value="table" id="table-option">Table</option>
                             <option value="tool" id="tool-option">Tool</option>
+                            <option value="sankey" id="sankey-option">Sankey</option>
+                            <option value="heatmap" id="heat-map">Heat Map</option>
                         </select>
                     </div>
 
@@ -287,8 +289,6 @@
             <div class="">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h1 class="h5">
-                        <button class="btn btn-info btn-sm ps-2 me-2" id="treeToggleBtn" style="border-radius: 1000px;"
-                            onclick="toggleTree()"><i class="fa-solid fa-arrow-left"></i></button>
                         {{ dashboard.title }}
 
                     </h1>
@@ -298,7 +298,7 @@
                 <div class="d-flex">
                     <!-- Tree Sidebar -->
                     <div id="tree" class="me-1 border-end border-dark text-secondary"
-                        style="min-width: 225px; overflow-y: auto; height: 75vh; font-size: small;">
+                        style="width: 220px; overflow-y: auto; height: 75vh; font-size: small;">
                         <ul class="list-group text-secondary">
                             {% for site in sites %}
                             <li class="list-group-item bg-dark border-dark text-secondary">
@@ -308,7 +308,7 @@
                                         {{ site.name }}
                                     </a>
                                 </strong>
-                                <ul class="list-group bg-dark border-dark text-secondary collapse ms-1"
+                                <ul class="list-group bg-dark border-dark text-secondary collapse"
                                     id="site-{{ site.id }}">
                                     {% for building in site.buildings.all %}
                                     <li class="list-group-item bg-dark border-dark text-secondary">
@@ -317,7 +317,7 @@
                                             aria-controls="building-{{ building.id }}">
                                             {{ building.name }}
                                         </a>
-                                        <ul class="list-group bg-dark border-dark text-secondary collapse ms-1"
+                                        <ul class="list-group bg-dark border-dark text-secondary collapse"
                                             id="building-{{ building.id }}">
                                             {% for area in building.areas.all %}
                                             <li class="list-group-item bg-dark border-dark text-secondary">
@@ -326,7 +326,7 @@
                                                     aria-controls="area-{{ area.id }}">
                                                     {{ area.name }}
                                                 </a>
-                                                <ul class="list-group bg-dark border-dark text-secondary collapse ms-1"
+                                                <ul class="list-group bg-dark border-dark text-secondary collapse"
                                                     style="font-size: smaller; width: 150px;" id="area-{{ area.id }}">
                                                     {% for meter in area.meters.all %}
                                                     <li class="list-group-item bg-dark border-dark text-secondary meter-item"
@@ -346,15 +346,15 @@
                         </ul>
                     </div>
 
-
-                    <div class=" d-flex flex-wrap ">
+                    
+                    <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
+                    <div id="masonry-grid">
                         {% for gadget in gadgets %}
-                        <div>
-                            <div class="p-3 shadow mb-1 mx-1 gadget-item" id="gadget-wrapper-{{ gadget.id }}"
-                                style="height: 290px; width: 350px;"
+                            <div class="p-3 shadow mb-1 gadget-item" id="gadget-wrapper-{{ gadget.id }}"
+                                style="height: 290px; width: 330px;"
                                 data-meter-ids='[{% for m in gadget.meters.all %}{{ m.id }}{% if not forloop.last %},{% endif %}{% endfor %}]'>
                                 <div class="d-flex">
-                                    <p class="" style="font-size: smaller;">{{ gadget.name }}</p>
+                                    <p class="" id="gadget-title{{gadget.id}}" style="font-size: smaller;">{{ gadget.name }}</p>
                                     
                                     {% if gadget.gadget_type == 'pie' %}
                                     <!-- Hidden Date Input -->
@@ -373,6 +373,22 @@
 
                                     <i class="fa-solid fa-up-right-and-down-left-from-center ms-1 maximizeGadget" data-bs-toggle="modal"
                                     data-bs-target="#maximizeModal{{gadget.id}}"></i>
+
+                                    {% elif gadget.gadget_type == 'sankey' %}
+                                    <!-- Hidden Date Input -->
+                                    <input type="date" id="datepicker-{{ gadget.id }}" class="form-control form-control-sm d-none"/>
+                                    <select id="period-selector-{{ gadget.id }}" class="form-select form-select-sm me-1 ms-auto" style="height: 20px; width: 100px; padding: 0; font-size: smaller;">
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                        <option value="yearly">Yearly</option>
+                                    </select>
+
+                                    <!-- Clickable Icon -->
+                                    <i class="fa fa-calendar-alt ms-1" style="cursor: pointer;" onclick="document.getElementById('datepicker-{{ gadget.id }}').showPicker()"></i>
+
+                                    <i class="fa-solid fa-up-right-and-down-left-from-center ms-1 maximizeGadget" data-bs-toggle="modal"
+                                    data-bs-target="#maximizeModal{{gadget.id}}"></i>
+
 
                                     {% elif gadget.gadget_type == 'line' %}
                                     <!-- Hidden Date Input -->
@@ -425,22 +441,35 @@
                                            data-bs-placement="top"
                                            title="Select End Date"></i>
                                     </div>
-                                  <script>
-                                    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-                                    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-                                        new bootstrap.Tooltip(tooltipTriggerEl)
-                                    });
-                                  </script>
 
                                     <!-- Clickable Icon -->
                                     <i class="fa fa-calendar-alt" id="dateInputAlternate" style="cursor: pointer;" onclick="document.getElementById('datepicker-{{ gadget.id }}').showPicker()"></i>
                                       <i class="fa-solid fa-up-right-and-down-left-from-center ms-1 maximizeGadget" data-bs-toggle="modal"
                                     data-bs-target="#maximizeModal{{gadget.id}}"></i>
-                                                                        
-                                    <script>
+
                                         
-                                    </script>
-                                        
+                                  {% elif gadget.gadget_type == 'heatmap' %}                                 
+                                    <!-- FontAwesome Pickers (VISIBLE) -->
+                                    <div id="range-selectors-{{ gadget.id }}" class="ms-auto" style="margin-top: -5px;">
+                                        <i id="open-start-picker-{{ gadget.id }}"
+                                           class="fas fa-calendar-alt"
+                                           style="cursor: pointer;"
+                                           data-bs-toggle="tooltip"
+                                           data-bs-placement="top"
+                                           title="Select Start Date"></i>
+                                      
+                                        <i id="open-end-picker-{{ gadget.id }}"
+                                           class="fas fa-calendar-check"
+                                           style="cursor: pointer;"
+                                           data-bs-toggle="tooltip"
+                                           data-bs-placement="top"
+                                           title="Select End Date"></i>
+                                    </div>
+
+                                    <input type="date" id="start-date-{{ gadget.id }}" class="invisible-picker" />
+                                    <input type="date" id="end-date-{{ gadget.id }}" class="invisible-picker" />
+
+
                                         {% elif gadget.gadget_type != 'tool' %}
                                         <i class="fa-solid fa-up-right-and-down-left-from-center ms-auto maximizeGadget" data-bs-toggle="modal"
                                     data-bs-target="#maximizeModal{{gadget.id}}"></i>
@@ -599,8 +628,7 @@
                                             const selectedDatetime = this.value;
                                             if (!selectedDatetime) return;
                                     
-                                            const url = `/dashboard/${dashboardId}/fetchDateTimeWindow/${gadgetId}/${selectedDatetime}/`;
-                                    
+                                            const url = `/dashboard/${dashboardId}/fetchDateTimeWindow/${gadgetId}/${selectedDatetime}/`;                                    
                                             axios.get(url)
                                                 .then(response => updateChart(response.data.readingData))
                                                 .catch(error => console.error("Error fetching windowed data:", error));
@@ -645,9 +673,7 @@
                                     
                                             axios.get(url)
                                                 .then(response => {
-                                                    const data = response.data.data;
-                                                    console.log(data);
-                                    
+                                                    const data = response.data.data;                                    
                                                     const labels = data.map(d => d.meter);
                                                     const values = data.map(d => d.value);
                                                     const colors = labels.map((_, i) => `hsl(${(i * 137) % 360}, 70%, 50%)`);
@@ -769,7 +795,6 @@
                                         axios.get(`/dashboard/${dashboardId}/fetchLatestToolData/${gadgetId}/`)
                                             .then(response => {
                                                 updateToolTable(response.data.reading);
-                                                console.log("updated too data")
                                             })
                                             .catch(error => {
                                                 console.error("Error fetching tool data:", error);
@@ -1082,11 +1107,532 @@
                                       setInterval(fetchTableData, 60000);
                                     })();
                                     </script>
-                                    
+
+
+
+
+
+
+                                    {% elif gadget.gadget_type == 'sankey' %}
+                                   
+                                   
+                                    <!-- Include ECharts -->
+                                    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+
+                                    <div id="sankey_echarts_{{ gadget.id }}" style="width: 990px; height: 400px;"></div>
+
+
+                                        <script>
+                                            const sankeyEcharts = echarts.init(document.getElementById("sankey_echarts_{{ gadget.id }}"));
+                                        
+                                            const measurement = "{{ gadget.measurement.all.0 }}";
+                                            const siteId = "{{ dashboard.site.id }}";
+                                            const dashboardId = "{{ dashboard.id }}";
+                                        
+                                            const datePicker = document.getElementById("datepicker-{{ gadget.id }}");
+                                            const periodSelector = document.getElementById("period-selector-{{ gadget.id }}");
+                                        
+                                            const gadgetWrapper = document.getElementById("gadget-wrapper-{{gadget.id}}");
+                                            gadgetWrapper.style.width = '1025px';
+                                            gadgetWrapper.style.height = '480px';
+                                        
+                                            function roundDate(date, periodType) {
+                                            const d = new Date(date);
+                                            if (periodType === 'weekly') {
+                                                // Set to Monday of this week
+                                                const day = d.getUTCDay();
+                                                const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1);
+                                                d.setUTCDate(diff);
+                                            } else if (periodType === 'monthly') {
+                                                d.setUTCDate(1);
+                                            } else if (periodType === '6monthly') {
+                                                const month = d.getUTCMonth();
+                                                const roundedMonth = month < 6 ? 0 : 6;
+                                                d.setUTCMonth(roundedMonth);
+                                                d.setUTCDate(1);
+                                            } else if (periodType === 'yearly') {
+                                                d.setUTCMonth(0);
+                                                d.setUTCDate(1);
+                                            }
+                                            return d.toISOString().split('T')[0];
+                                            }
+                                        
+                                            function drawEchartsSankey() {
+                                            const periodType = periodSelector.value;
+                                        
+                                            const rawDate = datePicker.value || "{{ start_date|default:'2025-01-01' }}";
+                                            const roundedDate = roundDate(rawDate, periodType);
+                                        
+                                            const url = `/dashboard/${dashboardId}/hierarchyy/${siteId}/${measurement}/${periodType}/${roundedDate}/`;
+                                        
+                                            fetch(url)
+                                                .then(res => res.json())
+                                                .then(data => {
+                                                const hierarchyy = data.hierarchy_data;
+                                                const hierarchy = {
+                                                                            "site_total": {
+                                                                                "Total Active Power": 40.5,
+                                                                                "Active Power L1": 19.5,
+                                                                                "Active Power L2": 13.0,
+                                                                                "Active Power L3": 8.0
+                                                                            },
+                                                                            "buildings": {
+                                                                                "Building A": {
+                                                                                "building_total": {
+                                                                                    "Total Active Power": 15.0,
+                                                                                    "Active Power L1": 7.0,
+                                                                                    "Active Power L2": 5.0,
+                                                                                    "Active Power L3": 3.0
+                                                                                },
+                                                                                "areas": {
+                                                                                    "Ground Floor": {
+                                                                                    "area_total": {
+                                                                                        "Total Active Power": 8.0,
+                                                                                        "Active Power L1": 4.5,
+                                                                                        "Active Power L2": 2.5,
+                                                                                        "Active Power L3": 1.0
+                                                                                    },
+                                                                                    "meters": {
+                                                                                        "MFM 1": {
+                                                                                        "data": {
+                                                                                            "Total Active Power": 5.0,
+                                                                                            "Active Power L1": 2.5,
+                                                                                            "Active Power L2": 1.5,
+                                                                                            "Active Power L3": 1.0
+                                                                                        }, "loadType": "HVAC"
+                                                                                        },
+                                                                                        "MFM 2": {
+                                                                                        "data": {
+                                                                                            "Total Active Power": 3.0,
+                                                                                            "Active Power L1": 2.0,
+                                                                                            "Active Power L2": 1.0,
+                                                                                            "Active Power L3": -1.0
+                                                                                        }, "loadType": "Manufacturing"
+                                                                                        }
+                                                                                    }
+                                                                                    },
+                                                                                    "First Floor": {
+                                                                                    "area_total": {
+                                                                                        "Total Active Power": 7.0,
+                                                                                        "Active Power L1": 2.5,
+                                                                                        "Active Power L2": 2.5,
+                                                                                        "Active Power L3": 2.0
+                                                                                    },
+                                                                                    "meters": {
+                                                                                        "MFM 3": {
+                                                                                        "data": {
+                                                                                            "Total Active Power": 4.0,
+                                                                                            "Active Power L1": 2.0,
+                                                                                            "Active Power L2": 1.0,
+                                                                                            "Active Power L3": 1.0
+                                                                                        }, "loadType": "HVAC"
+                                                                                        },
+                                                                                        "MFM 4": {
+                                                                                        "data": {
+                                                                                            "Total Active Power": 3.0,
+                                                                                            "Active Power L1": 0.5,
+                                                                                            "Active Power L2": 1.5,
+                                                                                            "Active Power L3": 1.0
+                                                                                        }, "loadType": "Manufacturing"
+                                                                                        }
+                                                                                    }
+                                                                                    }
+                                                                                }
+                                                                                },
+                                                                                "Building C": {
+                                                                                "building_total": {
+                                                                                    "Total Active Power": 15.0,
+                                                                                    "Active Power L1": 7.0,
+                                                                                    "Active Power L2": 5.0,
+                                                                                    "Active Power L3": 3.0
+                                                                                },
+                                                                                "areas": {
+                                                                                    "Ground Floor": {
+                                                                                    "area_total": {
+                                                                                        "Total Active Power": 8.0,
+                                                                                        "Active Power L1": 4.5,
+                                                                                        "Active Power L2": 2.5,
+                                                                                        "Active Power L3": 1.0
+                                                                                    },
+                                                                                    "meters": {
+                                                                                        "MFM 1": {
+                                                                                        "data": {
+                                                                                            "Total Active Power": 5.0,
+                                                                                            "Active Power L1": 2.5,
+                                                                                            "Active Power L2": 1.5,
+                                                                                            "Active Power L3": 1.0
+                                                                                        }, "loadType": "Manufacturing"
+                                                                                        },
+                                                                                        "MFM 2": {
+                                                                                        "data": {
+                                                                                            "Total Active Power": 3.0,
+                                                                                            "Active Power L1": 2.0,
+                                                                                            "Active Power L2": 1.0,
+                                                                                            "Active Power L3": -1.0
+                                                                                        }, "loadType": "Manufacturing"
+                                                                                        }
+                                                                                    }
+                                                                                    },
+                                                                                    "First Floor": {
+                                                                                    "area_total": {
+                                                                                        "Total Active Power": 7.0,
+                                                                                        "Active Power L1": 2.5,
+                                                                                        "Active Power L2": 2.5,
+                                                                                        "Active Power L3": 2.0
+                                                                                    },
+                                                                                    "meters": {
+                                                                                        "MFM 3": {
+                                                                                        "data": {
+                                                                                            "Total Active Power": 4.0,
+                                                                                            "Active Power L1": 2.0,
+                                                                                            "Active Power L2": 1.0,
+                                                                                            "Active Power L3": 1.0
+                                                                                        }, "loadType": "Manufacturing"
+                                                                                        },
+                                                                                        "MFM 4": {
+                                                                                        "data": {
+                                                                                            "Total Active Power": 3.0,
+                                                                                            "Active Power L1": 0.5,
+                                                                                            "Active Power L2": 1.5,
+                                                                                            "Active Power L3": 1.0
+                                                                                        }, "loadType": "Manufacturing"
+                                                                                        }
+                                                                                    }
+                                                                                    }
+                                                                                }
+                                                                                },
+                                                                                "Building B": {
+                                                                                "building_total": {
+                                                                                    "Total Active Power": 10.5,
+                                                                                    "Active Power L1": 5.5,
+                                                                                    "Active Power L2": 3.0,
+                                                                                    "Active Power L3": 2.0
+                                                                                },
+                                                                                "areas": {
+                                                                                    "Basement": {
+                                                                                    "area_total": {
+                                                                                        "Total Active Power": 5.5,
+                                                                                        "Active Power L1": 2.5,
+                                                                                        "Active Power L2": 2.0,
+                                                                                        "Active Power L3": 1.0
+                                                                                    },
+                                                                                    "meters": {
+                                                                                        "MFM 5": {
+                                                                                        "data": {
+                                                                                            "Total Active Power": 2.5,
+                                                                                            "Active Power L1": 1.5,
+                                                                                            "Active Power L2": 1.0,
+                                                                                            "Active Power L3": 0.0
+                                                                                        }, "loadType": "Lighting"
+                                                                                        },
+                                                                                        "MFM 6": {
+                                                                                        "data": {
+                                                                                            "Total Active Power": 3.0,
+                                                                                            "Active Power L1": 1.0,
+                                                                                            "Active Power L2": 1.0,
+                                                                                            "Active Power L3": 1.0
+                                                                                        }, "loadType": "Lighting"
+                                                                                        }
+                                                                                    }
+                                                                                    },
+                                                                                    "Second Floor": {
+                                                                                    "area_total": {
+                                                                                        "Total Active Power": 5.0,
+                                                                                        "Active Power L1": 3.0,
+                                                                                        "Active Power L2": 1.0,
+                                                                                        "Active Power L3": 1.0
+                                                                                    },
+                                                                                    "meters": {
+                                                                                        "MFM 7": {
+                                                                                        "data": {
+                                                                                            "Total Active Power": 2.0,
+                                                                                            "Active Power L1": 1.0,
+                                                                                            "Active Power L2": 1.0,
+                                                                                            "Active Power L3": 0.0
+                                                                                        }, "loadType": "Lighting"
+                                                                                        },
+                                                                                        "MFM 8": {
+                                                                                        "data": {
+                                                                                            "Total Active Power": 3.0,
+                                                                                            "Active Power L1": 2.0,
+                                                                                            "Active Power L2": 0.0,
+                                                                                            "Active Power L3": 1.0
+                                                                                        }, "loadType": "Manufacturing"
+                                                                                        }
+                                                                                    }
+                                                                                    }
+                                                                                }
+                                                                                }
+                                                                            }
+                                                                            }
+                                                const siteName = data.site?.name || "Site";
+                                        
+                                                const nodes = [];
+                                                const links = [];
+                                                const colors = {};
+                                                const added = new Set();
+                                                const loadTypeTotals = {};
+                                        
+                                                function getColor(name) {
+                                                    if (colors[name]) return colors[name];
+                                                    if (name === siteName) colors[name] = '#1f77b4';
+                                                    else if (name.includes('Building')) colors[name] = '#ff7f0e';
+                                                    else if (name.includes('Area')) colors[name] = '#2ca02c';
+                                                    else if (name.includes('Meter')) colors[name] = '#d62728';
+                                                    else if (name.includes('Load Type')) colors[name] = '#9467bd';
+                                                    else colors[name] = '#999';
+                                                    return colors[name];
+                                                }
+                                        
+                                                for (const [buildingName, buildingData] of Object.entries(hierarchy.buildings)) {
+                                                    links.push({ source: siteName, target: buildingName, value: buildingData.building_total[measurement] || 0 });
+                                                    added.add(siteName);
+                                                    added.add(buildingName);
+                                        
+                                                    for (const [areaName, areaData] of Object.entries(buildingData.areas)) {
+                                                    let areaSum = 0;
+                                        
+                                                    for (const [meterName, meterData] of Object.entries(areaData.meters)) {
+                                                        const val = meterData.data[measurement] || 0;
+                                        
+                                                        if (val > 0) {
+                                                        links.push({ source: areaName, target: meterName, value: val });
+                                                        added.add(areaName);
+                                                        added.add(meterName);
+                                                        areaSum += val;
+                                        
+                                                        const loadTypeName = "Load Type: " + (meterData.loadType || "Unknown");
+                                                        links.push({ source: meterName, target: loadTypeName, value: val });
+                                                        added.add(loadTypeName);
+                                        
+                                                        if (!loadTypeTotals[loadTypeName]) {
+                                                            loadTypeTotals[loadTypeName] = 0;
+                                                        }
+                                                        loadTypeTotals[loadTypeName] += val;
+                                                        }
+                                                    }
+                                        
+                                                    if (areaSum > 0) {
+                                                        links.push({ source: buildingName, target: areaName, value: areaSum });
+                                                        added.add(areaName);
+                                                    }
+                                                    }
+                                                }
+                                        
+                                                for (const name of added) {
+                                                    const node = { name, itemStyle: { color: getColor(name) } };
+                                                    if (loadTypeTotals[name]) {
+                                                    node.loadTypeTotal = loadTypeTotals[name];
+                                                    }
+                                                    nodes.push(node);
+                                                }
+                                        
+                                                sankeyEcharts.setOption({
+                                                    backgroundColor: '#212529',
+                                                    tooltip: {
+                                                    trigger: 'item',
+                                                    formatter: function (params) {
+                                                        if (params.dataType === 'edge') {
+                                                        return `${params.data.source} → ${params.data.target}<br/>${measurement}: ${params.data.value}`;
+                                                        } else if (params.dataType === 'node') {
+                                                        if (params.data.loadTypeTotal) {
+                                                            return `${params.data.name}<br/>Total ${measurement}: ${params.data.loadTypeTotal.toFixed(2)}`;
+                                                        }
+                                                        return `${params.data.name}`;
+                                                        }
+                                                    }
+                                                    },
+                                                    series: [{
+                                                    type: 'sankey',
+                                                    data: nodes,
+                                                    links: links,
+                                                    emphasis: { focus: 'adjacency' },
+                                                    lineStyle: { color: 'source', curveness: 0.5 },
+                                                    label: { color: '#eee' }
+                                                    }]
+                                                });
+                                                });
+                                            }
+                                        
+                                            window.addEventListener("DOMContentLoaded", drawEchartsSankey);
+                                            datePicker.addEventListener("change", drawEchartsSankey);
+                                            periodSelector.addEventListener("change", drawEchartsSankey);
+                                        </script>
+
+                                        {% elif gadget.gadget_type == 'heatmap' %}
+                                        <!-- ECharts CDN -->
+                                        <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+
+                                        <div id="heatmap_container_{{ gadget.id }}" style="width: 990px; height: 500px;"></div>
+
+                                        <script>
+                                        const heatmapChart = echarts.init(document.getElementById('heatmap_container_{{ gadget.id }}'));
+
+                                        const gadgetWrapper{{gadget.id}} = document.getElementById("gadget-wrapper-{{gadget.id}}");
+                                        gadgetWrapper{{gadget.id}}.style.width = '1025px';
+                                        gadgetWrapper{{gadget.id}}.style.height = '580px';
+
+
+
+                                        // Your measurement from Django
+                                        const measurement{{gadget.id}} = "{{ gadget.measurement.all.0 }}";
+                                        const meterId{{gadget.id}} = {{ gadget.meters.all.0.id }};  // Adjust if needed
+
+
+                                        // Your custom hidden pickers
+                                        const startPicker{{gadget.id}} = document.getElementById("start-date-{{ gadget.id }}");
+                                        const endPicker{{gadget.id}} = document.getElementById("end-date-{{ gadget.id }}");
+
+
+                                        // The icons that open the pickers
+                                        const openStart{{gadget.id}} = document.getElementById("open-start-picker-{{ gadget.id }}");
+                                        const openEnd{{gadget.id}} = document.getElementById("open-end-picker-{{ gadget.id }}");
+
+
+                                        // When icon clicked, open the hidden input
+                                        openStart{{gadget.id}}.addEventListener('click', () => startPicker{{gadget.id}}.showPicker());
+                                        openEnd{{gadget.id}}.addEventListener('click', () => endPicker{{gadget.id}}.showPicker());
+
+                                        // When date changes, refresh the heatmap
+                                        [startPicker{{gadget.id}}, endPicker{{gadget.id}}].forEach(picker => {
+                                        picker.addEventListener('change', loadHeatmap);
+                                        });
+
+                                        function loadHeatmap() {
+                                            const gadgetTitle = document.getElementById('gadget-title{{gadget.id}}')
+                                            
+                                            const start = startPicker{{gadget.id}}.value;
+                                            const end = endPicker{{gadget.id}}.value;
+
+                                            gadgetTitle.innerHTML = "{{ gadget.name }} - ("+start+" to "+end+")";
+
+                                            if (!start || !end) {
+                                                console.log("Select both dates first");
+                                                return;
+                                            }
+
+                                            const url = `/dashboard/{{gadget.dashboard.id}}/heatmap/{{gadget.meters.all.0.id}}/${start}/${end}/${encodeURIComponent("{{ gadget.measurement.all.0 }}")}/`;
+
+                                            fetch(url)
+                                                .then(res => res.json())
+                                                .then(res => {
+                                                const raw = res.data;
+                                                if (!raw || raw.length === 0) {
+                                                    heatmapChart.clear();
+                                                    console.warn("No data for selected range");
+                                                    return;
+                                                }
+
+                                                const days = [...new Set(raw.map(d => d.day))];
+                                                const hours = Array.from({ length: 24 }, (_, i) => i);
+
+                                                const heatmapData = raw.map(d => [
+                                                    days.indexOf(d.day),
+                                                    d.hour,
+                                                    d.value
+                                                ]);
+
+                                                const allValues = raw.map(d => d.value);
+                                            const dataMin = Math.min(...allValues);
+                                            const dataMax = Math.max(...allValues);
+                                            const option = {
+                                            tooltip: {
+                                                position: 'top',
+                                                formatter: p => {
+                                                const d = days[p.data[0]];
+                                                const h = p.data[1];
+                                                const v = p.data[2];
+                                                return `${d} ${h}:00<br>${measurement{{gadget.id}}}: ${v.toFixed(2)}`;
+                                                }
+                                            },
+                                            grid: { height: '70%', top: '10%' },
+                                            xAxis: {
+                                                type: 'category',
+                                                data: days,
+                                                name: 'Date',
+                                                nameTextStyle: { color: '#fff' },
+                                                axisLabel: { color: '#eee' },
+                                                splitArea: { show: false },  // Disable gridlines
+                                                splitLine: { show: false }
+                                            },
+                                            yAxis: {
+                                                type: 'category',
+                                                data: hours.map(h => `${h}:00`),
+                                                name: 'Hour',
+                                                nameTextStyle: { color: '#fff' },
+                                                axisLabel: { color: '#eee' },
+                                                splitArea: { show: false },  // Disable gridlines
+                                                splitLine: { show: false }
+                                            },
+                                            backgroundColor: '#212529',
+                                            visualMap: {
+                                                min: dataMin,
+                                                max: dataMax,
+                                                calculable: true,
+                                                orient: 'horizontal',
+                                                left: 'center',
+                                                bottom: '5%',
+                                                textStyle: { color: '#eee' },
+                                                inRange: {
+                                                color: ['#00FF00', '#FFFF00', '#FF0000']  // Green → Yellow → Red
+                                                }
+                                            },
+                                            series: [{
+                                                name: measurement{{gadget.id}},
+                                                type: 'heatmap',
+                                                data: heatmapData,
+                                                itemStyle: {
+                                                borderWidth: 0  // Remove cell borders
+                                                },
+                                                emphasis: {
+                                                itemStyle: {
+                                                    shadowBlur: 10,
+                                                    shadowColor: 'rgba(0,0,0,0.5)'
+                                                }
+                                                }
+                                            }],
+                                            };
+
+
+
+
+                                            heatmapChart.setOption(option);
+                                            })
+                                            .catch(err => {
+                                            console.error("Error loading heatmap:", err);
+                                            });
+                                        }
+
+                                        document.addEventListener("DOMContentLoaded", function() {
+                                        const startPicker = document.getElementById("start-date-{{ gadget.id }}");
+                                        const endPicker = document.getElementById("end-date-{{ gadget.id }}");
+
+                                        const today = new Date();
+                                        const yesterday = new Date(today);
+                                        yesterday.setDate(yesterday.getDate() - 1);
+
+                                        const oneMonthAgo = new Date(today);
+                                        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+                                        // Format to YYYY-MM-DD
+                                        function formatDate(date) {
+                                            const year = date.getFullYear();
+                                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                                            const day = String(date.getDate()).padStart(2, '0');
+                                            return `${year}-${month}-${day}`;
+                                        }
+
+                                        startPicker.value = formatDate(oneMonthAgo);
+                                        endPicker.value = formatDate(yesterday);
+                                        });
+
+                                        document.addEventListener("DOMContentLoaded", loadHeatmap)
+
+                                        </script>
+                        
                                     {% endif %}
                                     
                             </div>
-                        </div>
                         {% endfor %}
 
                     </div>
@@ -1146,17 +1692,6 @@
 <!-- Tree script -->
 <script>
     let tree = document.getElementById('tree');
-    let treeToggleBtn = document.getElementById('treeToggleBtn');
-    function toggleTree() {
-
-        if (tree.style.display === "none" || tree.style.display === "") {
-            tree.style.display = "block";
-            treeToggleBtn.innerHTML = `<i class="fa-solid fa-arrow-left"></i>`
-        } else {
-            tree.style.display = "none";
-            treeToggleBtn.innerHTML = `<i class="fa-solid fa-arrow-right"></i>`
-        }
-    }
     document.addEventListener("DOMContentLoaded", function () {
         // 1. Tree toggle (show/hide child UL)
         document.querySelectorAll("#tree li").forEach(function (li) {
@@ -1177,7 +1712,6 @@
 
         // Helper: expand parents of a meter element to make it visible
         function expandParents(meterElem) {
-            treeToggleBtn.innerHTML = `<i class="fa-solid fa-arrow-left"></i>`
             let tree = document.getElementById('tree');
             tree.style.display = "block";
             let current = meterElem.parentElement; // the <ul> containing the meter
@@ -1190,7 +1724,6 @@
         }
 
         gadgets.forEach(gadget => {
-            treeToggleBtn.innerHTML = `<i class="fa-solid fa-arrow-left"></i>`
             gadget.addEventListener("click", (event) => {
                 event.stopPropagation();
 
@@ -1229,8 +1762,21 @@
             meters.forEach(m => m.classList.remove("text-info"));
 
         });
+        // ✅ 3. Expand entire tree on load
+        document.querySelectorAll("#tree ul").forEach(ul => {
+            ul.style.display = "block";
+        });
     });
 </script>
-
+<script>
+    window.addEventListener('load', function() {
+      var grid = document.querySelector('#masonry-grid');
+      new Masonry(grid, {
+        itemSelector: '.gadget-item',
+        gutter: 20,
+        fitWidth: true
+      });
+    });
+  </script>
 
 {% endblock %}

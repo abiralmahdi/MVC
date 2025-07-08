@@ -60,84 +60,244 @@
 
 <div id="sankey"></div>
 
-  <script>
-    const hierarchy = {{ hierarchy_data|safe }};
-    const measurement = "{{ measurement }}";
-    const siteName = "{{ site.name }}";
+<script>
+// 🔥 Use your JSON from Django:
+// const hierarchy = {{ hierarchy_data|safe }};
 
-    const nodes = [];
-    const nodeIndex = {};
-    const links = [];
-
-    function getIndex(name) {
-      if (!(name in nodeIndex)) {
-        nodeIndex[name] = nodes.length;
-        nodes.push(name);
-      }
-      return nodeIndex[name];
-    }
-
-    // Add Site → Buildings
-    const siteIdx = getIndex(siteName);
-
-    for (const [buildingName, buildingData] of Object.entries(hierarchy.buildings)) {
-      const buildingVal = buildingData.building_total[measurement] || 0;
-      const bIdx = getIndex(buildingName);
-      links.push({ source: siteIdx, target: bIdx, value: buildingVal });
-
-        for (const [areaName, areaData] of Object.entries(buildingData.areas)) {
-          const areaVal = areaData.area_total[measurement] || 0;
-          const aIdx = getIndex(areaName);
-          links.push({ source: bIdx, target: aIdx, value: areaVal });
-
-            for (const [meterName, meterData] of Object.entries(areaData.meters)) {
-              const meterVal = meterData.data[measurement] || 0;
-              const mIdx = getIndex(meterName);
-              links.push({ source: aIdx, target: mIdx, value: meterVal+0.5 });
+const hierarchy = {
+  "site_total": {
+    "Total Active Power": 25.5,
+    "Active Power L1": 12.5,
+    "Active Power L2": 8.0,
+    "Active Power L3": 5.0
+  },
+  "buildings": {
+    "Building A": {
+      "building_total": {
+        "Total Active Power": 15.0,
+        "Active Power L1": 7.0,
+        "Active Power L2": 5.0,
+        "Active Power L3": 3.0
+      },
+      "areas": {
+        "Ground Floor": {
+          "area_total": {
+            "Total Active Power": 8.0,
+            "Active Power L1": 4.5,
+            "Active Power L2": 2.5,
+            "Active Power L3": 1.0
+          },
+          "meters": {
+            "MFM 1": {
+              "data": {
+                "Total Active Power": 5.0,
+                "Active Power L1": 2.5,
+                "Active Power L2": 1.5,
+                "Active Power L3": 1.0
+              }
+            },
+            "MFM 2": {
+              "data": {
+                "Total Active Power": 3.0,
+                "Active Power L1": 2.0,
+                "Active Power L2": 1.0,
+                "Active Power L3": -1.0
+              }
             }
-          
-        }
-      
-    }
-    console.log(links)
-    console.log(nodeIndex)
-    console.log(nodes)
-
-    const data = [{
-      type: "sankey",
-      orientation: "h",
-      node: {
-        pad: 15,
-        thickness: 20,
-        line: {
-          color: "black",
-          width: 0.5
+          }
         },
-        label: nodes,
-        color: "#3498db"
-      },
-      link: {
-        source: links.map(l => l.source),
-        target: links.map(l => l.target),
-        value: links.map(l => l.value),
-        color: "rgba(52, 152, 219, 0.6)",
-        hovertemplate:
-          "%{source.label} → %{target.label}<br>" +
-          "Value: %{value}<extra></extra>"
+        "First Floor": {
+          "area_total": {
+            "Total Active Power": 7.0,
+            "Active Power L1": 2.5,
+            "Active Power L2": 2.5,
+            "Active Power L3": 2.0
+          },
+          "meters": {
+            "MFM 3": {
+              "data": {
+                "Total Active Power": 4.0,
+                "Active Power L1": 2.0,
+                "Active Power L2": 1.0,
+                "Active Power L3": 1.0
+              }
+            },
+            "MFM 4": {
+              "data": {
+                "Total Active Power": 3.0,
+                "Active Power L1": 0.5,
+                "Active Power L2": 1.5,
+                "Active Power L3": 1.0
+              }
+            }
+          }
+        }
       }
-    }];
-
-    const layout = {
-      title: `Sankey Diagram: ${measurement}`,
-      font: {
-        size: 12,
-        color: "#eee"
+    },
+    "Building B": {
+      "building_total": {
+        "Total Active Power": 10.5,
+        "Active Power L1": 5.5,
+        "Active Power L2": 3.0,
+        "Active Power L3": 2.0
       },
-      paper_bgcolor: "#111",
-      plot_bgcolor: "#111"
-    };
+      "areas": {
+        "Basement": {
+          "area_total": {
+            "Total Active Power": 5.5,
+            "Active Power L1": 2.5,
+            "Active Power L2": 2.0,
+            "Active Power L3": 1.0
+          },
+          "meters": {
+            "MFM 5": {
+              "data": {
+                "Total Active Power": 2.5,
+                "Active Power L1": 1.5,
+                "Active Power L2": 1.0,
+                "Active Power L3": 0.0
+              }
+            },
+            "MFM 6": {
+              "data": {
+                "Total Active Power": 3.0,
+                "Active Power L1": 1.0,
+                "Active Power L2": 1.0,
+                "Active Power L3": 1.0
+              }
+            }
+          }
+        },
+        "Second Floor": {
+          "area_total": {
+            "Total Active Power": 5.0,
+            "Active Power L1": 3.0,
+            "Active Power L2": 1.0,
+            "Active Power L3": 1.0
+          },
+          "meters": {
+            "MFM 7": {
+              "data": {
+                "Total Active Power": 2.0,
+                "Active Power L1": 1.0,
+                "Active Power L2": 1.0,
+                "Active Power L3": 0.0
+              }
+            },
+            "MFM 8": {
+              "data": {
+                "Total Active Power": 3.0,
+                "Active Power L1": 2.0,
+                "Active Power L2": 0.0,
+                "Active Power L3": 1.0
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
-    Plotly.newPlot('sankey', data, layout);
 
-  </script>
+const measurement = "Active Power L1";
+
+const nodes = [];
+const nodeIndex = new Map();
+const links = [];
+
+function getIndex(name) {
+  if (!nodeIndex.has(name)) {
+    nodeIndex.set(name, nodes.length);
+    nodes.push(name);
+  }
+  return nodeIndex.get(name);
+}
+
+const siteName = "{{ site.name }}";
+const siteIdx = getIndex(siteName);
+
+for (const [buildingName, buildingData] of Object.entries(hierarchy.buildings)) {
+  let buildingSum = 0;
+  const bIdx = getIndex(buildingName);
+
+  for (const [areaName, areaData] of Object.entries(buildingData.areas)) {
+    let areaSum = 0;
+    const aIdx = getIndex(areaName);
+
+    for (const [meterName, meterData] of Object.entries(areaData.meters)) {
+      const val = meterData.data[measurement] || 0;
+      const mIdx = getIndex(meterName);
+
+      if (val !== 0) {
+        if (val > 0) {
+          links.push({ source: aIdx, target: mIdx, value: val, raw: val });
+        } else {
+          links.push({ source: mIdx, target: aIdx, value: Math.abs(val), raw: val });
+        }
+        areaSum += val;
+      }
+    }
+
+    if (areaSum !== 0) {
+      if (areaSum > 0) {
+        links.push({ source: bIdx, target: aIdx, value: areaSum, raw: areaSum });
+      } else {
+        links.push({ source: aIdx, target: bIdx, value: Math.abs(areaSum), raw: areaSum });
+      }
+      buildingSum += areaSum;
+    }
+  }
+
+  if (buildingSum !== 0) {
+    if (buildingSum > 0) {
+      links.push({ source: siteIdx, target: bIdx, value: buildingSum, raw: buildingSum });
+    } else {
+      links.push({ source: bIdx, target: siteIdx, value: Math.abs(buildingSum), raw: buildingSum });
+    }
+  }
+}
+
+// ✅ Set link colors: blue = positive, red = negative
+const linkColors = links.map(l => l.raw >= 0 ? 'rgba(52, 152, 219, 0.6)' : 'rgba(231, 76, 60, 0.6)');
+
+const data = [{
+  type: "sankey",
+  orientation: "h",
+  node: {
+    pad: 15,
+    thickness: 20,
+    line: {
+      color: "black",
+      width: 0.5
+    },
+    label: nodes,
+    color: "#3498db"
+  },
+  link: {
+    source: links.map(l => l.source),
+    target: links.map(l => l.target),
+    value: links.map(l => l.value),
+    color: linkColors,
+    customdata: links.map(l => l.raw.toFixed(3)),
+    hovertemplate:
+      "%{source.label} → %{target.label}<br>" +
+      "Abs Value: %{value:.3f}<br>" +
+      "Signed: %{customdata}<extra></extra>"
+  }
+}];
+
+const layout = {
+  title: `Sankey Diagram: ${measurement}`,
+  font: {
+    size: 12,
+    color: "#eee"
+  },
+  paper_bgcolor: "#111",
+  plot_bgcolor: "#111"
+};
+
+Plotly.newPlot('sankey', data, layout);
+
+</script>
 {% endblock %}

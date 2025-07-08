@@ -6,6 +6,9 @@ from django.http import JsonResponse
 from pprint import pprint
 from datetime import timedelta
 from django.utils import timezone
+from django.db.models.functions import TruncHour, TruncDate
+
+
 
 sites = Site.objects.prefetch_related(
         'buildings__areas__meters'
@@ -47,7 +50,7 @@ def indivDashboard(request, dashboardID):
 
     context = {
         'dashboard': dashboard_,
-        'sites': [site],
+        'sites': Site.objects.all(),
         'gadgets': gadgets,
         'areas': areas,
         'meters': meters,
@@ -381,7 +384,7 @@ def fetchTableData(request, dashboard_id, gadget_id):
 
 
 
-def hierarchyAggView(request, site_id, period_type, start_date):
+def hierarchyAggView(request, dashboard_id, site_id, measurement, period_type, start_date):
     site = get_object_or_404(Site, id=site_id)
     aggregate = get_object_or_404(
         HierarchyDataAggregate,
@@ -390,17 +393,48 @@ def hierarchyAggView(request, site_id, period_type, start_date):
         start_date=start_date
     )
     context = {
-        "site": site,
+        "site": site.id,
         "period_type": period_type,
         "start_date": start_date,
         "data": aggregate.data,
         "hierarchy_data": aggregate.data,
-        "measurement": "Active Power L1"
+        "measurement": measurement
     }
-    return render(request, "hierarchyView.html", context)
+    return JsonResponse(context)
 
 
+def heatmap_data(request, dashboard_id, meter_id, start_date, end_date, measurement):
+    try:
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+    except:
+        return JsonResponse({'error': 'Invalid dates'}, status=400)
 
+    readings = (
+        MeterReading.objects
+        .filter(
+            meter_id=meter_id,
+            timestamp__date__gte=start_dt,
+            timestamp__date__lte=end_dt
+        )
+        .annotate(day=TruncDate('timestamp'), hour=TruncHour('timestamp'))
+    )
+
+    hourly_totals = {}
+    for r in readings:
+        key = (r.timestamp.date().isoformat(), r.timestamp.hour)
+        val = r.data.get(measurement, 0)
+        hourly_totals[key] = hourly_totals.get(key, 0) + val
+
+    data = [
+        {'day': day, 'hour': hour, 'value': round(total, 2)}
+        for (day, hour), total in hourly_totals.items()
+    ]
+
+    return JsonResponse({
+        'measurement': measurement,
+        'data': data
+    })
 
 def newDashboard(request):
     if request.method=='POST':

@@ -12,7 +12,12 @@ urlpatterns = [
     path('<int:dashboard_id>/fetchLatestToolData/<int:gadget_id>/', views.fetchLatestToolData, name='fetchLatestToolData'),
     path('<int:dashboard_id>/multiYearBarData/<int:gadget_id>/<str:measurement>/<str:date>/<str:period>', views.getMultiYearBarData, name='bar_compare_data'),
     path('<int:dashboard_id>/fetchTableData/<int:gadget_id>', views.fetchTableData, name='fetchTableData'),
-    path("<int:site_id>/hierarchyy/<str:period_type>/<str:start_date>/", views.hierarchyAggView, name="hierarchyAggView"),
+    path("<int:dashboard_id>/hierarchyy/<int:site_id>/<str:measurement>/<str:period_type>/<str:start_date>/", views.hierarchyAggView, name="hierarchyAggView"),
+    path(
+    "<int:dashboard_id>/heatmap/<int:meter_id>/<str:start_date>/<str:end_date>/<path:measurement>/",
+    views.heatmap_data,
+    name="heatmap_data"
+    )
 
 
     

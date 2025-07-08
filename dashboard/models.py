@@ -1,5 +1,6 @@
 from django.db import models
 from home.models import *
+from datetime import datetime
 from dynamic.models import *
 
 
@@ -40,6 +41,45 @@ class MeterReading(models.Model):
     def __str__(self):
         return f"{self.meter.name} - {self.timestamp.strftime('%d-%m-%y %H:%M:%S')}"
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)  # Save the reading first
+
+        from alarms.models import AlarmsRange, Alarms  # adjust import to your app structure
+
+        for measurement_name, value in self.data.items():
+            # Find the measurement
+            try:
+                measurement = Measurements.objects.get(name=measurement_name)
+            except Measurements.DoesNotExist:
+                continue  # Ignore unknown measurement names
+
+            # Find any alarms range for this meter + measurement
+            try:
+                range_obj = AlarmsRange.objects.get(meter=self.meter, measurement=measurement)
+            except AlarmsRange.DoesNotExist:
+                continue  # No range set → skip
+
+            if range_obj.minValue is not None and value < range_obj.minValue:
+                Alarms.objects.get_or_create(
+                    meter=self.meter,
+                    measurement=measurement,
+                    value=value,
+                    alarmType="Low",
+                    desc=f"{measurement_name} below min ({range_obj.minValue})",
+                    date=datetime.now(),
+                    acknowledged=False
+                )
+
+            elif range_obj.maxValue is not None and value > range_obj.maxValue:
+                Alarms.objects.get_or_create(
+                    meter=self.meter,
+                    measurement=measurement,
+                    value=value,
+                    alarmType="High",
+                    desc=f"{measurement_name} above max ({range_obj.maxValue})",
+                    date=datetime.now(),
+                    acknowledged=False
+                )
 
 class LatestMeterReading(models.Model):
     meter = models.ForeignKey(Meters, related_name='dataLatest', on_delete=models.CASCADE)

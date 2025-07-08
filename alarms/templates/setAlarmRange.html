@@ -1,0 +1,186 @@
+{% extends 'layout.html' %}
+{% load extras %}
+{% block body %}
+
+<style>
+    .modal-content.bg-dark-custom {
+      color: #fff;
+    }
+  
+    .modal-header.bg-dark-custom {
+      border-bottom: 1px solid #444;
+    }
+  
+    .modal-body .detail-label {
+      font-weight: bold;
+      color: #aaa;
+    }
+  
+    .modal-body .detail-value {
+      color: #fff;
+      margin-bottom: 0.75rem;
+    }
+  
+    /* Base tab styles */
+    .nav-tabs .nav-link {
+      background-color: #2a2e36;
+      /* Gray background */
+      color: white;
+      /* White text */
+      border: none;
+      /* Remove borders */
+      margin-right: 4px;
+      border-radius: 0;
+    }
+  
+    /* Active tab styles */
+    .nav-tabs .nav-link.active {
+      background-color: #292a2a;
+      color: #00eaff;
+      border-bottom: 3px solid #00eaff;
+      font-weight: bolder;
+    }
+  
+    /* Hover effect */
+    .nav-tabs .nav-link:hover {
+      transition: 0.15s;
+      color: #00eaff;
+      border-bottom: 3px solid #00eaff;
+    }
+  </style>
+  
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column">
+    <div class="d-flex mt-5">
+        <h3 class="h5 text-info fw-bold mx-2">MARKS</h3>
+        <h3 class="h5"> Vision Center</h3>
+    </div>
+    <form action="" class="form p-3">
+        <div class="form-group mb-1">
+            <input type="text" class="form-control" placeholder="Search...">
+        </div>
+    </form>
+    <a href="/alarms/allAlarms" class="text-white">All Alarms</a>
+    <a href="/alarms/setAlarmRange" class="text-white">Set Alarm Range</a>
+    
+    
+
+</div>
+
+<!-- Overlay -->
+<div id="overlay" class="overlay"></div>
+
+<div class="container">
+    
+<div class="container mt-4">
+
+    <!-- Nav tabs -->
+    <ul class="nav nav-tabs" style="border:none !important;" id="myTab" role="tablist">
+      {% for site in sites %}
+      <li class="nav-item" role="presentation">
+        <button class="nav-link {% if forloop.first %}active{% endif %}"
+              id="{{site.id}}-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#{{site.id}}-table"
+              type="button"
+              role="tab">
+                {{site.name}}
+        </button>
+      </li>
+      {% endfor %}
+    </ul>
+  
+    <!-- Tab panes -->
+    <div class="tab-content mt-3">
+    {% for site in sites %}
+
+    <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
+        id="{{site.id}}-table"
+        role="tabpanel"
+        aria-labelledby="{{site.id}}-tab">
+        <table class="table table-striped table-dark table-hover">
+          <thead>
+            <tr>
+              <th>Meter</th>
+              <th>Area</th>
+              <th>Building</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for building in site.buildings.all %}
+              {% for area in building.areas.all %}
+                {% for meter in area.meters.all %}
+                  <tr>
+                    <td>{{ meter.name }}</td>
+                    <td>{{ meter.area.name }}</td>
+                    <td>{{ meter.area.building.name }}</td>
+                    <td>
+                      <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modal-{{ meter.id }}">Edit Range</button>
+                    </td>
+                  </tr>
+          
+                  <!-- Modal for this meter -->
+                  <div class="modal fade" id="modal-{{ meter.id }}" tabindex="-1" aria-labelledby="modal-{{ meter.id }}-label" aria-hidden="true">
+                    <div class="modal-dialog">
+                      <div class="modal-content bg-dark text-light">
+                        <div class="modal-header">
+                          <h1 class="modal-title fs-5">{{ meter.name }}</h1>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                          <form action="/alarms/setRange/{{ meter.id }}/" method="post">
+                            {% csrf_token %}
+                            {% with measurementList=measurements|get_item:meter %}
+                              {% for measurement in measurementList %}
+                                {% with meterID=meter.id|stringformat:"s" measurementID=measurement.id|stringformat:"s" %}
+                                  {% with key=meterID|add:"-"|add:measurementID %}
+                                    {% with range=alarmsRange|get_item:key %}
+                                      <div class="row align-items-center mb-2">
+                                        <div class="col-sm-4">
+                                          <label class="form-label mb-0">{{ measurement.name }}</label>
+                                        </div>
+                                        <div class="col-sm-4">
+                                          <input type="number" class="form-control"
+                                            name="min_value_{{measurement.id}}"
+                                            placeholder="Min Value"
+                                            value="{% if range %}{{ range.minValue }}{% endif %}">
+                                        </div>
+                                        <div class="col-sm-4">
+                                          <input type="number" class="form-control"
+                                            name="max_value_{{measurement.id}}"
+                                            placeholder="Max Value"
+                                            value="{% if range %}{{ range.maxValue }}{% endif %}">
+                                        </div>
+                                      </div>
+                                    {% endwith %}
+                                  {% endwith %}
+                                {% endwith %}
+                              {% endfor %}
+                            {% endwith %}
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                              <button type="submit" class="btn btn-primary">Save changes</button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              {% endfor %}
+            {% endfor %}
+          </tbody>
+          
+        </table>
+      </div>
+  
+      {% endfor %}
+  
+    </div>
+  </div>
+  
+</div>
+
+{% endblock %}

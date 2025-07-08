@@ -10,8 +10,7 @@ urlpatterns = [
     path('dashboard/sankeyDiagram', views.sankeyDiagram, name='sankeyDiagram'),
     path('dashboard/statusTable', views.statusTable, name='statusTable'),
     path('trends', views.trends, name='trends'),
-    path('alarms/activeAlarms', views.activeAlarms, name='activeAlarms'),
-    path('alarms/recentIncidents', views.incidents, name='incidents'),
+    path('recentIncidents', views.incidents, name='incidents'),
     path('reports/addReport', views.addReport, name='addReport'),
     path('reports/savedReports', views.savedReports, name='savedReports'),
     
