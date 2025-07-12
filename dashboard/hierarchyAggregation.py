@@ -1,136 +1,95 @@
-from django.utils import timezone
-from dashboard.models import Site, HierarchyDataAggregate, MeterReadingAggregate, Measurements
-from datetime import timedelta, date
-from tqdm import tqdm
+from dynamic.models import Site, Buildings, Areas, LoadType, Meters, Measurements
+import random
+import string
 
-def normalize_start_date(date_obj, period_type):
-    """
-    Normalize to:
-    - weekly → Monday
-    - monthly → 1st of month
-    - yearly → Jan 1st
-    """
-    if period_type == "weekly":
-        return date_obj - timedelta(days=date_obj.weekday())
-    elif period_type == "monthly":
-        return date_obj.replace(day=1)
-    elif period_type == "yearly":
-        return date_obj.replace(month=1, day=1)
-    else:
-        raise ValueError(f"Unknown period type: {period_type}")
+# --- Site names: A, B, C ---
+site_letters = list(string.ascii_uppercase)[:3]  # ['A', 'B', 'C']
 
-def get_period_end(start_date, period_type):
-    """
-    Compute exclusive period end date.
-    """
-    if period_type == "weekly":
-        return start_date + timedelta(days=7)
-    elif period_type == "monthly":
-        if start_date.month == 12:
-            return date(start_date.year + 1, 1, 1)
-        else:
-            return date(start_date.year, start_date.month + 1, 1)
-    elif period_type == "yearly":
-        return date(start_date.year + 1, 1, 1)
-    else:
-        raise ValueError(f"Unknown period type: {period_type}")
+sites = []
+for letter in site_letters:
+    site = Site.objects.create(name=f"Site {letter}")
+    sites.append((letter, site))
 
-def create_hierarchy_aggregate(site, period_type, start_date):
-    """
-    Create HierarchyDataAggregate for site, period_type, start_date.
-    Uses safe period window for meter aggregates.
-    """
-    hierarchy = {
-        "site_total": {},
-        "buildings": {}
-    }
+# --- Load Types ---
+load_types = []
+for lt in ['Lighting', 'HVAC', 'Elevator', 'Pump', 'Server Rack']:
+    load_type = LoadType.objects.create(name=lt)
+    load_types.append(load_type)
 
-    site_total = {}
+# --- Meter type -> measurement names ---
+meter_measurements = {
+    'Electricity Meter': [
+        "Timestamp", "Voltage L1-N", "Voltage L2-N", "Voltage L3-N",
+        "Voltage L1-L2", "Voltage L2-L3", "Voltage L3-L1",
+        "Current L1", "Current L2", "Current L3",
+        "Apparent Power L1", "Apparent Power L2", "Apparent Power L3",
+        "Active Power L1", "Active Power L2", "Active Power L3",
+        "Reactive Power L1", "Reactive Power L2", "Reactive Power L3",
+        "Power Factor L1", "Power Factor L2", "Power Factor L3",
+        "THD Voltage L1-L2", "THD Voltage L2-L3", "THD Voltage L3-L1",
+        "Line Frequency", "3-Phase Average Voltage L-N",
+        "3-Phase Average Voltage L-L", "3-Phase Average Current L-L",
+        "Total Active Power", "Total Reactive Power", "Total Power Factor"
+    ],
+    'Water Meter': ["Timestamp", "Flow Rate", "Total Volume"],
+    'Fuel Meter': ["Timestamp", "Fuel Consumption Rate", "Total Fuel Used"],
+    'Gas Meter': ["Timestamp", "Gas Flow Rate", "Gas Pressure", "Total Gas Volume"],
+    'Steam Meter': ["Timestamp", "Steam Flow Rate", "Steam Pressure", "Total Steam"],
+    'Temperature': ["Timestamp", "Temperature"],
+    'Pressure': ["Timestamp", "Pressure"],
+    'Humidity': ["Timestamp", "Humidity"],
+    'Air Quality': ["Timestamp", "CO2 Level", "PM2.5", "PM10"],
+}
 
-    period_end = get_period_end(start_date, period_type)
+# --- Track created unique Measurements ---
+created_measurements = {}
 
-    for building in site.buildings.all():
-        building_total = {}
-        building_data = {
-            "building_total": building_total,
-            "areas": {}
-        }
+# --- Cache meters per type ---
+type_to_meters = {}
 
-        for area in building.areas.all():
-            area_total = {}
-            area_data = {
-                "area_total": area_total,
-                "meters": {}
-            }
+building_count = 0
+area_count = 0
+meter_count = 0
 
-            for meter in area.meters.all():
-                measurement_names = Measurements.objects.filter(meterType=meter.meterType).values_list('name', flat=True)
+for site_letter, site in sites:
+    for b in range(1, 6):  # 5 buildings per site
+        building_name = f"Building {site_letter}{b}"  # e.g., Building A1
+        building = Buildings.objects.create(name=building_name, site=site)
+        building_count += 1
 
-                # ✅ Use safe window
-                agg = (
-                    MeterReadingAggregate.objects
-                    .filter(
-                        meter=meter,
-                        period_type=period_type,
-                        start_date__gte=start_date,
-                        start_date__lt=period_end
-                    )
-                    .order_by('start_date')
-                    .first()
+        for a in range(1, 11):  # 10 areas per building
+            area_name = f"Area {site_letter}{b}-{a}"  # e.g., Area A1-1
+            area = Areas.objects.create(name=area_name, building=building)
+            area_count += 1
+
+            for m in range(1, 6):  # 5 meters per area
+                meter_type = random.choice(list(meter_measurements.keys()))
+                meter_name = f"Meter {site_letter}{b}-{a}-{m}"  # e.g., Meter A1-1-1
+                ip = f"192.168.{random.randint(0,255)}.{random.randint(1,254)}"
+                load_type = random.choice(load_types)
+
+                meter = Meters.objects.create(
+                    name=meter_name,
+                    ip=ip,
+                    area=area,
+                    loadType=load_type,
+                    meterType=meter_type
                 )
+                meter_count += 1
 
-                if agg:
-                    meter_data = {
-                        name: agg.aggregateData.get(name, 0) for name in measurement_names
-                    }
-                else:
-                    meter_data = {name: 0 for name in measurement_names}
-                
+                if meter_type not in type_to_meters:
+                    type_to_meters[meter_type] = []
+                type_to_meters[meter_type].append(meter)
 
-                area_data["meters"][meter.name] = {"data": meter_data}
+                for m_name in meter_measurements[meter_type]:
+                    if m_name not in created_measurements:
+                        # Pick any available meter of this type to attach
+                        any_meter = type_to_meters[meter_type][0]
+                        m_obj = Measurements.objects.create(
+                            name=m_name,
+                            meter=any_meter,
+                            meterType=meter_type
+                        )
+                        created_measurements[m_name] = m_obj
 
-                for name, value in meter_data.items():
-                    area_total[name] = area_total.get(name, 0) + value
-
-            for name, value in area_total.items():
-                building_total[name] = building_total.get(name, 0) + value
-
-            building_data["areas"][area.name] = area_data
-
-        for name, value in building_total.items():
-            site_total[name] = site_total.get(name, 0) + value
-
-        hierarchy["buildings"][building.name] = building_data
-
-    hierarchy["site_total"] = site_total
-
-    HierarchyDataAggregate.objects.update_or_create(
-        site=site,
-        period_type=period_type,
-        start_date=start_date,
-        defaults={"data": hierarchy}
-    )
-
-# ===============================
-# ✅ Main loop with tqdm
-# ===============================
-
-sites = Site.objects.all()
-period_types = ["weekly", "monthly", "yearly"]
-
-for site in tqdm(sites, desc="Sites", unit="site"):
-    for period_type in tqdm(period_types, desc=f"Periods for {site.name}", unit="period", leave=False):
-        raw_dates = (
-            MeterReadingAggregate.objects
-            .filter(meter__area__building__site=site, period_type=period_type)
-            .values_list('start_date', flat=True)
-            .distinct()
-        )
-
-        normalized_dates = set()
-        for raw_date in raw_dates:
-            normalized = normalize_start_date(raw_date, period_type)
-            normalized_dates.add(normalized)
-
-        for norm_date in tqdm(sorted(normalized_dates), desc=f"{period_type.capitalize()} dates", unit="date", leave=False):
-            create_hierarchy_aggregate(site, period_type, norm_date)
+print(f"✅ Created: {len(sites)} sites, {building_count} buildings, {area_count} areas, {meter_count} meters, {len(created_measurements)} unique measurements")

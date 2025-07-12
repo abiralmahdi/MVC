@@ -22,6 +22,7 @@ class Gadgets(models.Model):
     dashboard = models.ForeignKey(Dashboard, related_name='gadgets', on_delete=models.CASCADE)
     meters = models.ManyToManyField(Meters, related_name='gadgets')  
     measurement = models.ManyToManyField(Measurements, related_name='gadgets')
+    access = models.JSONField()
     def __str__(self):
         return self.name
     

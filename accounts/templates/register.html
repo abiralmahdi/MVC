@@ -1,0 +1,98 @@
+{% extends 'layout.html' %}
+{% block body %}
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column">
+  <div class="d-flex mt-5">
+      <h3 class="h5 text-info fw-bold mx-2">MARKS</h3><h3 class="h5"> Vision Center</h3>
+    </div>
+  <form action="" class="form p-3">
+      <div class="form-group mb-1">
+          <input type="text" class="form-control" placeholder="Search..." >
+      </div>
+  </form>
+  <a href="/settings/billingRates" class="text-white">Billing Rates</a>
+  <a href="/settings/deviceManager" class="text-white">Device Manager</a>
+  <a href="/settings/hierarchy" class="text-white">Hierarchy</a>
+  <a href="/accounts/accountSettings" class="text-white">Account Settings</a>
+  <a href="/settings/sysLog" class="text-white">System Log</a>
+</div>
+
+<!-- Overlay -->
+<div id="overlay" class="overlay"></div>
+
+  <style>
+    body {
+      background-color: #121212;
+      height: 100vh;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .card {
+      background-color: #1e1e1e;
+      color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.6);
+      width: 100%;
+      max-width: 400px;
+      padding: 30px;
+    }
+    .form-control {
+      background-color: #2c2c2c;
+      color: #fff;
+      border: 1px solid #444;
+    }
+    .form-control:focus {
+      background-color: #2c2c2c;
+      color: #fff;
+      border-color: #0dcaf0;
+      box-shadow: none;
+    }
+    .btn-info {
+      width: 100%;
+    }
+  </style>
+
+<div class="card p-4 mx-auto mt-5">
+    <div class="d-flex justify-content-center mb-3">
+      <h3 class="h4 text-info fw-bold mx-2">MARKS</h3>
+      <h3 class="h4">Vision Center</h3>
+    </div>
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label for="name" class="form-label">Name</label>
+        <input type="text" class="form-control" id="name" name="name" placeholder="Enter your Name" required>
+      </div>
+      <div class="mb-3">
+        <label for="profilePic" class="form-label">Profile Picture</label>
+        <input type="file" class="form-control" id="profilePic" name="profilePic" placeholder="Upload Photo" required>
+      </div>
+      <div class="mb-3">
+        <label for="role" class="form-label">Role</label>
+        <select type="text" class="form-control" id="role" name="role" placeholder="Enter Role" required>
+            <option value="Administrator">Administrator</option>
+            <option value="Operator">Operator</option>
+            <option value="Quality Manager">Quality Manager</option>
+            <option value="Shift Manager">Shift Manager</option>
+            <option value="Maintenance Personnel">Maintenance Personnel</option>
+            <option value="Setup Technician">Setup Technician</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+      </div>
+      <div class="mb-3">
+        <label for="password1" class="form-label">Password</label>
+        <input type="password" class="form-control" id="password1" name="password1" placeholder="Enter your password" required>
+      </div>
+      <div class="mb-3">
+        <label for="password2" class="form-label">Confirm Password</label>
+        <input type="password" class="form-control" id="password2" name="password2" placeholder="Confirm your password" required>
+      </div>
+      <button type="submit" class="btn btn-info mt-3 fw-bold w-100">Register</button>
+    </form>
+  </div>
+{% endblock %}

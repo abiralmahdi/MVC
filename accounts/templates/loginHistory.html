@@ -1,16 +1,46 @@
 {% extends 'layout.html' %}
 {% block body %}
 
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column">
+  <div class="d-flex mt-5">
+      <h3 class="h5 text-info fw-bold mx-2">MARKS</h3><h3 class="h5"> Vision Center</h3>
+    </div>
+  <form action="" class="form p-3">
+      <div class="form-group mb-1">
+          <input type="text" class="form-control" placeholder="Search..." >
+      </div>
+  </form>
+  <a href="/settings/billingRates" class="text-white">Billing Rates</a>
+  <a href="/settings/deviceManager" class="text-white">Device Manager</a>
+  <a href="/settings/hierarchy" class="text-white">Hierarchy</a>
+  <a href="/accounts/accountSettings" class="text-white">Account Settings</a>
+  <a href="/settings/sysLog" class="text-white">System Log</a>
+</div>
+
+<!-- Overlay -->
+<div id="overlay" class="overlay"></div>
+
 <div class="container">
     <div class="container mt-4">
         <div class="d-flex">
             <h4 class="mb-3">Login History</h4>
             <div class="ms-auto d-flex">
+              <form method="GET" class="ms-auto d-flex" action="/accounts/loginHistory">
                 <label for="startDate" class="small mt-1">Start Date</label>
-                <input type="date" id="startDate" class="form-control mx-3" style="width: 150px; height: 30px; font-size: 0.8rem;">
+                <input type="date" id="startDate" name="start_date" class="form-control mx-3" style="width: 150px; height: 30px; font-size: 0.8rem;">
+                
                 <label for="endDate" class="small mt-1">End Date</label>
-                <input type="date" id="endDate" class="form-control mx-3" style="width: 150px; height: 30px; font-size: 0.8rem;">
-                <button class="btn btn-sm btn-info fw-bold" style="height: 30px;">Print <i class="fa-solid fa-print mx-2"></i></button>
+                <input type="date" id="endDate" name="end_date" class="form-control mx-3" style="width: 150px; height: 30px; font-size: 0.8rem;">
+                
+                <button class="btn btn-sm btn-info fw-bold me-2" style="height: 30px;" type="submit">
+                  Fetch <i class="fa-solid fa-search mx-2"></i>
+                </button>
+                
+                <button class="btn btn-sm btn-info fw-bold" style="height: 30px;" type="button">
+                  Print <i class="fa-solid fa-print mx-2"></i>
+                </button>
+              </form>
             </div>
         </div>
         
@@ -29,186 +59,42 @@
               </tr>
             </thead>
             <tbody>
-                <tr>
-                  <td>1</td>
-                  <td>John Doe</td>
-                  <td>Admin</td>
-                  <td>03/06/2025 09:15 AM</td>
-                  <td>New York, USA</td>
-                  <td>Chrome on Windows</td>
-                  <td><span class="badge text-bg-success">Active</span></td>
-                  <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
-                </tr>
-                <tr>
-                  <td>2</td>
-                  <td>Jane Smith</td>
-                  <td>Editor</td>
-                  <td>03/06/2025 08:50 AM</td>
-                  <td>London, UK</td>
-                  <td>Firefox on Mac</td>
-                  <td><span class="badge text-bg-danger">Inactive</span></td>
-                  <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
-                </tr>
-                <tr>
-                  <td>3</td>
-                  <td>Samuel Lee</td>
-                  <td>Viewer</td>
-                  <td>02/06/2025 05:20 PM</td>
-                  <td>Tokyo, Japan</td>
-                  <td>Edge on Windows</td>
-                  <td><span class="badge text-bg-warning">Idle</span></td>
-                  <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
-                </tr>
-                <tr>
-                    <td>1</td>
-                    <td>John Doe</td>
-                    <td>Admin</td>
-                    <td>03/06/2025 09:15 AM</td>
-                    <td>New York, USA</td>
-                    <td>Chrome on Windows</td>
-                    <td><span class="badge text-bg-success">Active</span></td>
-                    <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
-                  </tr>
+                {% for log in history %}
                   <tr>
-                    <td>2</td>
-                    <td>Jane Smith</td>
-                    <td>Editor</td>
-                    <td>03/06/2025 08:50 AM</td>
-                    <td>London, UK</td>
-                    <td>Firefox on Mac</td>
-                    <td><span class="badge text-bg-danger">Inactive</span></td>
-                    <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
+                    <td>{{ log.id }}</td>
+                    <td>{{ log.user.first_name }} {{ log.user.last_name }}</td>
+                    <td>
+                      {% if log.user.userModel.first %}
+                        {{ log.user.userModel.first.role }}
+                      {% else %}
+                        N/A
+                      {% endif %}
+                    </td>
+                    <td>{{ log.timestamp }}</td>
+                    <td>{{ log.ip_address }}</td>
+                    <td>{{ log.device }}</td>
+                    <td>
+                      {% with user_model=log.user.userModel.first %}
+                      {% if user_model and user_model.last_activity %}
+                        {% if user_model.last_activity|timesince < "1 minute" %}
+                        <span class="badge text-bg-success">Active</td>
+                        {% else %}
+                        <span class="badge text-bg-danger">Inactive</td>
+                        {% endif %}
+                      {% else %}
+                        <span class="badge text-bg-secondary">Unknown</td>
+                      {% endif %}
+                    {% endwith %}
+
+                    </td>
+                    <td><a class="btn btn-sm btn-info" href="/accounts/terminateUser/{{log.user.id}}">Terminate Session</a></td>
                   </tr>
+                {% empty %}
                   <tr>
-                    <td>3</td>
-                    <td>Samuel Lee</td>
-                    <td>Viewer</td>
-                    <td>02/06/2025 05:20 PM</td>
-                    <td>Tokyo, Japan</td>
-                    <td>Edge on Windows</td>
-                    <td><span class="badge text-bg-warning">Idle</span></td>
-                    <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
+                    <td colspan="7">No login history found.</td>
                   </tr>
-                  <tr>
-                    <td>1</td>
-                    <td>John Doe</td>
-                    <td>Admin</td>
-                    <td>03/06/2025 09:15 AM</td>
-                    <td>New York, USA</td>
-                    <td>Chrome on Windows</td>
-                    <td><span class="badge text-bg-success">Active</span></td>
-                    <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
-                  </tr>
-                  <tr>
-                    <td>2</td>
-                    <td>Jane Smith</td>
-                    <td>Editor</td>
-                    <td>03/06/2025 08:50 AM</td>
-                    <td>London, UK</td>
-                    <td>Firefox on Mac</td>
-                    <td><span class="badge text-bg-danger">Inactive</span></td>
-                    <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
-                  </tr>
-                  <tr>
-                    <td>3</td>
-                    <td>Samuel Lee</td>
-                    <td>Viewer</td>
-                    <td>02/06/2025 05:20 PM</td>
-                    <td>Tokyo, Japan</td>
-                    <td>Edge on Windows</td>
-                    <td><span class="badge text-bg-warning">Idle</span></td>
-                    <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
-                  </tr>
-                  <tr>
-                    <td>1</td>
-                    <td>John Doe</td>
-                    <td>Admin</td>
-                    <td>03/06/2025 09:15 AM</td>
-                    <td>New York, USA</td>
-                    <td>Chrome on Windows</td>
-                    <td><span class="badge text-bg-success">Active</span></td>
-                    <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
-                  </tr>
-                  <tr>
-                    <td>2</td>
-                    <td>Jane Smith</td>
-                    <td>Editor</td>
-                    <td>03/06/2025 08:50 AM</td>
-                    <td>London, UK</td>
-                    <td>Firefox on Mac</td>
-                    <td><span class="badge text-bg-danger">Inactive</span></td>
-                    <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
-                  </tr>
-                  <tr>
-                    <td>3</td>
-                    <td>Samuel Lee</td>
-                    <td>Viewer</td>
-                    <td>02/06/2025 05:20 PM</td>
-                    <td>Tokyo, Japan</td>
-                    <td>Edge on Windows</td>
-                    <td><span class="badge text-bg-warning">Idle</span></td>
-                    <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
-                  </tr>
-                  <tr>
-                      <td>1</td>
-                      <td>John Doe</td>
-                      <td>Admin</td>
-                      <td>03/06/2025 09:15 AM</td>
-                      <td>New York, USA</td>
-                      <td>Chrome on Windows</td>
-                      <td><span class="badge text-bg-success">Active</span></td>
-                      <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
-                    </tr>
-                    <tr>
-                      <td>2</td>
-                      <td>Jane Smith</td>
-                      <td>Editor</td>
-                      <td>03/06/2025 08:50 AM</td>
-                      <td>London, UK</td>
-                      <td>Firefox on Mac</td>
-                      <td><span class="badge text-bg-danger">Inactive</span></td>
-                      <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
-                    </tr>
-                    <tr>
-                      <td>3</td>
-                      <td>Samuel Lee</td>
-                      <td>Viewer</td>
-                      <td>02/06/2025 05:20 PM</td>
-                      <td>Tokyo, Japan</td>
-                      <td>Edge on Windows</td>
-                      <td><span class="badge text-bg-warning">Idle</span></td>
-                      <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
-                    </tr>
-                    <tr>
-                      <td>1</td>
-                      <td>John Doe</td>
-                      <td>Admin</td>
-                      <td>03/06/2025 09:15 AM</td>
-                      <td>New York, USA</td>
-                      <td>Chrome on Windows</td>
-                      <td><span class="badge text-bg-success">Active</span></td>
-                      <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
-                    </tr>
-                    <tr>
-                      <td>2</td>
-                      <td>Jane Smith</td>
-                      <td>Editor</td>
-                      <td>03/06/2025 08:50 AM</td>
-                      <td>London, UK</td>
-                      <td>Firefox on Mac</td>
-                      <td><span class="badge text-bg-danger">Inactive</span></td>
-                      <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
-                    </tr>
-                    <tr>
-                      <td>3</td>
-                      <td>Samuel Lee</td>
-                      <td>Viewer</td>
-                      <td>02/06/2025 05:20 PM</td>
-                      <td>Tokyo, Japan</td>
-                      <td>Edge on Windows</td>
-                      <td><span class="badge text-bg-warning">Idle</span></td>
-                      <td><button class="btn btn-sm btn-info">Terminate Session</button></td>
-                    </tr>
+                {% endfor %}
+                
               </tbody>
               
           </table>

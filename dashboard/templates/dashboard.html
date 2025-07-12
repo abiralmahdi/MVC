@@ -3,6 +3,7 @@
 
 
 <!-- Dashboard generation modal -->
+{% if request.user.is_superuser %}
 <div class="modal fade" id="addDashboardModal" tabindex="-1" aria-labelledby="addDashboardModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <form method="POST" action="/dashboard/newDashboard">
@@ -38,6 +39,7 @@
       </form>
     </div>
   </div>
+  {% endif %}
 
 
 
@@ -57,7 +59,13 @@
     </form>
 
     <div class="accordion accordion-flush" id="sidebarAccordion">
+      {% if request.user.is_superuser %}
         <button class="btn btn-block btn-info ms-3 fw-bold" data-bs-toggle="modal" data-bs-target="#addDashboardModal"><i class="fa-solid me-2 fa-plus"></i>Create a new Dashboard</button>
+      {% else %}
+      <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="You are not authorized to create a dashboard">
+        <button class="btn btn-block btn-info ms-3 fw-bold" disabled><i class="fa-solid me-2 fa-plus"></i>Create a new Dashboard</button>
+      </span>
+      {% endif %}
         {% for site in sites %}
         <!-- Industry Accordion -->
         <div class="accordion-item bg-dark border-0">

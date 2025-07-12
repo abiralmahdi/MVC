@@ -5,13 +5,13 @@ from dashboard.models import *  # Replace with your app name
 from dynamic.models import Meters
 
 # Get the meter instance
-meter, _ = Meters.objects.get_or_create(name="Multi Function Meter 2")
+meter, _ = Meters.objects.get_or_create(name="Meter A1-9-5")
 
 # Starting timestamp
-start_time = datetime.strptime("02-07-25 00:00", "%d-%m-%y %H:%M")
+start_time = datetime.strptime("12-07-23 00:00", "%d-%m-%y %H:%M")
 
 # Number of entries to generate
-num_entries = 144  # 3 year at 10-minute intervals
+num_entries = 105120  # 105120 for 2 year at 10-minute intervals, or 144 for daily
 
 current_time = start_time
 
@@ -96,7 +96,7 @@ for _ in tqdm(range(num_entries), desc="Generating readings"):
     }
 
     # Create and save
-    LatestMeterReading.objects.create(
+    MeterReading.objects.create(
         meter=meter,
         timestamp=current_time,
         data=data

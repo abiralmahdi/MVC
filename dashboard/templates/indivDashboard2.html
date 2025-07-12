@@ -60,7 +60,7 @@
 </style>
 
 
-
+{% if request.user.is_superuser %}
 <!-- Dashboard generation modal -->
 <div class="modal fade" id="addDashboardModal" tabindex="-1" aria-labelledby="addDashboardModalLabel"
     aria-hidden="true">
@@ -154,6 +154,21 @@
                             {% endfor %}
                         </select>
                     </div>
+
+                    <div class="mb-3">
+                        <label for="access" class="form-label">Access Control</label>
+                        <select class="form-select" id="access" name="access" multiple required>
+                            <optgroup label="Access Control">
+                                <option value="Administrator">Administrator</option>
+                                <option value="Operator">Operator</option>
+                                <option value="Quality Manager">Quality Manager</option>
+                                <option value="Shift Manager">Shift Manager</option>
+                                <option value="Maintenance Personnel">Maintenance Personnel</option>
+                                <option value="Setup Technician">Setup Technician</option>
+                            </optgroup>
+                        </select>
+                        <div class="form-text text-light">Hold Ctrl (Windows) or Cmd (Mac) to select multiple meters.</div>
+                    </div>
                 </div>
 
                 <div class="modal-footer border-dark">
@@ -215,7 +230,7 @@
     });
 </script>
 
-
+{% endif %}
 
 <!-- Sidebar -->
 <!-- Sidebar -->
@@ -233,8 +248,17 @@
     </form>
 
     <div class="accordion accordion-flush" id="sidebarAccordion">
-        <button class="btn btn-block btn-info ms-3 fw-bold" data-bs-toggle="modal"
-            data-bs-target="#addDashboardModal"><i class="fa-solid me-2 fa-plus"></i>Create a new Dashboard</button>
+        {% if request.user.is_superuser %}
+        <span>
+            <button class="btn btn-block btn-info ms-3 fw-bold" data-bs-toggle="modal"
+                data-bs-target="#addDashboardModal"><i class="fa-solid me-2 fa-plus"></i>Create a new Dashboard</button>
+        </span>
+        {% else %}
+        <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="You are not authorized to create a dashboard">
+            <button class="btn btn-block btn-info ms-3 fw-bold" data-bs-toggle="modal"
+                data-bs-target="#addDashboardModal"><i class="fa-solid me-2 fa-plus" disabled></i>Create a new Dashboard</button>
+        </span>
+        {% endif %}
         {% for site in sites %}
         <!-- Industry Accordion -->
         <div class="accordion-item bg-dark border-0">
@@ -282,8 +306,23 @@
                 <h3 class="text-center mt-5 text-secondary">No Gadgets Configured</h3>
                 <p class="text-center text-secondary">No Gadgets were configured for this dashboard. <br> Click below to
                     configure gadgets.</p>
-                <p class="text-center"><button class="btn btn-info" data-bs-toggle="modal"
-                        data-bs-target="#addGadgetModal"><i class="fa-solid fa-plus me-2"></i>Add Gadget</button></p>
+                <p class="text-center">
+                    {% if request.user.is_superuser %}
+                    <span>
+                    <button class="btn btn-info" data-bs-toggle="modal"
+                        data-bs-target="#addGadgetModal"><i class="fa-solid fa-plus me-2"></i>
+                        Add Gadget
+                    </button>
+                    </span>
+                    {% else %}
+                    <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="You are not authorized to configure a new Gadget">
+                        <button class="btn btn-info" data-bs-toggle="modal" disabled
+                            data-bs-target="#addGadgetModal"><i class="fa-solid fa-plus me-2"></i>
+                            Add Gadget
+                        </button>
+                    </span>
+                    {% endif %}
+                </p>
             </div>
             {% else %}
             <div class="">
@@ -292,8 +331,21 @@
                         {{ dashboard.title }}
 
                     </h1>
-                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#addGadgetModal"><i
-                            class="fa-solid fa-plus me-2"></i>Add Gadget</button>
+                    {% if request.user.is_superuser %}
+                    <span>
+                    <button class="btn btn-info" data-bs-toggle="modal"
+                        data-bs-target="#addGadgetModal"><i class="fa-solid fa-plus me-2"></i>
+                        Add Gadget
+                    </button>
+                    </span>
+                    {% else %}
+                    <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="You are not authorized to configure a new Gadget">
+                        <button class="btn btn-info" data-bs-toggle="modal" disabled
+                            data-bs-target="#addGadgetModal"><i class="fa-solid fa-plus me-2"></i>
+                            Add Gadget
+                        </button>
+                    </span>
+                    {% endif %}
                 </div>
                 <div class="d-flex">
                     <!-- Tree Sidebar -->
@@ -350,6 +402,7 @@
                     <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
                     <div id="masonry-grid">
                         {% for gadget in gadgets %}
+                        {% if request.user.userModel.first.role in gadget.access or request.user.is_superuser %}
                             <div class="p-3 shadow mb-1 gadget-item" id="gadget-wrapper-{{ gadget.id }}"
                                 style="height: 290px; width: 330px;"
                                 data-meter-ids='[{% for m in gadget.meters.all %}{{ m.id }}{% if not forloop.last %},{% endif %}{% endfor %}]'>
@@ -1633,6 +1686,7 @@
                                     {% endif %}
                                     
                             </div>
+                            {% endif %}
                         {% endfor %}
 
                     </div>

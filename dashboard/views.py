@@ -7,6 +7,7 @@ from pprint import pprint
 from datetime import timedelta
 from django.utils import timezone
 from django.db.models.functions import TruncHour, TruncDate
+from django.contrib.auth.decorators import login_required, user_passes_test
 
 
 
@@ -15,6 +16,7 @@ sites = Site.objects.prefetch_related(
     ).all()
 
 # Create your views here.
+@login_required
 def dashboard(request):
     dashboards = Dashboard.objects.all()
     gadgets = Gadgets.objects.all()
@@ -27,7 +29,7 @@ def dashboard(request):
     }
     return render(request, 'dashboard.html', context)
 
-
+@login_required
 def indivDashboard(request, dashboardID):
     dashboard_ = get_object_or_404(Dashboard, id=dashboardID)
     gadgets = Gadgets.objects.filter(dashboard=dashboard_).prefetch_related('meters', 'measurement')
@@ -61,7 +63,7 @@ def indivDashboard(request, dashboardID):
 
     return render(request, 'indivDashboard2.html', context)
 
-
+@login_required
 def fetchLatestReadings(request, dashboardID, gadget_id):
     try:
         gadget = Gadgets.objects.prefetch_related('meters', 'measurement').get(id=gadget_id)
@@ -89,7 +91,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime, timedelta
 from .models import MeterReading, Gadgets
-
+@login_required
 def fetchDateTimeWindow(request, dashboard_id, gadget_id, datetime_str):
     try:
         dt = timezone.make_aware(datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M"))
@@ -158,7 +160,7 @@ def get_period_start(date, period_type):
         return date
 
 
-
+@login_required
 def getData(request, dashboard_id, gadget_id, measurement, date, period):
     period_type = period  # optional query param: daily, weekly, monthly, etc.
 
@@ -214,6 +216,7 @@ def getData(request, dashboard_id, gadget_id, measurement, date, period):
 
 
 from collections import defaultdict
+@login_required
 def getMultiYearBarData(request, dashboard_id, gadget_id, measurement, date, period):
     try:
         selected_date = datetime.strptime(date, "%Y-%m-%d").date()
@@ -347,7 +350,7 @@ def getMultiYearBarData(request, dashboard_id, gadget_id, measurement, date, per
 
 
 
-
+@login_required
 def fetchLatestToolData(request, dashboard_id, gadget_id):
     try:
         gadget = Gadgets.objects.prefetch_related('meters', 'measurement').get(id=gadget_id)
@@ -368,7 +371,7 @@ def fetchLatestToolData(request, dashboard_id, gadget_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-
+@login_required
 def fetchTableData(request, dashboard_id, gadget_id):
     gadget = Gadgets.objects.get(id=gadget_id)
     meter = gadget.meters.first()
@@ -383,7 +386,7 @@ def fetchTableData(request, dashboard_id, gadget_id):
     return JsonResponse({"rows": rows})
 
 
-
+@login_required
 def hierarchyAggView(request, dashboard_id, site_id, measurement, period_type, start_date):
     site = get_object_or_404(Site, id=site_id)
     aggregate = get_object_or_404(
@@ -402,7 +405,7 @@ def hierarchyAggView(request, dashboard_id, site_id, measurement, period_type, s
     }
     return JsonResponse(context)
 
-
+@login_required
 def heatmap_data(request, dashboard_id, meter_id, start_date, end_date, measurement):
     try:
         start_dt = datetime.strptime(start_date, '%Y-%m-%d')
@@ -436,6 +439,9 @@ def heatmap_data(request, dashboard_id, meter_id, start_date, end_date, measurem
         'data': data
     })
 
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
 def newDashboard(request):
     if request.method=='POST':
         title = request.POST['title']
@@ -443,7 +449,8 @@ def newDashboard(request):
         site = Site.objects.get(id=siteID)
         Dashboard.objects.create(title=title, site=site).save()
     return redirect("/dashboard")
-
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
 def newGadget(request, dashboardID):
     if request.method == 'POST':
         name = request.POST['name']
@@ -462,11 +469,14 @@ def newGadget(request, dashboardID):
 
         measurements = Measurements.objects.filter(id__in=measurement_ids)
 
+        access = request.POST.getlist('access')
+
         # Create the gadget
         gadget = Gadgets.objects.create(
             name=name,
             gadget_type=gadget_type,
-            dashboard=dashboard_
+            dashboard=dashboard_,
+            access=access
         )
         gadget.meters.set(meters)
         gadget.measurement.set(measurements)
@@ -475,6 +485,8 @@ def newGadget(request, dashboardID):
     return redirect(f'/dashboard/{dashboardID}')
 
 # NO URLs YET
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
 def deleteGadget(request, gadgetID):
     gadget = Gadgets.objects.get(id=gadgetID)
     dashboardID = gadget.dashboard.id
