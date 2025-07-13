@@ -940,6 +940,15 @@
                                     
                                         dateInput.addEventListener("change", fetchPieData);
                                         periodSelector.addEventListener("change", fetchPieData);
+                                        document.addEventListener('DOMContentLoaded', function () {
+                                            // Loop through options and select the matching one
+                                            for (const option of periodSelector.options) {
+                                            if (option.value === 'monthly') {
+                                                option.selected = true;
+                                                break;
+                                            }
+                                            }
+                                        });                                        
                                         window.addEventListener("DOMContentLoaded", fetchPieData);
                                     })();
                                     </script>
@@ -1193,7 +1202,16 @@
                                     
                                         const today = new Date().toISOString().split("T")[0];
                                         dateInput.value = today;
-                                    
+                                        function loadMonth() {
+                                            // Loop through options and select the matching one
+                                            for (const option of periodSelector.options) {
+                                            if (option.value === 'monthly') {
+                                                option.selected = true;
+                                                break;
+                                            }
+                                            }
+                                        }; 
+                                        loadMonth();
                                         updateRangeSelectorsVisibility();
                                         fetchGroupedBarData();
                                     
@@ -1241,6 +1259,8 @@
                                             else if (period === "weekly") endWeekInput.showPicker();
                                             else if (period === "monthly") endMonthInput.showPicker();
                                         });
+
+                                        
                                     
                                     })();
                                     </script>
