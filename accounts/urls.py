@@ -8,5 +8,7 @@ urlpatterns = [
     path('loginHistory', views.loginHistory, name='loginHistory'),
     path('accountSettings', views.accountSettings, name='accountSettings'),
     path('terminateUser/<str:userID>', views.terminateUser, name='terminateUser'),
+    path('editUser/<str:userID>', views.editUser, name='editUser'),
+    path('deleteUser/<str:userID>', views.deleteUser, name='deleteUser'),
     
 ]

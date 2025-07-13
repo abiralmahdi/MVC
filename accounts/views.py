@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, HttpResponse
+from django.shortcuts import render, redirect, HttpResponse, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from .models import *
@@ -142,3 +142,48 @@ def terminateUser(request, userID):
         return redirect('/accounts/loginHistory')
     else:
         return HttpResponse("Unauthorized Entry")
+
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def editUser(request, userID):
+    usermodel = get_object_or_404(UserModel, id=userID)
+
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        role = request.POST.get('role')
+        password = request.POST.get('password')
+        profilePic = request.FILES.get('profilePic')
+
+        # Update UserModel
+        usermodel.name = name
+        usermodel.email = email
+        usermodel.role = role
+        usermodel.password = password  # (Consider hashing if used!)
+        if profilePic:
+            usermodel.profilePic = profilePic
+        usermodel.save()
+
+        # Update linked auth User
+        user = usermodel.user
+        user.first_name = name
+        user.email = email
+        user.username = email  # assuming username is same as email
+        user.set_password(password)
+        user.save()
+
+        return redirect('/accounts/accountSettings')
+
+    return redirect('/accounts/accountSettings')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def deleteUser(request, userID):
+    usermodel = get_object_or_404(UserModel, id=userID)
+    user = usermodel.user
+    usermodel.delete()
+    user.delete()
+    return redirect('/accounts/accountSettings')

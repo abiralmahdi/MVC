@@ -53,6 +53,13 @@
         display: none;
     }
 
+    .deleteIcon{
+        color: white;
+    }
+
+    .deleteIcon:hover{
+        color: rgb(246, 83, 83);
+    }
     canvas{
         background-color: #212529 !important;
         box-shadow: 0px 10px 50px rgb(27, 27, 27) !important;
@@ -233,7 +240,6 @@
 {% endif %}
 
 <!-- Sidebar -->
-<!-- Sidebar -->
 <div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
     style="overflow-y: auto;">
     <div class="d-flex m-3">
@@ -309,14 +315,14 @@
                 <p class="text-center">
                     {% if request.user.is_superuser %}
                     <span>
-                    <button class="btn btn-info" data-bs-toggle="modal"
+                    <button class="btn btn-info fw-bold" data-bs-toggle="modal"
                         data-bs-target="#addGadgetModal"><i class="fa-solid fa-plus me-2"></i>
                         Add Gadget
                     </button>
                     </span>
                     {% else %}
                     <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="You are not authorized to configure a new Gadget">
-                        <button class="btn btn-info" data-bs-toggle="modal" disabled
+                        <button class="btn btn-info fw-bold" data-bs-toggle="modal" disabled
                             data-bs-target="#addGadgetModal"><i class="fa-solid fa-plus me-2"></i>
                             Add Gadget
                         </button>
@@ -333,14 +339,14 @@
                     </h1>
                     {% if request.user.is_superuser %}
                     <span>
-                    <button class="btn btn-info" data-bs-toggle="modal"
+                    <button class="btn btn-info fw-bold" data-bs-toggle="modal"
                         data-bs-target="#addGadgetModal"><i class="fa-solid fa-plus me-2"></i>
                         Add Gadget
                     </button>
                     </span>
                     {% else %}
                     <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="You are not authorized to configure a new Gadget">
-                        <button class="btn btn-info" data-bs-toggle="modal" disabled
+                        <button class="btn btn-info fw-bold" data-bs-toggle="modal" disabled
                             data-bs-target="#addGadgetModal"><i class="fa-solid fa-plus me-2"></i>
                             Add Gadget
                         </button>
@@ -409,6 +415,142 @@
                                 <div class="d-flex">
                                     <p class="" id="gadget-title{{gadget.id}}" style="font-size: smaller;">{{ gadget.name }}</p>
                                     
+
+
+
+
+                                    <!-- Edit gadget Modal -->
+                                    <div class="modal fade" id="editGadgetModal{{gadget.id}}" tabindex="-1" aria-labelledby="editGadgetModalLabel{{gadget.id}}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                          <form method="POST" action="/dashboard/{{ dashboard.id }}/editGadget/{{ gadget.id }}/">
+                                            {% csrf_token %}
+                                            <div class="modal-content bg-dark text-white">
+                                              <div class="modal-header border-dark">
+                                                <h5 class="modal-title" id="editGadgetModalLabel{{gadget.id}}">Edit Gadget</h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                              </div>
+                                      
+                                              <div class="modal-body">
+                                                <!-- Gadget Name -->
+                                                <div class="mb-3">
+                                                  <label for="name" class="form-label">Gadget Name</label>
+                                                  <input type="text" class="form-control" id="name" name="name" value="{{ gadget.name }}" required>
+                                                </div>
+                                      
+                                                <!-- Gadget Type -->
+                                                <div class="mb-3">
+                                                  <label for="gadget_type" class="form-label">Gadget Type</label>
+                                                  <select class="form-select" id="gadget_type" name="gadget_type" required>
+                                                    {% for option in gadgetTypes %}
+                                                      <option value="{{ option }}" {% if option == gadget.gadget_type %}selected{% endif %}>{{ option|title }}</option>
+                                                    {% endfor %}
+                                                  </select>
+                                                </div>
+                                      
+                                                <!-- Meters -->
+                                                <div class="mb-3">
+                                                  <label for="meters" class="form-label">Meters</label>
+                                                  <select class="form-select" id="meters" name="meters" multiple required>
+                                                    {% for area in areas %}
+                                                      <optgroup label="{{ area.name }}">
+                                                        {% for meter in area.meters.all %}
+                                                          <option value="{{ meter.id }}"
+                                                            {% if meter in gadget.meters.all %}selected{% endif %}>
+                                                            {{ meter.name }}
+                                                          </option>
+                                                        {% endfor %}
+                                                      </optgroup>
+                                                    {% endfor %}
+                                                  </select>
+                                                  <div class="form-text text-light">Hold Ctrl (Windows) or Cmd (Mac) to select multiple meters.</div>
+                                                </div>
+                                      
+                                                <!-- Measurements -->
+                                                <div class="mb-3">
+                                                  <label for="measurement" class="form-label">Measurements</label>
+                                                  <select class="form-select" id="measurement" name="measurement" {% if gadget.gadget_type == "tool" %}multiple{% endif %} required>
+                                                    {% for measurement in measurements %}
+                                                      <option value="{{ measurement.id }}"
+                                                        {% if measurement in gadget.measurement.all %}selected{% endif %}>
+                                                        {{ measurement.name }}
+                                                      </option>
+                                                    {% endfor %}
+                                                  </select>
+                                                </div>
+                                      
+                                                <!-- Access Control -->
+                                                <div class="mb-3">
+                                                  <label for="access" class="form-label">Access Control</label>
+                                                  <select class="form-select" id="access" name="access" multiple required>
+                                                    {% for option in accessControl %}
+                                                      <option value="{{ option }}" {% if option in gadget.access %}selected{% endif %}>{{ option }}</option>
+                                                    {% endfor %}
+                                                  </select>
+                                                  <div class="form-text text-light">Hold Ctrl (Windows) or Cmd (Mac) to select multiple access levels.</div>
+                                                </div>
+                                              </div>
+                                      
+                                              <div class="modal-footer border-dark">
+                                                <button type="submit" class="btn btn-info">Update Gadget</button>
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                              </div>
+                                            </div>
+                                          </form>
+                                        </div>
+                                      </div>
+                                      <script>
+                                        document.addEventListener('DOMContentLoaded', function () {
+                                          // Find all edit gadget modals on the page
+                                          document.querySelectorAll('[id^="editGadgetModal"]').forEach(function (modal) {
+                                            const gadgetId = modal.id.replace('editGadgetModal', '');
+                                            const metersSelect = modal.querySelector(`#meters`);
+                                            const gadgetTypeSelect = modal.querySelector(`#gadget_type`);
+                                            const measurementSelect = modal.querySelector(`#measurement`);
+                                            const tableOption = modal.querySelector(`#gadget_type option[value="table"]`);
+                                      
+                                            if (!metersSelect || !gadgetTypeSelect || !measurementSelect) return;
+                                      
+                                            // Meter selection changes
+                                            metersSelect.addEventListener('change', function () {
+                                              const selectedMeters = Array.from(this.selectedOptions);
+                                              const moreThanOne = selectedMeters.length > 1;
+                                      
+                                              // Disable "Table" if multiple meters
+                                              if (tableOption) tableOption.disabled = moreThanOne;
+                                      
+                                              if (moreThanOne && gadgetTypeSelect.value === 'table') {
+                                                gadgetTypeSelect.value = '';
+                                                measurementSelect.disabled = false;
+                                              }
+                                            });
+                                      
+                                            // Gadget type selection changes
+                                            gadgetTypeSelect.addEventListener('change', function () {
+                                              const type = this.value;
+                                      
+                                              if (type === 'table') {
+                                                measurementSelect.disabled = true;
+                                              } else {
+                                                measurementSelect.disabled = false;
+                                              }
+                                      
+                                              if (type === 'tool') {
+                                                metersSelect.multiple = false;
+                                                metersSelect.selectedIndex = -1;
+                                                measurementSelect.multiple = true;
+                                                measurementSelect.selectedIndex = -1;
+                                              } else {
+                                                metersSelect.multiple = true;
+                                                measurementSelect.multiple = false;
+                                                metersSelect.selectedIndex = -1;
+                                                measurementSelect.selectedIndex = -1;
+                                              }
+                                            });
+                                          });
+                                        });
+                                      </script>
+                                      
+
                                     {% if gadget.gadget_type == 'pie' %}
                                     <!-- Hidden Date Input -->
                                     <input type="date" id="datepicker-{{ gadget.id }}" class="form-control form-control-sm d-none"/>
@@ -496,7 +638,7 @@
                                     </div>
 
                                     <!-- Clickable Icon -->
-                                    <i class="fa fa-calendar-alt" id="dateInputAlternate" style="cursor: pointer;" onclick="document.getElementById('datepicker-{{ gadget.id }}').showPicker()"></i>
+                                    <i class="fa fa-calendar-alt" id="dateInputAlternate{{gadget.id}}" style="cursor: pointer;" onclick="document.getElementById('datepicker-{{ gadget.id }}').showPicker()"></i>
                                       <i class="fa-solid fa-up-right-and-down-left-from-center ms-1 maximizeGadget" data-bs-toggle="modal"
                                     data-bs-target="#maximizeModal{{gadget.id}}"></i>
 
@@ -527,8 +669,11 @@
                                         <i class="fa-solid fa-up-right-and-down-left-from-center ms-auto maximizeGadget" data-bs-toggle="modal"
                                     data-bs-target="#maximizeModal{{gadget.id}}"></i>
                                     {% endif %}
-
-                                    
+                                    {% if request.user.is_superuser %}
+                                    <i class="fa-solid fa-pen {% if gadget.gadget_type != 'tool' %}ms-1{% else %}ms-auto {% endif %} maximizeGadget" data-bs-toggle="modal"
+                                    data-bs-target="#editGadgetModal{{gadget.id}}"></i>
+                                    <a href="/dashboard/{{gadget.dashboard.id}}/deleteGadget/{{gadget.id}}" class="ms-1" style="margin-top: -5px !important;"><i class="fa-solid fa-trash deleteIcon"></i></a>
+                                    {% endif %}
                                 </div>
                                 
                                 <!-- Maximize Gadget Modal -->
@@ -902,10 +1047,10 @@
                                     
                                             if (['daily', 'weekly', 'monthly'].includes(period)) {
                                                 iconContainer.classList.remove('d-none');
-                                                document.getElementById('dateInputAlternate').classList.add('d-none');
+                                                document.getElementById('dateInputAlternate{{gadget.id}}').classList.add('d-none');
                                             } else {
                                                 iconContainer.classList.add('d-none');
-                                                document.getElementById('dateInputAlternate').classList.remove('d-none');
+                                                document.getElementById('dateInputAlternate{{gadget.id}}').classList.remove('d-none');
                                             }
                                         }
                                     

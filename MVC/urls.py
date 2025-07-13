@@ -12,6 +12,7 @@ urlpatterns = [
     path('settings/', include('dynamic.urls')),
     path('dashboard/', include('dashboard.urls')),
     path('alarms/', include('alarms.urls')),
+    path('reports/', include('report.urls')),
 ]
 
 

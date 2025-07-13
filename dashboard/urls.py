@@ -13,11 +13,9 @@ urlpatterns = [
     path('<int:dashboard_id>/multiYearBarData/<int:gadget_id>/<str:measurement>/<str:date>/<str:period>', views.getMultiYearBarData, name='bar_compare_data'),
     path('<int:dashboard_id>/fetchTableData/<int:gadget_id>', views.fetchTableData, name='fetchTableData'),
     path("<int:dashboard_id>/hierarchyy/<int:site_id>/<str:measurement>/<str:period_type>/<str:start_date>/", views.hierarchyAggView, name="hierarchyAggView"),
-    path(
-    "<int:dashboard_id>/heatmap/<int:meter_id>/<str:start_date>/<str:end_date>/<path:measurement>/",
-    views.heatmap_data,
-    name="heatmap_data"
-    )
+    path("<int:dashboard_id>/heatmap/<int:meter_id>/<str:start_date>/<str:end_date>/<path:measurement>/", views.heatmap_data, name="heatmap_data"),
+    path('<str:dashboardID>/deleteGadget/<str:gadgetID>/', views.deleteGadget, name='deleteGadget'),
+    path('<str:dashboardID>/editGadget/<str:gadgetID>/', views.editGadget, name='editGadget'),
 
 
     

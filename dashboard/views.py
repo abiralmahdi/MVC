@@ -10,7 +10,8 @@ from django.db.models.functions import TruncHour, TruncDate
 from django.contrib.auth.decorators import login_required, user_passes_test
 
 
-
+GADGET_TYPES = ["pie", "bar", "line", "table", "tool", "sankey", "heatmap"]
+ACCESS_CONSTROL = ["Administrator", "Operator", "Quality Manager", "Shift Manager", "Maintenance Personnel", "Setup Technician"]
 sites = Site.objects.prefetch_related(
         'buildings__areas__meters'
     ).all()
@@ -57,7 +58,9 @@ def indivDashboard(request, dashboardID):
         'areas': areas,
         'meters': meters,
         'measurements': measurements,
-        'readingData':readingArray
+        'readingData':readingArray,
+        'gadgetTypes':GADGET_TYPES,
+        'accessControl':ACCESS_CONSTROL
         
     }
 
@@ -487,9 +490,37 @@ def newGadget(request, dashboardID):
 # NO URLs YET
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
-def deleteGadget(request, gadgetID):
+def deleteGadget(request, dashboardID, gadgetID):
     gadget = Gadgets.objects.get(id=gadgetID)
-    dashboardID = gadget.dashboard.id
     gadget.delete()
     return redirect('/dashboard/'+str(dashboardID))
 
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def editGadget(request, dashboardID, gadgetID):
+    gadget = get_object_or_404(Gadgets, id=gadgetID, dashboard_id=dashboardID)
+
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        gadget_type = request.POST.get('gadget_type')
+
+        # Multiple select fields
+        meters = request.POST.getlist('meters')
+        measurements = request.POST.getlist('measurement')
+        access = request.POST.getlist('access')
+
+        # Update gadget fields
+        gadget.name = name
+        gadget.gadget_type = gadget_type
+        gadget.access = access  # JSONField will store list as JSON
+
+        # Update M2M relationships
+        gadget.meters.set(meters)
+        gadget.measurement.set(measurements)
+
+        gadget.save()
+
+        return redirect(f'/dashboard/{dashboardID}')  # Adjust redirect as needed
+
+    return redirect(f'/dashboard/{dashboardID}')

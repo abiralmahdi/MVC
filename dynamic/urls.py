@@ -11,6 +11,10 @@ urlpatterns = [
     path('hierarchy/addArea', views.addArea, name='addArea'),
     path('hierarchy/addMeter', views.addMeter, name='addMeter'),
     path('hierarchy/addLoadType', views.addLoadType, name='addLoadType'),
+    path('hierarchy/deleteSite', views.deleteSite, name='deleteSite'),
+    path('hierarchy/deleteArea', views.deleteArea, name='deleteArea'),
+    path('hierarchy/deleteBuilding', views.deleteBuilding, name='deleteBuilding'),
+    path('hierarchy/deleteMeter', views.deleteMeter, name='deleteMeter'),
 
     
 ]

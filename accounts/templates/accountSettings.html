@@ -66,7 +66,7 @@
                   <td>{{user.user.last_login}}</td>
                   <td>
                     {% if request.user.is_superuser %}
-                    <button class="btn btn-sm btn-info">Edit</button>
+                    <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#editUserModal{{ user.id }}">Edit</button>
                     {% else %}
                     <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="You are not authorized to edit user information">
                       <button class="btn btn-info btn-sm" disabled>Edit</button>
@@ -75,18 +75,64 @@
                   </td>
                   <td>
                     {% if request.user.is_superuser %}
-                    <button class="btn btn-sm btn-danger">Delete</button>
+                    <a class="btn btn-sm btn-danger" href="/accounts/deleteUser/{{user.id}}">Delete</a>
                     {% else %}
                     <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="You are not authorized to delete any user">
                       <button class="btn btn-danger btn-sm" disabled>Delete</button>
                     </span>
-                    {% endif %}                  </td>
+                    {% endif %}                  
+                  </td>
                 </tr>
                 {% endfor %}
                 
               </tbody>
               
           </table>
+          {% for user in users %}
+            <!-- Edit Modal -->
+            <div class="modal fade" id="editUserModal{{ user.id }}" tabindex="-1" aria-labelledby="editUserModalLabel{{ user.id }}" aria-hidden="true">
+              <div class="modal-dialog">
+                <form method="POST" action="/accounts/editUser/{{user.id}}" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  <div class="modal-content bg-dark text-white">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="editUserModalLabel{{ user.id }}">Edit User</h5>
+                      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                      <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" name="name" value="{{ user.name }}" required>
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label">Email / Username</label>
+                        <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <input type="text" class="form-control" name="role" value="{{ user.role }}" required>
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="text" class="form-control" name="password" value="{{ user.password }}" required>
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label">Profile Picture</label><br>
+                        <img src="{{ user.profilePic.url }}" alt="Current Photo" style="width: 50px; height: 50px; object-fit: cover;" class="mb-2">
+                        <input type="file" class="form-control" name="profilePic">
+                      </div>
+                    </div>
+
+                    <div class="modal-footer">
+                      <button type="submit" class="btn btn-info">Save Changes</button>
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
         </div>
       </div>
 </div>

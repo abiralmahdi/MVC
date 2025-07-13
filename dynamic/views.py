@@ -3,15 +3,22 @@ from .models import *
 from django.shortcuts import redirect
 from django.db.models import Count, Prefetch
 from dashboard.models import *
+from django.contrib.auth.decorators import login_required, user_passes_test
+
 
 # Create your views here.
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
 def configureDashboard(request):
     return render(request, "configureDashboard.html")
 
-
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
 def settings(request):
     return render(request, 'settings.html')
 
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
 def hierarchy(request):
     site = Site.objects.all().prefetch_related(
         Prefetch(
@@ -38,11 +45,16 @@ def hierarchy(request):
     }
     return render(request, 'hierarchy.html', context)
 
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
 def addSite(request):
     if request.method == 'POST':
         Site.objects.create(name=request.POST.get('site_name'))
         return redirect("/settings/hierarchy")
-    
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)  
 def addBuilding(request):
     if request.method == 'POST':
         name = request.POST['building_name']
@@ -51,7 +63,10 @@ def addBuilding(request):
 
         Buildings.objects.create(name=name, site=site)
         return redirect("/settings/hierarchy")
-    
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser) 
 def addArea(request):
     if request.method == 'POST':
         name = request.POST['area_name']
@@ -62,6 +77,8 @@ def addArea(request):
         return redirect("/settings/hierarchy")
     
 
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
 def addMeter(request):
     if request.method == 'POST':
         name = request.POST['meter_name']
@@ -73,9 +90,36 @@ def addMeter(request):
         
         Meters.objects.create(name=name, area=area, loadType=load, meterType=meterType)
         return redirect("/settings/hierarchy")
-    
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
 def addLoadType(request):
     if request.method == 'POST':
         name = request.POST['load_name']
         LoadType.objects.create(name=name)
         return redirect("/settings/hierarchy")
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def deleteSite(request, siteID):
+    Site.objects.get(id=siteID).delete()
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def deleteBuilding(request, siteID):
+    Buildings.objects.get(id=siteID).delete()
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def deleteArea(request, siteID):
+    Areas.objects.get(id=siteID).delete()
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def deleteMeter(request, siteID):
+    Meters.objects.get(id=siteID).delete()

@@ -157,7 +157,7 @@
               <td>{{site.buildings.count}}</td>
               <td><a class="btn btn-sm btn-info" data-bs-toggle="modal"
                   data-bs-target="#siteDetailsModal{{ site.id }}"><i class="fa-solid fa-eye"></i></a></td>
-              <td><a class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i></a></td>
+              <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteSite"><i class="fa-solid fa-trash"></i></a></td>
             </tr>
             {% endfor %}
           </tbody>
@@ -334,7 +334,7 @@
               <td>{{building.areas.count}}</td>
               <td>{{building.meter_count}}</td>
               <td><a class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#buildingDetailsModal{{ building.id }}"><i class="fa-solid fa-eye"></i></a></td>
-              <td><a class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i></a></td>
+              <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteBuilding"><i class="fa-solid fa-trash"></i></a></td>
             </tr>
             {% endfor %}
           </tbody>
@@ -476,7 +476,7 @@
               <td>{{area.building.name}}</td>
               <td>{{area.meters.count}}</td>
               <td><a class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#areaDetailsModal{{ area.id }}"><i class="fa-solid fa-eye"></i></a></td>
-              <td><a class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i></a></td>
+              <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteArea"><i class="fa-solid fa-trash"></i></a></td>            
             </tr>
             {% endfor %}
           </tbody>
@@ -625,7 +625,7 @@
               <td>{{meter.area.building.name}}</td>
               <td>{{meter.area.name}}</td>
               <td><a class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#meterDetailsModal{{ meter.id }}"><i class="fa-solid fa-eye"></i></a></td>
-              <td><a class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i></a></td>
+              <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteMeter"><i class="fa-solid fa-trash"></i></a></td>
             </tr>
             {% endfor %}
           </tbody>

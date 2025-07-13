@@ -65,10 +65,6 @@
   display: none;
 }
 
-#accountDropdown{
-
-}
-
         
          /* Sidebar styling */
     .sidebar {
@@ -270,7 +266,7 @@
                 <a class="nav-link {% if 'alarm' in request.path %} text-info fw-bold {% endif %}" href="/alarms/allAlarms">Alarms</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link {% if 'addReport' in request.path %} text-info fw-bold {% endif %}" href="/reports/addReport">Reports</a>
+                <a class="nav-link {% if 'addReport' in request.path %} text-info fw-bold {% endif %}" href="/reports">Reports</a>
               </li>
               <li class="nav-item">
                 <a class="nav-link {% if 'savedReport' in request.path %} text-info fw-bold {% endif %}" href="/reports/savedReports">Saved Reports</a>
