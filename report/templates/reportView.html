@@ -1,0 +1,407 @@
+{% extends 'layout.html' %}
+{% block body %}
+
+<style>
+    .accordion-button::after {
+    display: none !important;
+}
+</style>
+
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
+    style="overflow-y: auto;">
+    <div class="d-flex m-3">
+        <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
+        <h3 class="h6">Vision Center</h3>
+    </div>
+
+    <form class="form m-3">
+        <div class="form-group">
+            <input type="text" class="form-control" placeholder="Search...">
+        </div>
+    </form>
+
+    <div class="accordion accordion-flush" id="sidebarAccordion">
+        <span>
+            <button class="btn btn-block btn-info ms-3 fw-bold" href="/reports/newReport"><i class="fa-solid me-2 fa-plus"></i>New Report</button>
+        </span>
+        {% for report in reports %}
+        <!-- Industry Accordion -->
+        <div class="accordion-item bg-dark border-0 mt-2">
+            <h2 class="accordion-header">
+                <button 
+                class="accordion-button collapsed bg-dark text-white generate-report-btn" 
+                type="button"
+                data-bs-toggle="modal"
+                data-bs-target="#generateReportModal-{{ report.id }}"
+                data-format-id="{{ report.id }}"
+                data-format-name="{{ report.title }}"
+                >
+              <i class="fa-solid fa-folder"></i>
+              <span class="mx-2">{{ report.title }}</span>
+            </button>
+            </h2>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+
+<!-- Overlay -->
+<div id="overlay" class="overlay"></div>
+
+<div class="container">
+    {% for diagram in diagrams %}
+
+    {% if diagram.diagram_type == 'line' %}
+  <h4>{{ diagram.diagram_type|title }} Chart</h4>
+  <div style="width: 100%; height: 400px;">
+    <canvas id="diagram-{{ diagram.id }}"></canvas>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        fetch(`/reports/getDiagramData/{{ diagram.id }}`)
+          .then(res => res.json())
+          .then(data => {
+            const ctx = document.getElementById('diagram-{{ diagram.id }}').getContext('2d');
+    
+            // Flattened rows => group by period
+            const grouped = {};
+            data.data.forEach(item => {
+              if (!grouped[item.period]) {
+                grouped[item.period] = {};
+              }
+              grouped[item.period][item.meter_id] = item.value;
+            });
+    
+            const labels = Object.keys(grouped).sort();
+            const meterNames = {
+              {% for meter in diagram.meters.all %}
+                {{ meter.id }}: "{{ meter.name }}",
+              {% endfor %}
+            };
+            const meterIds = Object.keys(meterNames);
+    
+            const datasets = meterIds.map((meterId, index) => ({
+              label: meterNames[meterId],
+              data: labels.map(period => grouped[period][meterId] || 0),
+              backgroundColor: `hsl(${index * 40}, 70%, 50%)`,
+              borderColor: `hsl(${index * 40}, 70%, 50%)`,
+              borderWidth: 1,
+              fill: '{{ diagram.diagram_type }}' === 'line' ? false : true
+            }));
+    
+            new Chart(ctx, {
+              type: '{{ diagram.diagram_type }}',
+              data: {
+                labels: labels,
+                datasets: datasets
+              },
+              options: {
+                responsive: true,
+                plugins: {
+                  legend: { position: 'top' },
+                  title: {
+                    display: true,
+                    text: '{{ diagram.diagram_type|title }} - {{ diagram.measurement.name }}'
+                  }
+                }
+              }
+            });
+          });
+    });
+    </script>
+
+
+
+
+{% elif diagram.diagram_type == 'pie' %}
+<div style="width: 100%; height: 400px;">
+    <canvas id="diagram-{{ diagram.id }}"></canvas>
+  </div><script>
+    document.addEventListener('DOMContentLoaded', function () {
+      fetch(`/reports/getDiagramData/{{ diagram.id }}`)
+        .then(res => res.json())
+        .then(data => {
+          const ctx = document.getElementById('diagram-{{ diagram.id }}').getContext('2d');
+    
+          // Group by meter ID → sum all values across periods
+          const grouped = {};
+          data.data.forEach(item => {
+            if (!grouped[item.meter_id]) {
+              grouped[item.meter_id] = 0;
+            }
+            grouped[item.meter_id] += item.value;
+          });
+    
+          const meterNames = {
+            {% for meter in diagram.meters.all %}
+              {{ meter.id }}: "{{ meter.name }}",
+            {% endfor %}
+          };
+    
+          const meterIds = Object.keys(grouped);
+    
+          const labels = meterIds.map(id => meterNames[id] || `Meter ${id}`);
+          const values = meterIds.map(id => grouped[id]);
+          const colors = meterIds.map((_, i) => `hsl(${i * 40}, 70%, 50%)`);
+    
+          new Chart(ctx, {
+            type: 'pie',
+            data: {
+              labels: labels,
+              datasets: [{
+                data: values,
+                backgroundColor: colors,
+                borderWidth: 0
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  position: 'top',
+                },
+                title: {
+                  display: true,
+                  text: 'Pie - {{ diagram.measurement.name }}'
+                }
+              }
+            }
+          });
+        })
+        .catch(err => console.error(err));
+    });
+    </script>
+
+
+{% elif diagram.diagram_type == 'bar' %}
+<div style="width: 100%; height: 400px;">
+    <canvas id="diagram-{{ diagram.id }}"></canvas>
+  </div><script>
+    document.addEventListener('DOMContentLoaded', function () {
+      fetch(`/reports/getDiagramData/{{ diagram.id }}`)
+        .then(res => res.json())
+        .then(data => {
+          const ctx = document.getElementById('diagram-{{ diagram.id }}').getContext('2d');
+  
+          // Group by period → meter → value
+          const grouped = {};
+          data.data.forEach(item => {
+            const period = item.period;
+            const meterId = item.meter_id;
+            if (!grouped[period]) {
+              grouped[period] = {};
+            }
+            if (!grouped[period][meterId]) {
+              grouped[period][meterId] = 0;
+            }
+            grouped[period][meterId] += item.value;
+          });
+  
+          const labels = Object.keys(grouped).sort();
+          const meterNames = {
+            {% for meter in diagram.meters.all %}
+              {{ meter.id }}: "{{ meter.name }}",
+            {% endfor %}
+          };
+          const meterIds = Object.keys(meterNames);
+  
+          const datasets = meterIds.map((meterId, index) => ({
+            label: meterNames[meterId] || `Meter ${meterId}`,
+            data: labels.map(period => grouped[period][meterId] || 0),
+            backgroundColor: `hsl(${index * 40}, 70%, 50%)`,
+            borderWidth: 0
+          }));
+  
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: datasets
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  position: 'top',
+                },
+                title: {
+                  display: true,
+                  text: 'Bar - {{ diagram.measurement.name }}'
+                }
+              },
+              scales: {
+                x: { stacked: false },
+                y: { beginAtZero: true }
+              }
+            }
+          });
+  
+        })
+        .catch(err => console.error(err));
+    });
+  </script>
+
+
+{% elif diagram.diagram_type == 'table' %}
+<div style="max-height: 200px; min-width: 300px; max-width: 450px; overflow-y: auto;">
+    <table id="diagram-{{ diagram.id }}" class="table table-sm table-striped table-dark text-light" style="font-size: 12px; width: 100%;">
+      <thead style="margin-top: 0;">
+        <tr id="table-head-{{ diagram.id }}"></tr>
+      </thead>
+      <tbody id="table-body-{{ diagram.id }}"></tbody>
+    </table>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const diagramId = {{ diagram.id }};
+      const tableHead = document.getElementById('table-head-{{ diagram.id }}');
+      const tableBody = document.getElementById('table-body-{{ diagram.id }}');
+      const modalBody = document.getElementById('maximizeModalBody{{ diagram.id }}');
+    
+      function updateTable(rows) {
+        if (!rows.length) return;
+    
+        const fields = Object.keys(rows[0]);
+    
+        // Build table head
+        tableHead.innerHTML = fields.map(f => `<th>${f}</th>`).join('');
+    
+        // Build table body
+        tableBody.innerHTML = rows.map(row => {
+          const tds = fields.map(f => `<td>${row[f] !== undefined ? row[f] : ''}</td>`).join('');
+          return `<tr>${tds}</tr>`;
+        }).join('');
+
+      }
+    
+      function fetchTableData() {
+        axios.get(`/reports/getTableData/${diagramId}`)
+          .then(response => updateTable(response.data.rows))
+          .catch(error => console.error('Error fetching table data:', error));
+      }
+    
+      fetchTableData();
+      setInterval(fetchTableData, 60000); // auto-refresh every 60 sec if needed
+    });
+    </script>
+
+
+{% elif diagram.diagram_type == 'sankey' %}
+<!-- ECharts CDN -->
+<script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+
+<div id="heatmap_container_{{ diagram.id }}" style="width: 1000px; height: 500px;"></div>
+
+<script>
+const heatmapChart = echarts.init(document.getElementById('heatmap_container_{{ diagram.id }}'));
+
+function loadHeatmap() {
+  fetch(`/reports/heatmap/{{ diagram.id }}`)
+    .then(res => res.json())
+    .then(res => {
+      const raw = res.data;
+      const measurement = res.measurement;
+
+      if (!raw || raw.length === 0) {
+        heatmapChart.clear();
+        console.warn("No data for this diagram’s date range");
+        return;
+      }
+
+      const days = [...new Set(raw.map(d => d.day))].sort();
+      const hours = Array.from({ length: 24 }, (_, i) => i);
+
+      const heatmapData = raw.map(d => [
+        days.indexOf(d.day),
+        d.hour,
+        d.value
+      ]);
+
+      const allValues = raw.map(d => d.value);
+      const dataMin = Math.min(...allValues);
+      const dataMax = Math.max(...allValues);
+
+      const option = {
+        tooltip: {
+          position: 'top',
+          formatter: p => {
+            const d = days[p.data[0]];
+            const h = p.data[1];
+            const v = p.data[2];
+            return `${d} ${h}:00<br>${measurement}: ${v.toFixed(2)}`;
+          }
+        },
+        grid: { height: '70%', top: '10%' },
+        xAxis: {
+          type: 'category',
+          data: days,
+          name: 'Date',
+          nameTextStyle: { color: '#fff' },
+          axisLabel: { color: '#eee' },
+          splitArea: { show: false },
+          splitLine: { show: false }
+        },
+        yAxis: {
+          type: 'category',
+          data: hours.map(h => `${h}:00`),
+          name: 'Hour',
+          nameTextStyle: { color: '#fff' },
+          axisLabel: { color: '#eee' },
+          splitArea: { show: false },
+          splitLine: { show: false }
+        },
+        backgroundColor: '#212529',
+        visualMap: {
+          min: dataMin,
+          max: dataMax,
+          calculable: true,
+          orient: 'horizontal',
+          left: 'center',
+          bottom: '5%',
+          textStyle: { color: '#eee' },
+          inRange: {
+            color: ['#00FF00', '#FFFF00', '#FF0000']
+          }
+        },
+        series: [{
+          name: measurement,
+          type: 'heatmap',
+          data: heatmapData,
+          itemStyle: {
+            borderWidth: 0
+          },
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 10,
+              shadowColor: 'rgba(0,0,0,0.5)'
+            }
+          }
+        }]
+      };
+
+      heatmapChart.setOption(option);
+    })
+    .catch(err => console.error("Heatmap load error:", err));
+}
+
+loadHeatmap();
+</script>
+
+
+{% endif %}
+    
+
+{% endfor %}
+
+
+
+
+
+</div>
+
+
+
+{% endblock %}
