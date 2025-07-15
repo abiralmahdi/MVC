@@ -3,21 +3,7 @@ from dashboard.models import Site, HierarchyDataAggregate, MeterReading
 from datetime import timedelta
 from tqdm import tqdm
 
-TARGET_MEASUREMENTS = [
-    "Total Active Power",
-    "Total Reactive Power",
-    "Active Power L1",
-    "Active Power L2",
-    "Active Power L3",
-    "Reactive Power L1",
-    "Reactive Power L2",
-    "Reactive Power L3",
-    "Apparent Power L1",
-    "Apparent Power L2",
-    "Apparent Power L3", 
-    "Total Volume",
-    "Air Flow"
-]
+TARGET_MEASUREMENTS = MeterReading.objects.first().data.keys()
 
 def normalize_start_date(date, period_type):
     if period_type == "weekly":

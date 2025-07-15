@@ -3,13 +3,16 @@ from dynamic.models import *
 from dashboard.models import *
 from .models import *
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
 import json
 from django.http import JsonResponse
 from django.db.models.functions import TruncDate, TruncMonth, TruncYear, TruncHour
 from datetime import timedelta, datetime
-   
+from django.utils.dateparse import parse_date
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
+
+
+
 
 
 # Create your views here.
@@ -43,47 +46,66 @@ def createReportFormat(request):
 
         for diagram_json in diagrams_raw:
             data = json.loads(diagram_json)
+            diagram_type = data['type']
+
+            start_date_raw = data.get('startDate')
+            end_date_raw = data.get('endDate')
+            start_dt = None
+            end_dt = None
+
+            if diagram_type == 'line':
+                if start_date_raw:
+                    start_dt = datetime.strptime(start_date_raw, '%Y-%m-%dT%H:%M')
+                if end_date_raw:
+                    end_dt = datetime.strptime(end_date_raw, '%Y-%m-%dT%H:%M')
+            elif diagram_type == 'sankey':
+                start_dt = parse_date(start_date_raw)
+                end_dt = start_dt
+            else:
+                start_dt = parse_date(start_date_raw)
+                end_dt = parse_date(end_date_raw)
+
             diagram = ReportDiagram.objects.create(
                 report_format=report_format,
-                diagram_type=data['type'],
-                measurement_id=data['measurement'],
-                period_type=data['periodType'],
-                date_range_start=data['startDate'],
-                date_range_end=data['endDate']
+                diagram_type=diagram_type,
+                period_type=data.get('periodType'),
+                date_range_start=start_dt,
+                date_range_end=end_dt, 
+                description=data.get('description')
             )
-            diagram.meters.set(data['meters'])
+
+            if diagram_type == 'table':
+                diagram.measurements.set(data.get('measurements', []))
+                if data.get('meters'):
+                    diagram.meters.set(data.get('meters')[:1])  # Only single
+            else:
+                diagram.measurements.set([data.get('measurement')]) if data.get('measurement') else None
+                if diagram_type != 'sankey' and data.get('meters'):
+                    diagram.meters.set(data.get('meters'))
 
         messages.success(request, "Report format created successfully.")
         return redirect('/reports')
 
-    meters = Meters.objects.all()
-    measurements = Measurements.objects.all()
     return redirect('/reports')
 
+
+@login_required
 def viewReport(request, reportID):
     reports = ReportFormat.objects.all()
     individualReport = ReportFormat.objects.get(id=reportID)
     diagrams = individualReport.diagrams.all()
 
-    
     context = {
-        'reports':reports,
-        'report':individualReport,
+        'reports': reports,
+        'individualReport': individualReport,
         'diagrams': diagrams
-
     }
-    return render(request, 'reportView.html', context=context)
-
-
-# API to get aggregated data for a diagram
-from django.views.decorators.csrf import csrf_exempt
+    return render(request, 'reportView2.html', context=context)
 
 
 def get_period_start(date, period_type):
-    from datetime import date as dt
-
     if period_type == "weekly":
-        return date - timedelta(days=date.weekday())  # Monday
+        return date - timedelta(days=date.weekday())
     elif period_type == "monthly":
         return date.replace(day=1)
     elif period_type == "3monthly":
@@ -102,7 +124,7 @@ def get_period_start(date, period_type):
 def getDiagramData(request, diagramID):
     diagram = get_object_or_404(ReportDiagram, id=diagramID)
     meters = diagram.meters.all()
-    measurement = diagram.measurement.name
+    measurement = diagram.measurements.first().name if diagram.measurements.exists() else None
     start = diagram.date_range_start
     end = diagram.date_range_end
     period_type = diagram.period_type
@@ -114,13 +136,41 @@ def getDiagramData(request, diagramID):
         period_type=period_type
     ).order_by('start_date')
 
-    # Prepare data for JS
     data = []
     for reading in readings:
         data.append({
             'period': reading.start_date.strftime('%Y-%m-%d'),
             'meter_id': reading.meter.id,
-            'value': reading.aggregateData.get(measurement, 0)
+            'value': reading.aggregateData.get(measurement, 0) if measurement else None
+        })
+
+    return JsonResponse({'data': data})
+
+
+
+@csrf_exempt
+def getLineDiagramData(request, diagramID):
+    diagram = get_object_or_404(ReportDiagram, id=diagramID)
+    meters = diagram.meters.all()
+    measurement = diagram.measurements.first().name if diagram.measurements.exists() else None
+    start = diagram.date_range_start
+    end = diagram.date_range_end
+
+    if not measurement:
+        return JsonResponse({'error': 'No measurement selected.'}, status=400)
+
+    readings = MeterReading.objects.filter(
+        meter__in=meters,
+        timestamp__gte=start,
+        timestamp__lte=end
+    ).order_by('timestamp')
+
+    data = []
+    for reading in readings:
+        data.append({
+            'timestamp': reading.timestamp.strftime('%Y-%m-%d %H:%M'),
+            'meter_id': reading.meter.id,
+            'value': reading.data.get(measurement, 0)
         })
 
     return JsonResponse({'data': data})
@@ -131,16 +181,15 @@ def getDiagramData(request, diagramID):
 def getTableData(request, diagramID):
     diagram = get_object_or_404(ReportDiagram, id=diagramID)
     meters = diagram.meters.all()
-    measurement = diagram.measurement.name
+    measurements = diagram.measurements.all()
     start = diagram.date_range_start
     end = diagram.date_range_end
 
-    # Filter MeterReading by meters and date range
     data = MeterReading.objects.filter(
         meter__in=meters,
         timestamp__date__gte=start,
         timestamp__date__lte=end
-    ).order_by('-timestamp') # Limit for safety
+    ).order_by('-timestamp')
 
     rows = []
     for instance in data:
@@ -148,21 +197,17 @@ def getTableData(request, diagramID):
             'Timestamp': instance.timestamp.strftime("%Y-%m-%d %H:%M"),
             'Meter': instance.meter.name
         }
-        row[measurement] = instance.data.get(measurement, 0)
+        for m in measurements:
+            row[m.name] = instance.data.get(m.name, 0)
         rows.append(row)
 
     return JsonResponse({"rows": rows})
 
 
-
-
-
 @login_required
 def heatmap_data(request, diagramID):
-    from datetime import datetime
-
     diagram = get_object_or_404(ReportDiagram, id=diagramID)
-    measurement = diagram.measurement.name
+    measurement = diagram.measurements.first().name if diagram.measurements.exists() else None
     start = diagram.date_range_start
     end = diagram.date_range_end
     meters = diagram.meters.all()
@@ -170,7 +215,6 @@ def heatmap_data(request, diagramID):
     if not meters.exists():
         return JsonResponse({'error': 'No meters attached to diagram'}, status=400)
 
-    # For now pick first meter
     meter_id = meters.first().id
 
     readings = (
@@ -186,7 +230,7 @@ def heatmap_data(request, diagramID):
     hourly_totals = {}
     for r in readings:
         key = (r.day.isoformat(), r.hour.hour)
-        val = r.data.get(measurement, 0)
+        val = r.data.get(measurement, 0) if measurement else 0
         hourly_totals[key] = hourly_totals.get(key, 0) + val
 
     data = [
@@ -199,3 +243,24 @@ def heatmap_data(request, diagramID):
         'meter_id': meter_id,
         'data': data
     })
+
+
+@login_required
+def sankey_data(request, diagramID):
+    diagram = get_object_or_404(ReportDiagram, id=diagramID)
+    site = diagram.site  # You must ensure ReportFormat → Site relation exists
+    period_type = diagram.period_type
+    date = diagram.date_range_start
+
+    hierarchy_entry = HierarchyDataAggregate.objects.filter(
+        site=site,
+        period_type=period_type,
+        start_date=date
+    ).first()
+    print('----------------------------------------')
+    print(hierarchy_entry)
+
+    if not hierarchy_entry:
+        return JsonResponse({'error': 'No hierarchy data found for this date/period.'}, status=404)
+
+    return JsonResponse({'hierarchy': hierarchy_entry.data})

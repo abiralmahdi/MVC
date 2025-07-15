@@ -127,6 +127,11 @@
                 <option value="yearly">Yearly</option>
               </select>
             </div>
+
+            <div class="mb-2">
+                <label class="form-label">Description</label>
+                <textarea name="description" id="description" cols="30" rows="10" class="form-control"></textarea>
+            </div>
   
           </div>
   
@@ -141,7 +146,62 @@
     </div>
 
   
-
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          const diagramType = document.getElementById('diagramType');
+          const metersSelect = document.getElementById('diagramMeters');
+          const measurementSelect = document.getElementById('diagramMeasurement');
+          const periodType = document.getElementById('diagramPeriodType');
+          const dateRangeContainer = document.querySelector('#diagramPeriodType').parentElement.previousElementSibling; // The div containing Date Range
+          const startDateInput = document.getElementById('diagramStartDate');
+          const endDateInput = document.getElementById('diagramEndDate');
+        
+          function updateForm() {
+            const selected = diagramType.value;
+        
+            // Reset to default for all options
+            metersSelect.multiple = true;
+            metersSelect.parentElement.style.display = 'block';
+            measurementSelect.multiple = false;
+            periodType.parentElement.style.display = 'block';
+        
+            dateRangeContainer.style.display = 'block';
+            startDateInput.type = 'date';
+            endDateInput.type = 'date';
+            endDateInput.style.display = 'inline-block';
+        
+            if (selected === 'heatmap') {
+              // Heatmap: single meter, no period type
+              metersSelect.multiple = false;
+              periodType.parentElement.style.display = 'none';
+        
+            } else if (selected === 'sankey') {
+              // Sankey: no meters, single date input, keep period type
+              metersSelect.parentElement.style.display = 'none';
+              endDateInput.style.display = 'none';
+        
+            } else if (selected === 'line') {
+              // Trend: keep meters, remove period type, change date to datetime
+              periodType.parentElement.style.display = 'none';
+              startDateInput.type = 'datetime-local';
+              endDateInput.type = 'datetime-local';
+        
+            } else if (selected === 'table') {
+              // Table: single meter, multiple measurement
+              metersSelect.multiple = false;
+              measurementSelect.multiple = true;
+        
+            }
+          }
+        
+          // Initial state on page load
+          updateForm();
+        
+          // Listen for changes
+          diagramType.addEventListener('change', updateForm);
+        });
+        </script>
+        
 
 
 
@@ -153,31 +213,55 @@
         const addDiagramBtn = document.getElementById('addDiagramBtn');
       
         addDiagramBtn.addEventListener('click', function() {
-          const type = document.getElementById('diagramType').value;
-          const meters = Array.from(document.getElementById('diagramMeters').selectedOptions).map(opt => opt.value);
-          const measurement = document.getElementById('diagramMeasurement').value;
-          const startDate = document.getElementById('diagramStartDate').value;
-          const endDate = document.getElementById('diagramEndDate').value;
-          const periodType = document.getElementById('diagramPeriodType').value;
-      
-          if (!type || !meters.length || !measurement || !startDate || !endDate || !periodType) {
-            alert('Please fill in all fields!');
-            return;
-          }
-      
-          // Create a visual badge or card
-          const div = document.createElement('div');
-          div.classList.add('p-2', 'mb-2', 'bg-info', 'rounded');
-          div.innerHTML = `
-            <strong>${type}</strong> | Meters: ${meters.join(', ')} | Measurement: ${measurement} | ${startDate} to ${endDate} | ${periodType}
-            <input type="hidden" name="diagrams[]" value='${JSON.stringify({type, meters, measurement, startDate, endDate, periodType})}'>
-          `;
-          diagramsList.appendChild(div);
-      
-          // Close modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('addDiagramModal'));
-          modal.hide();
-        });
+            const type = document.getElementById('diagramType').value;
+            const meters = Array.from(document.getElementById('diagramMeters').selectedOptions).map(opt => opt.value);
+            const measurementSelect = document.getElementById('diagramMeasurement');
+            const measurements = Array.from(measurementSelect.selectedOptions).map(opt => opt.value);
+            const startDate = document.getElementById('diagramStartDate').value;
+            const endDate = document.getElementById('diagramEndDate').value;
+            const periodType = document.getElementById('diagramPeriodType').value;
+            const description = document.getElementById('description').value;
+
+
+            if (!type || !startDate) {
+                alert('Please fill in all required fields!');
+                return;
+            }
+
+            // Validate meters
+            if (type !== 'sankey' && meters.length === 0) {
+                alert('Please select meters!');
+                return;
+            }
+
+            let payload = { type, meters, startDate, endDate, periodType, description };
+
+            if (type === 'table') {
+                if (measurements.length === 0) {
+                alert('Please select at least one measurement for Table!');
+                return;
+                }
+                payload.measurements = measurements;
+            } else {
+                if (!measurements[0]) {
+                alert('Please select a measurement!');
+                return;
+                }
+                payload.measurement = measurements[0];
+            }
+
+            const div = document.createElement('div');
+            div.classList.add('p-2', 'mb-2', 'bg-info', 'rounded');
+            div.innerHTML = `
+                <strong>${type}</strong> | Meters: ${meters.join(', ')} | Measurements: ${type === 'table' ? measurements.join(', ') : payload.measurement} | ${startDate} to ${endDate} | ${periodType}
+                <input type="hidden" name="diagrams[]" value='${JSON.stringify(payload)}'>
+            `;
+            diagramsList.appendChild(div);
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addDiagramModal'));
+            modal.hide();
+            });
+
       </script>
 
   

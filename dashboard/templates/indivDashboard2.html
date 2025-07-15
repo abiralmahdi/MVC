@@ -1328,9 +1328,6 @@
 
 
 
-
-
-
                                     {% elif gadget.gadget_type == 'sankey' %}
                                    
                                    
@@ -1388,201 +1385,202 @@
                                                 .then(data => {
                                                 const hierarchyy = data.hierarchy_data;
                                                 const hierarchy = {
-                                                                            "site_total": {
-                                                                                "Total Active Power": 40.5,
-                                                                                "Active Power L1": 19.5,
-                                                                                "Active Power L2": 13.0,
-                                                                                "Active Power L3": 8.0
-                                                                            },
-                                                                            "buildings": {
-                                                                                "Building A": {
-                                                                                "building_total": {
-                                                                                    "Total Active Power": 15.0,
-                                                                                    "Active Power L1": 7.0,
-                                                                                    "Active Power L2": 5.0,
-                                                                                    "Active Power L3": 3.0
-                                                                                },
-                                                                                "areas": {
-                                                                                    "Ground Floor": {
-                                                                                    "area_total": {
-                                                                                        "Total Active Power": 8.0,
-                                                                                        "Active Power L1": 4.5,
-                                                                                        "Active Power L2": 2.5,
-                                                                                        "Active Power L3": 1.0
-                                                                                    },
-                                                                                    "meters": {
-                                                                                        "MFM 1": {
-                                                                                        "data": {
-                                                                                            "Total Active Power": 5.0,
-                                                                                            "Active Power L1": 2.5,
-                                                                                            "Active Power L2": 1.5,
-                                                                                            "Active Power L3": 1.0
-                                                                                        }, "loadType": "HVAC"
-                                                                                        },
-                                                                                        "MFM 2": {
-                                                                                        "data": {
-                                                                                            "Total Active Power": 3.0,
-                                                                                            "Active Power L1": 2.0,
-                                                                                            "Active Power L2": 1.0,
-                                                                                            "Active Power L3": -1.0
-                                                                                        }, "loadType": "Manufacturing"
-                                                                                        }
-                                                                                    }
-                                                                                    },
-                                                                                    "First Floor": {
-                                                                                    "area_total": {
-                                                                                        "Total Active Power": 7.0,
-                                                                                        "Active Power L1": 2.5,
-                                                                                        "Active Power L2": 2.5,
-                                                                                        "Active Power L3": 2.0
-                                                                                    },
-                                                                                    "meters": {
-                                                                                        "MFM 3": {
-                                                                                        "data": {
-                                                                                            "Total Active Power": 4.0,
-                                                                                            "Active Power L1": 2.0,
-                                                                                            "Active Power L2": 1.0,
-                                                                                            "Active Power L3": 1.0
-                                                                                        }, "loadType": "HVAC"
-                                                                                        },
-                                                                                        "MFM 4": {
-                                                                                        "data": {
-                                                                                            "Total Active Power": 3.0,
-                                                                                            "Active Power L1": 0.5,
-                                                                                            "Active Power L2": 1.5,
-                                                                                            "Active Power L3": 1.0
-                                                                                        }, "loadType": "Manufacturing"
-                                                                                        }
-                                                                                    }
-                                                                                    }
-                                                                                }
-                                                                                },
-                                                                                "Building C": {
-                                                                                "building_total": {
-                                                                                    "Total Active Power": 15.0,
-                                                                                    "Active Power L1": 7.0,
-                                                                                    "Active Power L2": 5.0,
-                                                                                    "Active Power L3": 3.0
-                                                                                },
-                                                                                "areas": {
-                                                                                    "Ground Floor": {
-                                                                                    "area_total": {
-                                                                                        "Total Active Power": 8.0,
-                                                                                        "Active Power L1": 4.5,
-                                                                                        "Active Power L2": 2.5,
-                                                                                        "Active Power L3": 1.0
-                                                                                    },
-                                                                                    "meters": {
-                                                                                        "MFM 1": {
-                                                                                        "data": {
-                                                                                            "Total Active Power": 5.0,
-                                                                                            "Active Power L1": 2.5,
-                                                                                            "Active Power L2": 1.5,
-                                                                                            "Active Power L3": 1.0
-                                                                                        }, "loadType": "Manufacturing"
-                                                                                        },
-                                                                                        "MFM 2": {
-                                                                                        "data": {
-                                                                                            "Total Active Power": 3.0,
-                                                                                            "Active Power L1": 2.0,
-                                                                                            "Active Power L2": 1.0,
-                                                                                            "Active Power L3": -1.0
-                                                                                        }, "loadType": "Manufacturing"
-                                                                                        }
-                                                                                    }
-                                                                                    },
-                                                                                    "First Floor": {
-                                                                                    "area_total": {
-                                                                                        "Total Active Power": 7.0,
-                                                                                        "Active Power L1": 2.5,
-                                                                                        "Active Power L2": 2.5,
-                                                                                        "Active Power L3": 2.0
-                                                                                    },
-                                                                                    "meters": {
-                                                                                        "MFM 3": {
-                                                                                        "data": {
-                                                                                            "Total Active Power": 4.0,
-                                                                                            "Active Power L1": 2.0,
-                                                                                            "Active Power L2": 1.0,
-                                                                                            "Active Power L3": 1.0
-                                                                                        }, "loadType": "Manufacturing"
-                                                                                        },
-                                                                                        "MFM 4": {
-                                                                                        "data": {
-                                                                                            "Total Active Power": 3.0,
-                                                                                            "Active Power L1": 0.5,
-                                                                                            "Active Power L2": 1.5,
-                                                                                            "Active Power L3": 1.0
-                                                                                        }, "loadType": "Manufacturing"
-                                                                                        }
-                                                                                    }
-                                                                                    }
-                                                                                }
-                                                                                },
-                                                                                "Building B": {
-                                                                                "building_total": {
-                                                                                    "Total Active Power": 10.5,
-                                                                                    "Active Power L1": 5.5,
-                                                                                    "Active Power L2": 3.0,
-                                                                                    "Active Power L3": 2.0
-                                                                                },
-                                                                                "areas": {
-                                                                                    "Basement": {
-                                                                                    "area_total": {
-                                                                                        "Total Active Power": 5.5,
-                                                                                        "Active Power L1": 2.5,
-                                                                                        "Active Power L2": 2.0,
-                                                                                        "Active Power L3": 1.0
-                                                                                    },
-                                                                                    "meters": {
-                                                                                        "MFM 5": {
-                                                                                        "data": {
-                                                                                            "Total Active Power": 2.5,
-                                                                                            "Active Power L1": 1.5,
-                                                                                            "Active Power L2": 1.0,
-                                                                                            "Active Power L3": 0.0
-                                                                                        }, "loadType": "Lighting"
-                                                                                        },
-                                                                                        "MFM 6": {
-                                                                                        "data": {
-                                                                                            "Total Active Power": 3.0,
-                                                                                            "Active Power L1": 1.0,
-                                                                                            "Active Power L2": 1.0,
-                                                                                            "Active Power L3": 1.0
-                                                                                        }, "loadType": "Lighting"
-                                                                                        }
-                                                                                    }
-                                                                                    },
-                                                                                    "Second Floor": {
-                                                                                    "area_total": {
-                                                                                        "Total Active Power": 5.0,
-                                                                                        "Active Power L1": 3.0,
-                                                                                        "Active Power L2": 1.0,
-                                                                                        "Active Power L3": 1.0
-                                                                                    },
-                                                                                    "meters": {
-                                                                                        "MFM 7": {
-                                                                                        "data": {
-                                                                                            "Total Active Power": 2.0,
-                                                                                            "Active Power L1": 1.0,
-                                                                                            "Active Power L2": 1.0,
-                                                                                            "Active Power L3": 0.0
-                                                                                        }, "loadType": "Lighting"
-                                                                                        },
-                                                                                        "MFM 8": {
-                                                                                        "data": {
-                                                                                            "Total Active Power": 3.0,
-                                                                                            "Active Power L1": 2.0,
-                                                                                            "Active Power L2": 0.0,
-                                                                                            "Active Power L3": 1.0
-                                                                                        }, "loadType": "Manufacturing"
-                                                                                        }
-                                                                                    }
-                                                                                    }
-                                                                                }
-                                                                                }
-                                                                            }
-                                                                            }
+    "site_total": {
+        "Total Active Power": 40.5,
+        "Active Power L1": 19.5,
+        "Active Power L2": 13.0,
+        "Active Power L3": 8.0
+    },
+    "buildings": {
+        "Building A": {
+        "building_total": {
+            "Total Active Power": 15.0,
+            "Active Power L1": 7.0,
+            "Active Power L2": 5.0,
+            "Active Power L3": 3.0
+        },
+        "areas": {
+            "Ground Floor": {
+            "area_total": {
+                "Total Active Power": 8.0,
+                "Active Power L1": 4.5,
+                "Active Power L2": 2.5,
+                "Active Power L3": 1.0
+            },
+            "meters": {
+                "MFM 1": {
+                "data": {
+                    "Total Active Power": 5.0,
+                    "Active Power L1": 2.5,
+                    "Active Power L2": 1.5,
+                    "Active Power L3": 1.0
+                }, "loadType": "HVAC"
+                },
+                "MFM 2": {
+                "data": {
+                    "Total Active Power": 3.0,
+                    "Active Power L1": 2.0,
+                    "Active Power L2": 1.0,
+                    "Active Power L3": -1.0
+                }, "loadType": "Manufacturing"
+                }
+            }
+            },
+            "First Floor": {
+            "area_total": {
+                "Total Active Power": 7.0,
+                "Active Power L1": 2.5,
+                "Active Power L2": 2.5,
+                "Active Power L3": 2.0
+            },
+            "meters": {
+                "MFM 3": {
+                "data": {
+                    "Total Active Power": 4.0,
+                    "Active Power L1": 2.0,
+                    "Active Power L2": 1.0,
+                    "Active Power L3": 1.0
+                }, "loadType": "HVAC"
+                },
+                "MFM 4": {
+                "data": {
+                    "Total Active Power": 3.0,
+                    "Active Power L1": 0.5,
+                    "Active Power L2": 1.5,
+                    "Active Power L3": 1.0
+                }, "loadType": "Manufacturing"
+                }
+            }
+            }
+        }
+        },
+        "Building C": {
+        "building_total": {
+            "Total Active Power": 15.0,
+            "Active Power L1": 7.0,
+            "Active Power L2": 5.0,
+            "Active Power L3": 3.0
+        },
+        "areas": {
+            "Ground Floor": {
+            "area_total": {
+                "Total Active Power": 8.0,
+                "Active Power L1": 4.5,
+                "Active Power L2": 2.5,
+                "Active Power L3": 1.0
+            },
+            "meters": {
+                "MFM 1": {
+                "data": {
+                    "Total Active Power": 5.0,
+                    "Active Power L1": 2.5,
+                    "Active Power L2": 1.5,
+                    "Active Power L3": 1.0
+                }, "loadType": "Manufacturing"
+                },
+                "MFM 2": {
+                "data": {
+                    "Total Active Power": 3.0,
+                    "Active Power L1": 2.0,
+                    "Active Power L2": 1.0,
+                    "Active Power L3": -1.0
+                }, "loadType": "Manufacturing"
+                }
+            }
+            },
+            "First Floor": {
+            "area_total": {
+                "Total Active Power": 7.0,
+                "Active Power L1": 2.5,
+                "Active Power L2": 2.5,
+                "Active Power L3": 2.0
+            },
+            "meters": {
+                "MFM 3": {
+                "data": {
+                    "Total Active Power": 4.0,
+                    "Active Power L1": 2.0,
+                    "Active Power L2": 1.0,
+                    "Active Power L3": 1.0
+                }, "loadType": "Manufacturing"
+                },
+                "MFM 4": {
+                "data": {
+                    "Total Active Power": 3.0,
+                    "Active Power L1": 0.5,
+                    "Active Power L2": 1.5,
+                    "Active Power L3": 1.0
+                }, "loadType": "Manufacturing"
+                }
+            }
+            }
+        }
+        },
+        "Building B": {
+        "building_total": {
+            "Total Active Power": 10.5,
+            "Active Power L1": 5.5,
+            "Active Power L2": 3.0,
+            "Active Power L3": 2.0
+        },
+        "areas": {
+            "Basement": {
+            "area_total": {
+                "Total Active Power": 5.5,
+                "Active Power L1": 2.5,
+                "Active Power L2": 2.0,
+                "Active Power L3": 1.0
+            },
+            "meters": {
+                "MFM 5": {
+                "data": {
+                    "Total Active Power": 2.5,
+                    "Active Power L1": 1.5,
+                    "Active Power L2": 1.0,
+                    "Active Power L3": 0.0
+                }, "loadType": "Lighting"
+                },
+                "MFM 6": {
+                "data": {
+                    "Total Active Power": 3.0,
+                    "Active Power L1": 1.0,
+                    "Active Power L2": 1.0,
+                    "Active Power L3": 1.0
+                }, "loadType": "Lighting"
+                }
+            }
+            },
+            "Second Floor": {
+            "area_total": {
+                "Total Active Power": 5.0,
+                "Active Power L1": 3.0,
+                "Active Power L2": 1.0,
+                "Active Power L3": 1.0
+            },
+            "meters": {
+                "MFM 7": {
+                "data": {
+                    "Total Active Power": 2.0,
+                    "Active Power L1": 1.0,
+                    "Active Power L2": 1.0,
+                    "Active Power L3": 0.0
+                }, "loadType": "Lighting"
+                },
+                "MFM 8": {
+                "data": {
+                    "Total Active Power": 3.0,
+                    "Active Power L1": 2.0,
+                    "Active Power L2": 0.0,
+                    "Active Power L3": 1.0
+                }, "loadType": "Manufacturing"
+                }
+            }
+            }
+        }
+        }
+    }
+    }
+                                                
                                                 const siteName = data.site?.name || "Site";
                                         
                                                 const nodes = [];
@@ -1676,6 +1674,10 @@
                                             datePicker.addEventListener("change", drawEchartsSankey);
                                             periodSelector.addEventListener("change", drawEchartsSankey);
                                         </script>
+
+
+
+
 
                                         {% elif gadget.gadget_type == 'heatmap' %}
                                         <!-- ECharts CDN -->

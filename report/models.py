@@ -10,10 +10,29 @@ class ReportFormat(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class ReportDiagram(models.Model):
-    report_format = models.ForeignKey(ReportFormat, related_name='diagrams', on_delete=models.CASCADE)
+    report_format = models.ForeignKey(
+        ReportFormat,
+        related_name='diagrams',
+        on_delete=models.CASCADE
+    )
+
+    site = models.ForeignKey(Site, on_delete=models.PROTECT, default=7)
     diagram_type = models.CharField(max_length=50)
-    meters = models.ManyToManyField(Meters)
-    measurement = models.ForeignKey(Measurements, on_delete=models.CASCADE)
-    date_range_start = models.DateField()
-    date_range_end = models.DateField()
-    period_type = models.CharField(max_length=20)
+
+    # Meters can be empty for Sankey, single for Table
+    meters = models.ManyToManyField(Meters, blank=True)
+
+    # Measurements → Many-to-many to support multiple for Table
+    measurements = models.ManyToManyField(Measurements, blank=True)
+
+    # Date range fields → flexible for single/range
+    date_range_start = models.DateTimeField(null=True, blank=True)
+    date_range_end = models.DateTimeField(null=True, blank=True)
+
+    # Period type → optional
+    period_type = models.CharField(max_length=20, blank=True, null=True)
+
+    description = models.CharField(max_length=1000, default='')
+
+    def __str__(self):
+        return f"{self.diagram_type} for {self.report_format.title} and ID: {self.id}"

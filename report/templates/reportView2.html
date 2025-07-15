@@ -1,28 +1,52 @@
+
 {% extends 'layout.html' %}
 {% block body %}
 
 <style>
-    .accordion-button::after {
-    display: none !important;
-}
+    /* ✅ General page style for screen */
+    .diagram-section {
+      margin: 2rem 0;
+      page-break-inside: avoid; /* Prevent splitting */
+    }
+  
+    h4 {
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+  
 
-@media print {
-  canvas {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
 
-  .diagram-container {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
+  
+    /* ✅ Sticky table headers */
+    .sticky-header th {
+      position: sticky;
+      top: 0;
+      background-color: #212529;
+      z-index: 2;
+    }
+  
+  
+    @media print {
+    .navbar{
+        display: none;
+    }
+      body {
+        background: #fff !important;
+        color: #000;
 
-  .navbar{
-    display: none;
-  }
-}
-</style>
-
+      }
+  
+      .diagram-section {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+  
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+  
 
 <!-- Sidebar -->
 <div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
@@ -39,45 +63,52 @@
     </form>
 
     <div class="accordion accordion-flush" id="sidebarAccordion">
-        <span>
-            <button class="btn btn-block btn-info ms-3 fw-bold" href="/reports/newReport"><i class="fa-solid me-2 fa-plus"></i>New Report</button>
-        </span>
         {% for report in reports %}
         <!-- Industry Accordion -->
         <div class="accordion-item bg-dark border-0 mt-2">
             <h2 class="accordion-header">
-                <button 
-                class="accordion-button collapsed bg-dark text-white generate-report-btn" 
-                type="button"
-                data-bs-toggle="modal"
-                data-bs-target="#generateReportModal-{{ report.id }}"
-                data-format-id="{{ report.id }}"
-                data-format-name="{{ report.title }}"
-                >
-              <i class="fa-solid fa-folder"></i>
-              <span class="mx-2">{{ report.title }}</span>
-            </button>
+                <a class="accordion-button collapsed bg-dark text-white generate-report-btn" href="/reports/viewReport/{{report.id}}">
+                    <i class="fa-solid fa-file"></i>
+                    <span class="mx-2">{{ report.title }}</span>
+                </a>
             </h2>
         </div>
         {% endfor %}
     </div>
 </div>
 
-
-<!-- Overlay -->
+  <!-- Overlay -->
 <div id="overlay" class="overlay"></div>
-
 <div class="container">
-    {% for diagram in diagrams %}
-    <h4>{{ diagram.diagram_type|title }} Chart</h4>
-  {% if diagram.diagram_type == 'line' %}
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+        <div class="d-flex">
+            <button class="btn btn-info fw-bold mt-5 ms-auto no-print" onclick="window.print()"><i class="fa-solid fa-print me-2"></i>
+                Print
+            </button>
+        </div>
+
+        <div class="container">
+            <h3 class="h3 text-center">
+                {{individualReport.title}}
+            </h3>
+            <p class="mt-3 text-center">
+                {{individualReport.description}}
+            </p>
+        </div>
   
-  <div style="width: 100%; height: 400px;">
-    <canvas id="diagram-{{ diagram.id }}"></canvas>
-  </div>
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    {% for diagram in diagrams %}
+    <div class="diagram-section">
+        {% if diagram.diagram_type != 'table' %}
+        <h4>{{ diagram.diagram_type|title }} Chart on {{diagram.measurements.all.0.name}} of {% for meter in diagram.meters.all %} {{meter.name}}, {% endfor %}</h4>
+        {% else %}
+        <h4>{{ diagram.diagram_type|title }} Chart on {% for measurement in diagram.measurements.all %} {{measurement.name}}, {% endfor %} of {{diagram.meters.all.0.name}}</h4>
+        {% endif %}
+      {% if diagram.diagram_type == 'line' %}
+      <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+      <div class="diagram-container" style="width: 100%; height: 400px;">
+        <canvas id="diagram-{{ diagram.id }}"></canvas>
+      </div>
+      <script>
+        document.addEventListener('DOMContentLoaded', function () {
       fetch(`/reports/getLineDiagramData/{{ diagram.id }}`)
         .then(res => res.json())
         .then(data => {
@@ -156,15 +187,14 @@
           });
         });
     });
-    </script>
-    
-
-  {% elif diagram.diagram_type == 'bar' %}
-  <div style="width: 100%; height: 400px;">
-    <canvas id="diagram-{{ diagram.id }}"></canvas>
-  </div>
-  <script>
-  document.addEventListener('DOMContentLoaded', function () {
+      </script>
+  
+      {% elif diagram.diagram_type == 'bar' %}
+      <div class="diagram-container" style="width: 100%; height: 400px;">
+        <canvas id="diagram-{{ diagram.id }}"></canvas>
+      </div>
+      <script>
+        document.addEventListener('DOMContentLoaded', function () {
     fetch(`/reports/getDiagramData/{{ diagram.id }}`)
       .then(res => res.json())
       .then(data => {
@@ -212,14 +242,14 @@
         });
       });
   });
-  </script>
-
-  {% elif diagram.diagram_type == 'pie' %}
-  <div style="width: 100%; height: 400px;">
-    <canvas id="diagram-{{ diagram.id }}"></canvas>
-  </div>
-  <script>
-  document.addEventListener('DOMContentLoaded', function () {
+      </script>
+  
+      {% elif diagram.diagram_type == 'pie' %}
+      <div class="diagram-container" style="width: 100%; height: 400px;">
+        <canvas id="diagram-{{ diagram.id }}"></canvas>
+      </div>
+      <script>
+        document.addEventListener('DOMContentLoaded', function () {
     fetch(`/reports/getDiagramData/{{ diagram.id }}`)
       .then(res => res.json())
       .then(data => {
@@ -260,28 +290,19 @@
         });
       });
   });
-  </script>
-
-  {% elif diagram.diagram_type == 'table' %}
-  <style>
-    .sticky-header th {
-  position: sticky;
-  top: 0;
-  background-color: #212529; /* Same as your table background or header color */
-  z-index: 2;
-}
-
-  </style>
-  <div style="max-height: 200px; overflow-y: auto;" class="diagram-container">
-    <table id="diagram-{{ diagram.id }}" class="table table-sm table-dark text-light">
-      <thead class="sticky-header">
-        <tr id="table-head-{{ diagram.id }}"></tr>
-      </thead>
-      <tbody id="table-body-{{ diagram.id }}"></tbody>
-    </table>
-  </div>
-  <script>
-  document.addEventListener('DOMContentLoaded', function () {
+      </script>
+  
+      {% elif diagram.diagram_type == 'table' %}
+      <div class="diagram-container" style="max-height: 200px; overflow-y: auto;">
+        <table id="diagram-{{ diagram.id }}" class="table table-sm table-dark text-light">
+          <thead class="sticky-header">
+            <tr id="table-head-{{ diagram.id }}"></tr>
+          </thead>
+          <tbody id="table-body-{{ diagram.id }}"></tbody>
+        </table>
+      </div>
+      <script>
+        document.addEventListener('DOMContentLoaded', function () {
     const diagramId = {{ diagram.id }};
     const head = document.getElementById('table-head-{{ diagram.id }}');
     const body = document.getElementById('table-body-{{ diagram.id }}');
@@ -304,17 +325,13 @@
 
     fetchTable();
   });
-  </script>
-
-  {% elif diagram.diagram_type == 'sankey' %}
-  <!-- ✅ Include ECharts -->
-<script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
-
-<!-- ✅ Sankey container -->
-<div id="sankey-container-{{ diagram.id }}" class="diagram-container" style="width: 80%; height: 300px;"></div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
+      </script>
+  
+      {% elif diagram.diagram_type == 'sankey' %}
+      <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+      <div class="diagram-container" id="sankey-container-{{ diagram.id }}" style="width: 80%; height: 300px;"></div>
+      <script>
+        document.addEventListener('DOMContentLoaded', function () {
   const sankeyContainer = echarts.init(document.getElementById("sankey-container-{{ diagram.id }}"));
   const measurement = "{{ diagram.measurements.first.name|escapejs }}";
   const siteName = "Site Total";
@@ -413,20 +430,19 @@ document.addEventListener('DOMContentLoaded', function () {
           links: links,
           emphasis: { focus: 'adjacency' },
           lineStyle: { color: 'source', curveness: 0.5 },
-          label: { color: '#eee' }
+          label: { color: '#4a4949' } // ✅ updated label color
         }]
       });
 
     });
 });
-</script>
-
-
-  {% elif diagram.diagram_type == 'heatmap' %}
-  <div id="heatmap_container_{{ diagram.id }}" class="diagram-container" style="width: 1000px; height: 500px;"></div>
-  <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
-  <script>
-  const heatmapChart = echarts.init(document.getElementById('heatmap_container_{{ diagram.id }}'));
+      </script>
+  
+      {% elif diagram.diagram_type == 'heatmap' %}
+      <div id="heatmap_container_{{ diagram.id }}" class="diagram-container" style="width: 1000px; height: 500px;"></div>
+      <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+      <script>
+        const heatmapChart = echarts.init(document.getElementById('heatmap_container_{{ diagram.id }}'));
   function loadHeatmap() {
     fetch(`/reports/heatmap/{{ diagram.id }}`)
       .then(res => res.json())
@@ -459,8 +475,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 type: 'category',
                 data: days,
                 name: 'Date',
-                nameTextStyle: { color: '#fff' },
-                axisLabel: { color: '#eee' },
+                nameTextStyle: { color: '#4a4949' },
+                axisLabel: { color: '#4a4949' },
                 splitArea: { show: false },  // Disable gridlines
                 splitLine: { show: false }
             },
@@ -468,8 +484,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 type: 'category',
                 data: hours.map(h => `${h}:00`),
                 name: 'Hour',
-                nameTextStyle: { color: '#fff' },
-                axisLabel: { color: '#eee' },
+                nameTextStyle: { color: '#4a4949' },
+                axisLabel: { color: '#4a4949' },
                 splitArea: { show: false },  // Disable gridlines
                 splitLine: { show: false }
             },
@@ -480,7 +496,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 orient: 'horizontal',
                 left: 'center',
                 bottom: '5%',
-                textStyle: { color: '#eee' },
+                textStyle: { color: '#4a4949' },
                 inRange: {
                 color: ['#00FF00', '#FFFF00', '#FF0000']  // Green → Yellow → Red
                 }
@@ -504,19 +520,17 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   }
   loadHeatmap();
-  </script>
-
-  {% endif %}
-
-{% endfor %}
-
-
-
-
+      </script>
+  
+      {% endif %}
+      <div class="mt-3">
+        <p name="" id="description">{{diagram.description}}</p>
+    </div>
+    </div>
 
 
-</div>
-
-
-
-{% endblock %}
+    {% endfor %}
+  
+  
+  </div>
+  {% endblock %}
