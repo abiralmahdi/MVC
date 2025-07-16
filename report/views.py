@@ -5,7 +5,7 @@ from .models import *
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 import json
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse, Http404
 from django.db.models.functions import TruncDate, TruncMonth, TruncYear, TruncHour
 from datetime import timedelta, datetime
 from django.utils.dateparse import parse_date
@@ -42,7 +42,7 @@ def createReportFormat(request):
             messages.error(request, "Title and at least one diagram are required.")
             return redirect(request.path)
 
-        report_format = ReportFormat.objects.create(title=title, description=description)
+        report_format = ReportFormat.objects.create(title=title, description=description, user=request.user)
 
         for diagram_json in diagrams_raw:
             data = json.loads(diagram_json)
@@ -103,6 +103,251 @@ def viewReport(request, reportID):
     return render(request, 'reportView2.html', context=context)
 
 
+
+
+
+from django.core.files.base import ContentFile
+import uuid
+import base64
+
+@login_required
+def saveDiagramImage(request, diagramID):
+    if request.method == "POST":
+        import json
+        data = json.loads(request.body)
+
+        image_data = data.get('image')
+
+        if not image_data:
+            return JsonResponse({"status": "error", "message": "No image provided."}, status=400)
+
+        try:
+            diagram = ReportDiagram.objects.get(id=diagramID)
+
+            # ✅ Check if an image is already saved
+            if diagram.image and diagram.image.name:
+                return JsonResponse({
+                    "status": "skipped",
+                    "message": "Image already exists.",
+                    "image_url": diagram.image.url
+                }, status=200)
+
+            # Decode the base64 image
+            format, imgstr = image_data.split(';base64,')
+            ext = format.split('/')[-1]  # png or jpeg
+
+            file_name = f"diagram_{diagramID}_{uuid.uuid4()}.{ext}"
+            file_content = ContentFile(base64.b64decode(imgstr), name=file_name)
+
+            # Save to the ImageField
+            diagram.image.save(file_name, file_content, save=True)
+
+            return JsonResponse({
+                "status": "success",
+                "message": "Image saved.",
+                "image_url": diagram.image.url
+            })
+
+        except ReportDiagram.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Diagram not found."}, status=404)
+
+    return JsonResponse({"status": "error", "message": "Invalid request method."}, status=405)
+
+
+
+
+
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import inch
+from reportlab.lib.utils import simpleSplit
+from reportlab.pdfbase.pdfmetrics import stringWidth
+from django.utils import timezone
+from django.conf import settings
+import os
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
+
+@login_required
+def generate_pdf(request, filename, reportID):
+    report = ReportFormat.objects.get(id=reportID)
+    diagrams = ReportDiagram.objects.filter(report_format=report)
+    
+    output_path = os.path.join(settings.MEDIA_ROOT+"/generatedReports", filename)
+
+    # Make sure the folder exists:
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    c = canvas.Canvas(output_path, pagesize=A4)
+    width, height = A4
+
+    left_margin = 50
+    right_margin = width - 50
+    text_width = right_margin - left_margin
+
+    # Logo path (adjust this to your logo)
+    logo_path = os.path.join(settings.BASE_DIR, 'report', 'static', 'customerLogo.png')  # ✅ Replace with your logo path
+    logo_width = 1.5 * inch  # adjust size as needed
+
+    def ordinal(n):
+        if 11 <= n % 100 <= 13:
+            return f"{n}th"
+        else:
+            return f"{n}{['th','st','nd','rd','th','th','th','th','th','th'][n % 10]}"
+
+    def add_header_footer(page_number):
+        now = timezone.now()
+        day_of_week = now.strftime("%A")
+        day_with_ordinal = ordinal(now.day)
+        month_year = now.strftime("%B, %Y")
+
+        # Logo on left
+        if os.path.exists(logo_path):
+            logo_height = 1 * inch  # match aspect ratio
+            c.drawImage(
+                logo_path,
+                20,  # X
+                height - logo_height - 5,  # Y, down from top margin
+                width=logo_width,
+                height=logo_height,
+                preserveAspectRatio=True,
+                mask='auto'
+            )
+
+        # Date on right (multiline)
+        c.setFont("Helvetica", 10)
+        date_x = width - 130  # adjust to align nicely
+        date_y = height - 40
+
+        c.drawString(date_x, date_y, day_of_week)
+        c.drawString(date_x, date_y - 12, f"{day_with_ordinal} {month_year}")
+
+        # Footer page number center bottom
+        footer_text = f"Page {page_number}"
+        footer_width = stringWidth(footer_text, "Helvetica", 10)
+        c.drawString((width - footer_width) / 2, 30, footer_text)
+
+
+    page_number = 1
+    y = height - 80  # adjust to leave space for header
+
+    add_header_footer(page_number)
+
+    # Title (center aligned)
+    c.setFont("Helvetica-Bold", 20)
+    title_width = stringWidth(report.title, "Helvetica-Bold", 20)
+    title_x = (width - title_width) / 2
+    c.drawString(title_x, y, report.title)
+    y -= 30
+
+    # Description (left aligned)
+    c.setFont("Helvetica", 12)
+    description_lines = simpleSplit(report.description, "Helvetica", 12, text_width)
+    for line in description_lines:
+        c.drawString(left_margin, y, line)
+        y -= 15
+
+    y -= 20
+    count = 1
+    for diagram in diagrams:
+        meters = ", ".join([m.name for m in diagram.meters.all()])
+        measurements = ", ".join([m.name for m in diagram.measurements.all()])
+        line = f"{count}. {diagram.diagram_type.title()} Chart of {meters} on {measurements}"
+
+        # Diagram title (center aligned)
+        c.setFont("Helvetica-Bold", 12)
+        wrapped_lines = simpleSplit(line, "Helvetica-Bold", 12, text_width)
+        for l in wrapped_lines:
+            line_width = stringWidth(l, "Helvetica-Bold", 12)
+            line_x = (width - line_width) / 2
+            c.drawString(line_x, y, l)
+            y -= 20
+
+        # Image if exists
+        if diagram.image and diagram.image.name:
+            image_path = os.path.join(settings.MEDIA_ROOT, diagram.image.name)
+            if os.path.exists(image_path):
+                max_width = width - 100
+                max_height = 4 * inch
+
+                from PIL import Image as PILImage
+                img = PILImage.open(image_path)
+                img_width, img_height = img.size
+
+                aspect = img_height / img_width
+
+                display_width = max_width
+                display_height = display_width * aspect
+
+                if display_height > max_height:
+                    display_height = max_height
+                    display_width = display_height / aspect
+
+                if y - display_height < 80:
+                    c.showPage()
+                    page_number += 1
+                    add_header_footer(page_number)
+                    y = height - 80
+
+                c.drawImage(image_path, 50, y - display_height, width=display_width, height=display_height)
+                y -= display_height + 10
+
+        # Diagram description (left aligned)
+        y -= 30
+        c.setFont("Helvetica", 12)
+        desc_lines = simpleSplit(diagram.description, "Helvetica", 12, text_width)
+        for l in desc_lines:
+            c.drawString(left_margin, y, l)
+            y -= 15
+
+        y -= 20
+
+        c.showPage()
+        page_number += 1
+        add_header_footer(page_number)
+        y = height - 80
+
+        count += 1
+
+    c.save()
+    print("PDF GENERATED ✅")
+    return FileResponse(open(output_path, 'rb'), as_attachment=True, filename=filename)
+
+
+def savedReportsPage(request):
+    context = {
+        'reports':ReportFormat.objects.all()
+    }
+    return render(request, 'savedReportPage.html', context)
+
+from django.views.decorators.clickjacking import xframe_options_exempt
+
+@xframe_options_exempt
+def viewSavedReports(request, reportID):
+    reports =ReportFormat.objects.all() 
+    report = ReportFormat.objects.get(id=reportID)
+    pdf_url = f"/media/generatedReports/{report.title}.pdf"
+    context = {
+        'report': report,
+        'pdf_url': pdf_url,
+        'reports':reports
+    }
+    return render(request, 'savedReportView.html', context=context)
+
+
+
+@xframe_options_exempt
+def viewSavedReport(request, reportID):
+    report = ReportFormat.objects.get(id=reportID)
+    file_path = os.path.join(settings.MEDIA_ROOT, "generatedReports", f"{report.title}.pdf")
+    if os.path.exists(file_path):
+        return FileResponse(open(file_path, 'rb'), content_type='application/pdf')
+    else:
+        raise Http404("PDF not found.")
+
+
+
 def get_period_start(date, period_type):
     if period_type == "weekly":
         return date - timedelta(days=date.weekday())
@@ -121,6 +366,7 @@ def get_period_start(date, period_type):
 
 
 @csrf_exempt
+@login_required
 def getDiagramData(request, diagramID):
     diagram = get_object_or_404(ReportDiagram, id=diagramID)
     meters = diagram.meters.all()
@@ -149,6 +395,7 @@ def getDiagramData(request, diagramID):
 
 
 @csrf_exempt
+@login_required
 def getLineDiagramData(request, diagramID):
     diagram = get_object_or_404(ReportDiagram, id=diagramID)
     meters = diagram.meters.all()

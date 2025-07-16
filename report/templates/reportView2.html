@@ -45,6 +45,27 @@
         display: none !important;
       }
     }
+
+
+canvas {
+  display: block;  /* removes inline gap */
+  width: 100% !important; 
+  height: 100% !important;
+}
+
+    .diagram-container.light-mode {
+  background: #fff !important;
+  color: #000 !important;
+}
+
+.diagram-container.light-mode canvas {
+  background: #fff !important;
+}
+
+.diagram-container.light-mode * {
+  background: #fff !important;
+  color: #000 !important;
+}
   </style>
   
 
@@ -81,9 +102,50 @@
 <div id="overlay" class="overlay"></div>
 <div class="container">
         <div class="d-flex">
-            <button class="btn btn-info fw-bold mt-5 ms-auto no-print" onclick="window.print()"><i class="fa-solid fa-print me-2"></i>
-                Print
-            </button>
+            <a class="btn btn-info fw-bold mt-5 ms-auto no-print"
+                id="reportButton"
+                href="#"
+                data-report-id="{{ individualReport.id }}"
+                data-report-title="{{ individualReport.title }}">
+                <i class="fa-solid fa-print me-2"></i>
+                Save PDF
+            </a>
+            <script>
+                document.getElementById('reportButton').addEventListener('click', async function(e) {
+                  e.preventDefault(); // stop the default link
+                
+                  const reportId = this.getAttribute('data-report-id');
+                  const reportTitle = this.getAttribute('data-report-title');
+                
+                  // ✅ Find all diagrams
+                  const containers = document.querySelectorAll('.diagram-container');
+                
+                  for (const container of containers) {
+                    const diagramId = container.getAttribute('data-diagram-id');
+                
+                    // Take screenshot
+                    container.classList.add('light-mode');
+                    const canvas = await html2canvas(container);
+                    const imageData = canvas.toDataURL('image/png');
+                    container.classList.remove('light-mode');
+                
+                    // Save image to server
+                    await fetch(`/reports/saveDiagramImage/${diagramId}`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                      },
+                      body: JSON.stringify({ image: imageData })
+                    });
+                  }
+                  
+                  alert("PDF Saved Successfully")
+                  // ✅ After saving, go to the PDF link:
+                  window.location.href = `/reports/generate_pdf/${encodeURIComponent(reportTitle)}.pdf/${reportId}`;
+                });
+                </script>
+                
         </div>
 
         <div class="container">
@@ -104,7 +166,7 @@
         {% endif %}
       {% if diagram.diagram_type == 'line' %}
       <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-      <div class="diagram-container" style="width: 100%; height: 400px;">
+      <div class="diagram-container" data-diagram-id="{{ diagram.id }}" style="height: 400px; width: 70%;">
         <canvas id="diagram-{{ diagram.id }}"></canvas>
       </div>
       <script>
@@ -190,7 +252,7 @@
       </script>
   
       {% elif diagram.diagram_type == 'bar' %}
-      <div class="diagram-container" style="width: 100%; height: 400px;">
+      <div class="diagram-container" data-diagram-id="{{ diagram.id }}" style="width: 70%; height: 400px;">
         <canvas id="diagram-{{ diagram.id }}"></canvas>
       </div>
       <script>
@@ -245,7 +307,7 @@
       </script>
   
       {% elif diagram.diagram_type == 'pie' %}
-      <div class="diagram-container" style="width: 100%; height: 400px;">
+      <div class="diagram-container" data-diagram-id="{{ diagram.id }}" style="width: 35%; height: 400px;">
         <canvas id="diagram-{{ diagram.id }}"></canvas>
       </div>
       <script>
@@ -293,7 +355,7 @@
       </script>
   
       {% elif diagram.diagram_type == 'table' %}
-      <div class="diagram-container" style="max-height: 200px; overflow-y: auto;">
+      <div class="diagram-container" data-diagram-id="{{ diagram.id }}" style="max-height: 200px; overflow-y: auto;">
         <table id="diagram-{{ diagram.id }}" class="table table-sm table-dark text-light">
           <thead class="sticky-header">
             <tr id="table-head-{{ diagram.id }}"></tr>
@@ -329,7 +391,7 @@
   
       {% elif diagram.diagram_type == 'sankey' %}
       <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
-      <div class="diagram-container" id="sankey-container-{{ diagram.id }}" style="width: 80%; height: 300px;"></div>
+      <div class="diagram-container" data-diagram-id="{{ diagram.id }}" id="sankey-container-{{ diagram.id }}" style="width: 80%; height: 300px;"></div>
       <script>
         document.addEventListener('DOMContentLoaded', function () {
   const sankeyContainer = echarts.init(document.getElementById("sankey-container-{{ diagram.id }}"));
@@ -439,7 +501,7 @@
       </script>
   
       {% elif diagram.diagram_type == 'heatmap' %}
-      <div id="heatmap_container_{{ diagram.id }}" class="diagram-container" style="width: 1000px; height: 500px;"></div>
+      <div id="heatmap_container_{{ diagram.id }}" data-diagram-id="{{ diagram.id }}" class="diagram-container" style="width: 1000px; height: 500px;"></div>
       <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
       <script>
         const heatmapChart = echarts.init(document.getElementById('heatmap_container_{{ diagram.id }}'));
@@ -523,14 +585,67 @@
       </script>
   
       {% endif %}
-      <div class="mt-3">
-        <p name="" id="description">{{diagram.description}}</p>
+      
     </div>
-    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        /* This makes the dark background light for screenshots */
+        .diagram-container.light-mode {
+          background-color: white !important;
+          color: black !important;
+        }
+        
+        .diagram-container.light-mode canvas {
+          background-color: white !important;
+        }
+        
+        .diagram-container.light-mode * {
+          background-color: transparent !important;
+          color: black !important;
+        }
+        </style>
+        
+    <script>
+        function imageExport(){
+          const containers = document.querySelectorAll('.diagram-container');
+        
+          containers.forEach((container) => {
+            const diagramId = container.getAttribute('data-diagram-id');
+        
+            // ✅ Add a temp class for light mode
+            container.classList.add('light-mode');
+        
+            html2canvas(container).then(canvas => {
+              const imageData = canvas.toDataURL('image/png');
+        
+              // ✅ Remove the temp light mode class after capture
+              container.classList.remove('light-mode');
+        
+              fetch(`/reports/saveDiagramImage/${diagramId}`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ image: imageData })
+              })
+              .then(res => res.json())
+              .then(data => console.log(`Saved diagram ${diagramId}:`, data))
+              .catch(err => console.error(err));
+            });
+          });
+        }
+        </script>
+        
+
 
 
     {% endfor %}
   
   
   </div>
+
+
+  
   {% endblock %}

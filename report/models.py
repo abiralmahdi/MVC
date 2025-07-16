@@ -3,11 +3,11 @@ from django.contrib.auth.models import User
 from dashboard.models import *
 from dynamic.models import *
 
-
 class ReportFormat(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 class ReportDiagram(models.Model):
     report_format = models.ForeignKey(
@@ -33,6 +33,8 @@ class ReportDiagram(models.Model):
     period_type = models.CharField(max_length=20, blank=True, null=True)
 
     description = models.CharField(max_length=1000, default='')
+
+    image = models.ImageField(upload_to='media/reportImages/')
 
     def __str__(self):
         return f"{self.diagram_type} for {self.report_format.title} and ID: {self.id}"
