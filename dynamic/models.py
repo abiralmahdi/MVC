@@ -31,7 +31,7 @@ class Meters(models.Model):
     loadType = models.ForeignKey(LoadType, related_name='meters', on_delete=models.CASCADE,)
     meterType = models.CharField(max_length=100,)
     def __str__(self):
-        return self.name
+        return self.name + ' - ' + self.meterType
 
 
 class Measurements(models.Model):

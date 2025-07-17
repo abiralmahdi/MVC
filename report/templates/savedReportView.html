@@ -41,7 +41,7 @@
 
     <a class="btn btn-info fw-bold ms-auto no-print"
         id="reportButton"
-        href="/media/generatedReports/{{ report.title|urlencode }}.pdf"
+        href="/media/generatedReports/Report-{{ report.id|urlencode }}.pdf"
         data-report-id="{{ individualReport.id }}"
         data-report-title="{{ individualReport.title }}"
         download
@@ -52,9 +52,10 @@
   </div>
   {% if pdf_url %}
   <div id="fileViewer" class="container">
+    <!-- src="/media/generatedReports/Report-{{ report.id|urlencode }}.pdf" -->
     <iframe
-      src="/media/generatedReports/{{ report.title|urlencode }}.pdf"
-      width="100%"
+      src="{% url 'viewSavedReport' reportID=report.id %}"
+      width="90%"
       height="800px"
       style="border: none;">
     </iframe>

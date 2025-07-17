@@ -2,12 +2,14 @@ from django.db import models
 from django.contrib.auth.models import User
 from dashboard.models import *
 from dynamic.models import *
+from accounts.models import UserModel
 
 class ReportFormat(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
+    logo = models.ImageField(upload_to='media/reportImages')
 
 class ReportDiagram(models.Model):
     report_format = models.ForeignKey(
