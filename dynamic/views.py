@@ -87,6 +87,7 @@ def addMeter(request):
         load_id = request.POST['load_id']
         load = LoadType.objects.get(id=load_id)
         meterType = request.POST['meterType']
+        ecological = request.POST['ecological']
         
         Meters.objects.create(name=name, area=area, loadType=load, meterType=meterType)
         return redirect("/settings/hierarchy")

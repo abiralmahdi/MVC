@@ -84,17 +84,36 @@ canvas {
     </form>
 
     <div class="accordion accordion-flush" id="sidebarAccordion">
-        {% for report in reports %}
-        <!-- Industry Accordion -->
-        <div class="accordion-item bg-dark border-0 mt-2">
-            <h2 class="accordion-header">
-                <a class="accordion-button collapsed bg-dark text-white generate-report-btn" href="/reports/viewReport/{{report.id}}">
-                    <i class="fa-solid fa-file"></i>
-                    <span class="mx-2">{{ report.title }}</span>
-                </a>
-            </h2>
-        </div>
-        {% endfor %}
+      {% for site in sites %}
+      <!-- Site Accordion -->
+      <div class="accordion-item bg-dark border-0">
+          <h2 class="accordion-header">
+              <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#siteCollapse{{ forloop.counter }}">
+                  <i class="fa-solid fa-folder"></i> 
+                  <span class="mx-2">{{ site.name }}</span>
+              </button>
+          </h2>
+          <div id="siteCollapse{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+              <div class="accordion-body pl-3">
+  
+                  <ul class="list-unstyled">
+                      {% for report in site.reports.all %}
+                      <li>
+                          <a href="/reports/viewReport/{{ report.id }}"
+                              class="text-white text-decoration-none">
+                              <i class="fa-solid fa-file"></i> 
+                              {{ report.title }}
+                          </a>
+                      </li>
+                      {% endfor %}
+                  </ul>
+  
+              </div>
+          </div>
+      </div>
+  {% endfor %}
+  
     </div>
 </div>
 

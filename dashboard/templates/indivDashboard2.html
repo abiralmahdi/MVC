@@ -4,6 +4,32 @@
 {% block body %}
 
 <style>
+  .ticker-container {
+    width: 1200px;  /* adjust as needed */
+    height: 1.5em; /* one line high */
+    overflow: hidden;
+    position: relative;
+    background: #333;
+    color: white;
+  }
+
+  .ticker-item {
+    position: absolute;
+    width: 100%;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  .ticker-item.active {
+    opacity: 1;
+    position: absolute;
+  }
+
+  .ticker-item a {
+    color: white;
+    text-decoration: none;
+  }
+
 
 .invisible-picker {
         position: absolute;
@@ -353,7 +379,30 @@
                     </span>
                     {% endif %}
                 </div>
-                <div class="d-flex">
+                <div class="container">
+                    <div class="ticker-container container shadow">
+                        {% for alarm in alarms %}
+                        <div class="ticker-item{% if forloop.first %} active{% endif %}">
+                            <a href="/alarms/allAlarms" style="color: {{alarm.color}}">
+                            🔔 {{alarm.date}} - {{alarm.meter.name}}, {{alarm.meter.area.name}}, {{alarm.meter.area.building.name}} - {{alarm.measurement.name}} - Value: {{alarm.value}}
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <script>
+                        const items = document.querySelectorAll('.ticker-item');
+                        let currentIndex = 0;
+                    
+                        setInterval(() => {
+                        items[currentIndex].classList.remove('active');
+                        currentIndex = (currentIndex + 1) % items.length;
+                        items[currentIndex].classList.add('active');
+                        }, 2000); // every 2 seconds
+                    </script>
+                </div>
+                
+                <div class="d-flex mt-3">
                     <!-- Tree Sidebar -->
                     <div id="tree" class="me-1 border-end border-dark text-secondary"
                         style="width: 220px; overflow-y: auto; height: 75vh; font-size: small;">
@@ -1070,135 +1119,151 @@
                                             };
                                             }
                                     
-                                        function fetchGroupedBarData() {
-                                            const date = dateInput.value;
-                                            const measurement = '{{ gadget.measurement.all.0.name }}';
-                                            const period = periodSelector.value;
-                                            if (!date) return;
-                                    
-                                            let url = `/dashboard/${dashboardId}/multiYearBarData/${gadgetId}/${encodeURIComponent(measurement)}/${date}/${period}`;
-                                    
-                                            let start = null;
-                                            let end = null;
-                                    
-                                            if (period === 'daily') {
-                                                start = startDateInput.value;
-                                                end = endDateInput.value;
-                                            } else if (period === 'weekly') {
-                                                start = startWeekInput.value;
-                                                end = endWeekInput.value;
-                                            } else if (period === 'monthly') {
-                                                start = startMonthInput.value;
-                                                end = endMonthInput.value;
-                                            }
-                                    
-                                            const params = new URLSearchParams();
-                                            if (start) params.append('start', start);
-                                            if (end) params.append('end', end);
-                                    
-                                            if ([...params].length) {
-                                                url += `?${params.toString()}`;
-                                            }
-                                    
-                                            axios.get(url)
-                                                .then(response => {
-                                                    const labels = response.data.labels;
-                                                    const years = response.data.years;
-                                                    const latestYear = new Date(date).getFullYear().toString();
-                                                    const data = response.data.data;
-                                    
-                                                    if (barChart) barChart.destroy();
-                                                    if (barChartMax) barChartMax.destroy();
-                                    
-                                                    const datasets = [];
-                                                    data.forEach((meterData, meterIndex) => {
-                                                        const baseHue = (meterIndex * 137) % 360;
-                                                        const colors = generateYearColors(baseHue);
+                                            function fetchGroupedBarData() {
+    const date = dateInput.value;
+    const measurement = '{{ gadget.measurement.all.0.name }}';
+    const period = periodSelector.value;
+    if (!date) return;
 
-                                                        years.forEach(year => {
-                                                            const isLatest = year === latestYear;
-                                                            const values = meterData.values[year] || []; // fallback empty
+    let url = `/dashboard/${dashboardId}/multiYearBarData/${gadgetId}/${encodeURIComponent(measurement)}/${date}/${period}`;
 
-                                                            // Only push if there's actual data
-                                                            if (!values.length || values.every(v => v === 0 || v === null)) {
-                                                            return;
-                                                            }
+    let start = null;
+    let end = null;
 
-                                                            datasets.push({
-                                                            label: `${meterData.meter} ${year}`,
-                                                            data: values,
-                                                            backgroundColor: isLatest ? colors.latest : colors.older,
-                                                            borderWidth: 0,
-                                                            customYear: year,
-                                                            });
-                                                        });
-                                                    });
+    if (period === 'daily') {
+        start = startDateInput.value;
+        end = endDateInput.value;
+    } else if (period === 'weekly') {
+        start = startWeekInput.value;
+        end = endWeekInput.value;
+    } else if (period === 'monthly') {
+        start = startMonthInput.value;
+        end = endMonthInput.value;
+    }
 
-                                    
-                                                    const chartConfig = {
-                                                        type: 'bar',
-                                                        data: {
-                                                            labels: labels,
-                                                            datasets: datasets
-                                                        },
-                                                        options: {
-                                                            responsive: true,
-                                                            maintainAspectRatio: true,
-                                                            layout: { padding: { bottom: 10 } },
-                                                            plugins: {
-                                                                legend: {
-                                                                    position: 'bottom',
-                                                                    labels: {
-                                                                        color: '#6c757d',
-                                                                        font: { size: 10 },
-                                                                        boxWidth: 10,
-                                                                        boxHeight: 10,
-                                                                        filter: function (item) {
-                                                                            return item.text !== '';
-                                                                        }
-                                                                    }
-                                                                },
-                                                                title: {
-                                                                    display: true,
-                                                                    text: `${measurement} - ${period.charAt(0).toUpperCase() + period.slice(1)}`
-                                                                },
-                                                                tooltip: {
-                                                                    callbacks: {
-                                                                        label: function (context) {
-                                                                            const value = context.parsed.y;
-                                                                            const year = context.dataset.customYear;
-                                                                            return `${year} - ${value}`;
-                                                                        }
-                                                                    }
-                                                                }
-                                                            },
-                                                            scales: {
-                                                                x: {
-                                                                    stacked: false,
-                                                                    ticks: {
-                                                                        color: '#6c757d',
-                                                                        font: { size: 10 }
-                                                                    },
-                                                                    grid: { display: false }
-                                                                },
-                                                                y: {
-                                                                    beginAtZero: true,
-                                                                    ticks: {
-                                                                        color: '#6c757d',
-                                                                        font: { size: 10 }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    };
-                                    
-                                                    barChart = new Chart(barCanvas, chartConfig);
-                                                    barChartMax = new Chart(barCanvasMax, chartConfig);
-                                                })
-                                                .catch(error => {
-                                                    console.error("Error fetching grouped bar chart data:", error);
-                                                });
-                                        }
+    const params = new URLSearchParams();
+    if (start) params.append('start', start);
+    if (end) params.append('end', end);
+
+    if ([...params].length) {
+        url += `?${params.toString()}`;
+    }
+
+    axios.get(url)
+        .then(response => {
+            const labels = response.data.labels;
+            const years = response.data.years;
+            const latestYear = new Date(date).getFullYear().toString();
+            const data = response.data.data;
+
+            if (barChart) barChart.destroy();
+            if (barChartMax) barChartMax.destroy();
+
+            const datasets = [];
+            const allYValues = [];
+
+            data.forEach((meterData, meterIndex) => {
+                const baseHue = (meterIndex * 137) % 360;
+                const colors = generateYearColors(baseHue);
+
+                years.forEach(year => {
+                    const isLatest = year === latestYear;
+                    const values = meterData.values[year] || [];
+
+                    if (!values.length || values.every(v => v === 0 || v === null)) {
+                        return;
+                    }
+
+                    // Collect all Y values
+                    values.forEach(v => {
+                        if (v !== null && v !== undefined) {
+                            allYValues.push(v);
+                        }
+                    });
+
+                    datasets.push({
+                        label: `${meterData.meter} ${year}`,
+                        data: values,
+                        backgroundColor: isLatest ? colors.latest : colors.older,
+                        borderWidth: 0,
+                        customYear: year,
+                    });
+                });
+            });
+
+            // Compute min, max, and buffer
+            const minY = Math.min(...allYValues);
+            const maxY = Math.max(...allYValues);
+            const range = maxY - minY;
+            const buffer = range * 0.1;
+
+            const chartConfig = {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    layout: { padding: { bottom: 10 } },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#6c757d',
+                                font: { size: 10 },
+                                boxWidth: 10,
+                                boxHeight: 10,
+                                filter: function (item) {
+                                    return item.text !== '';
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: `${measurement} - ${period.charAt(0).toUpperCase() + period.slice(1)}`
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const value = context.parsed.y;
+                                    const year = context.dataset.customYear;
+                                    return `${year} - ${value}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: false,
+                            ticks: {
+                                color: '#6c757d',
+                                font: { size: 10 }
+                            },
+                            grid: { display: false }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            min: minY - buffer < 0 ? 0 : minY - buffer,
+                            max: maxY + buffer,
+                            ticks: {
+                                color: '#6c757d',
+                                font: { size: 10 }
+                            }
+                        }
+                    }
+                }
+            };
+
+            barChart = new Chart(barCanvas, chartConfig);
+            barChartMax = new Chart(barCanvasMax, chartConfig);
+        })
+        .catch(error => {
+            console.error("Error fetching grouped bar chart data:", error);
+        });
+}
+
                                     
                                         const today = new Date().toISOString().split("T")[0];
                                         dateInput.value = today;
@@ -1383,8 +1448,9 @@
                                             fetch(url)
                                                 .then(res => res.json())
                                                 .then(data => {
-                                                const hierarchyy = data.hierarchy_data;
-                                                const hierarchy = {
+                                                const hierarchy = data.hierarchy_data;
+                                                console.log(hierarchy)
+                                                const hierarchyy = {
     "site_total": {
         "Total Active Power": 40.5,
         "Active Power L1": 19.5,

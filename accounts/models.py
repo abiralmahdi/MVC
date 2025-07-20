@@ -1,10 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import User
+from dynamic.models import Site
 
-# Create your models here.
 
 class UserModel(models.Model):
     name = models.CharField(max_length=100)
+    site = models.ForeignKey(Site, on_delete=models.CASCADE)
     email = models.CharField(max_length=100)
     password = models.CharField(max_length=100)
     role = models.CharField(max_length=100)

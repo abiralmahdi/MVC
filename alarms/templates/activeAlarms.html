@@ -114,7 +114,7 @@
               {% for alarm in alarms %}
                 <tr>
                   <td><p style="color: {{ alarm.color }}">{{ alarm.date }}</p></td>
-                  <td><p style="color: {{ alarm.color }}">{{ alarm.meter.name }} - {{ alarm.meter.area.name }} - {{ alarm.meter.area.building.name }}</p></td>
+                  <td><p style="color: {{ alarm.color }}">{{ alarm.meter.name }} - {{ alarm.meter.area.name }} - {{ alarm.meter.area.building.name }} - {{alarm.meter.area.building.site.name}}</p></td>
                   <td><p style="color: {{ alarm.color }}">{{ alarm.measurement.name }}</p></td>
                   <td><p style="color: {{ alarm.color }}">{{ alarm.value }}</p></td>
                   <td><p style="color: {{ alarm.color }}">{{ alarm.alarmType }}</p></td>

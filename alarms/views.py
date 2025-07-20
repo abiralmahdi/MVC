@@ -1,9 +1,14 @@
 from django.shortcuts import render, HttpResponse, redirect
 from .models import *
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
+@login_required
 def allAlarms(request):
-    alarms = Alarms.objects.all()
+    if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
+        alarms = Alarms.objects.all().order_by('-date')
+    else:
+        alarms = Alarms.objects.filter(meter__area__building__site=request.user.userModel.first().site)
 
     # Add a color property to each alarm
     for alarm in alarms:
@@ -21,16 +26,24 @@ def allAlarms(request):
     }
     return render(request, 'activeAlarms.html', context)
 
-
+@login_required
 def setAlarmRange(request):
-    meters = Meters.objects.all().prefetch_related('alarms')
+    if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
+        meters = Meters.objects.all().prefetch_related('alarms')
+        sites = Site.objects.all().prefetch_related('buildings')
+        areas = Areas.objects.all().prefetch_related('meters')
+        buildings = Buildings.objects.all().prefetch_related('areas')
+    else:
+        meters = Meters.objects.filter(area__building__site=request.user.userModel.first().site).prefetch_related('alarms')
+        sites = Site.objects.filter(id=request.user.userModel.first().site.id).prefetch_related('buildings')
+        areas = Areas.objects.filter(building__site=request.user.userModel.first().site).prefetch_related('meters')
+        buildings = Buildings.objects.filter(site=request.user.userModel.first().site).prefetch_related('areas')
+
     measurements = {}
     for meter in meters:
         measurements[meter] = Measurements.objects.filter(meterType=meter.meterType)
 
-    sites = Site.objects.all().prefetch_related('buildings')
-    areas = Areas.objects.all().prefetch_related('meters')
-    buildings = Buildings.objects.all().prefetch_related('areas')
+    
 
     # Build alarmsRange lookup as a dict with a string key: "meterID-measurementID"
     alarmsRange_qs = AlarmsRange.objects.all()
@@ -48,7 +61,7 @@ def setAlarmRange(request):
     }
 
     return render(request, 'setAlarmRange.html', context)
-
+@login_required
 def setRange(request, meterID):
     if request.method == 'POST':
         for key in request.POST:
@@ -70,7 +83,7 @@ def setRange(request, meterID):
 
         return redirect('/alarms/setAlarmRange')
 
-
+@login_required
 def ackAlarm(request, alarmID):
     try:
         alarm = Alarms.objects.get(id=alarmID)
@@ -82,7 +95,7 @@ def ackAlarm(request, alarmID):
     except Exception as e:
         return HttpResponse(f"An error occurred: {e}", status=500)
     
-
+@login_required
 def changeAlarmDesc(request, meterID):
     if request.method == 'POST':
         new_desc = request.POST.get('desc-'+str(meterID))
@@ -99,3 +112,4 @@ def changeAlarmDesc(request, meterID):
             return HttpResponse(f"An error occurred: {e}", status=500)
     else:
         return HttpResponse("Invalid request method", status=405)
+    

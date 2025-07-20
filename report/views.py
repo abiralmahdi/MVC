@@ -5,7 +5,7 @@ from .models import *
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 import json
-from django.http import JsonResponse, FileResponse, Http404
+from django.http import JsonResponse, FileResponse, Http404, HttpResponse
 from django.db.models.functions import TruncDate, TruncMonth, TruncYear, TruncHour
 from datetime import timedelta, datetime
 from django.utils.dateparse import parse_date
@@ -18,14 +18,23 @@ from accounts.models import UserModel
 # Create your views here.
 @login_required
 def reports(request):
-    reports = ReportFormat.objects.all()
-    meters = Meters.objects.all()
-    measurements = Measurements.objects.all()
+    if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
+        sites = Site.objects.all()
+        reports = ReportFormat.objects.all()
+        meters = Meters.objects.all()
+        measurements = Measurements.objects.all()
+    else:
+        sites = [UserModel.objects.filter(user=request.user).first().site]
+        reports = ReportFormat.objects.filter(user__site=UserModel.objects.get(user=request.user).site)
+        meters = Meters.objects.filter(area__building__site=UserModel.objects.get(user=request.user).site)
+        measurements = Measurements.objects.all()
+    
     context = {
         'reports':reports,
         'gadgets':Gadgets.objects.all(),
         'meters':meters,
-        'measurements':measurements
+        'measurements':measurements,
+        'sites':sites
     }
     return render(request, 'reports.html', context)
 
@@ -43,8 +52,9 @@ def createReportFormat(request):
             messages.error(request, "Title and at least one diagram are required.")
             return redirect(request.path)
 
-        report_format = ReportFormat.objects.create(title=title, description=description, user=UserModel.objects.get(user=request.user), logo=reportImage)
+        report_format = ReportFormat.objects.create(title=title, description=description, user=UserModel.objects.get(user=request.user), logo=reportImage, site=request.user.userModel.first().site)
 
+        
         for diagram_json in diagrams_raw:
             print(diagram_json)
             data = json.loads(diagram_json)
@@ -93,16 +103,30 @@ def createReportFormat(request):
 
 @login_required
 def viewReport(request, reportID):
-    reports = ReportFormat.objects.all()
-    individualReport = ReportFormat.objects.get(id=reportID)
-    diagrams = individualReport.diagrams.all()
+    reports = []
+    sites = []
+    if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
+        reports = ReportFormat.objects.all()
+        sites = UserModel.objects.all()
 
-    context = {
-        'reports': reports,
-        'individualReport': individualReport,
-        'diagrams': diagrams
-    }
-    return render(request, 'reportView2.html', context=context)
+    else:
+        reports = ReportFormat.objects.filter(user__site=UserModel.objects.get(user=request.user).site)
+        sites = [UserModel.objects.filter(user=request.user).first().site]
+
+
+    individualReport = ReportFormat.objects.get(id=reportID)
+    if request.user.is_superuser or request.user.userModel.first().role == 'Administrator' or UserModel.objects.get(user=request.user).site == individualReport.site:
+        diagrams = individualReport.diagrams.all()
+
+        context = {
+            'reports': reports,
+            'individualReport': individualReport,
+            'diagrams': diagrams, 
+            'sites':sites
+        }
+        return render(request, 'reportView2.html', context=context)
+    else:
+        return HttpResponse('You are not authorized to view this page')
 
 
 
@@ -320,9 +344,19 @@ def generate_pdf(request, filename, reportID):
     return FileResponse(open(output_path, 'rb'), as_attachment=True, filename=filename)
 
 
+@login_required
 def savedReportsPage(request):
+    if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
+        reports = ReportFormat.objects.all()
+        sites = Site.objects.all()
+    else:
+        reports = ReportFormat.objects.filter(site=UserModel.objects.get(user=request.user).site)
+        sites = [UserModel.objects.filter(user=request.user).first().site]
+
+
     context = {
-        'reports':ReportFormat.objects.all()
+        'reports':reports,
+        'sites':sites
     }
     return render(request, 'savedReportPage.html', context)
 
@@ -330,15 +364,26 @@ from django.views.decorators.clickjacking import xframe_options_exempt
 
 @xframe_options_exempt
 def viewSavedReports(request, reportID):
-    reports =ReportFormat.objects.all() 
-    report = ReportFormat.objects.get(id=reportID)
-    pdf_url = f"/media/generatedReports/Report-{report.id}.pdf"
-    context = {
-        'report': report,
-        'pdf_url': pdf_url,
-        'reports':reports
-    }
-    return render(request, 'savedReportView.html', context=context)
+    report = ReportFormat.objects.get(id=reportID)    
+    if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
+        reports = ReportFormat.objects.all()
+        sites = Site.objects.all()
+    else:
+        reports = ReportFormat.objects.filter(site=UserModel.objects.get(user=request.user).site)
+        sites = [UserModel.objects.filter(user=request.user).first().site]
+
+
+    if request.user.is_superuser or request.user.userModel.first().role == 'Administrator' or UserModel.objects.get(user=request.user).site == report.site:
+        pdf_url = f"/media/generatedReports/Report-{report.id}.pdf"
+        context = {
+            'report': report,
+            'pdf_url': pdf_url,
+            'reports':reports, 
+            'sites':sites
+        }
+        return render(request, 'savedReportView.html', context=context)
+    else:
+        return HttpResponse('You are not authorized to view this page')
 
 
 

@@ -10,6 +10,7 @@ class ReportFormat(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
     logo = models.ImageField(upload_to='media/reportImages')
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, null=True, blank=True, related_name='reports')
 
 class ReportDiagram(models.Model):
     report_format = models.ForeignKey(

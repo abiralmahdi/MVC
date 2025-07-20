@@ -3,17 +3,15 @@ from dashboard.models import Site, HierarchyDataAggregate, MeterReading, Meters
 from datetime import timedelta
 from tqdm import tqdm
 
-# 📌 Shared cumulative fields (works for both electric & non-electric)
+# ✅ Define known cumulative fields for non-electric meters
 CUMULATIVE_FIELDS = {
-    "Total Active Power",
-    "Total Reactive Power",
     "Total Fuel Used",
     "Total Gas Volume",
     "Total Steam",
     "Total Volume",
 }
 
-# 📌 Non-electric meter definitions if you want to restrict to specific ones
+# ✅ Define your meter types exactly like you generated them
 METER_DEFINITIONS = {
     'Fuel Meter': ['Fuel Consumption Rate', 'Total Fuel Used'],
     'Gas Meter': ['Gas Flow Rate', 'Gas Pressure', 'Total Gas Volume'],
@@ -41,7 +39,7 @@ def create_hierarchy_aggregate(site, period_type, start_date, meters):
     }
     site_total = {}
 
-    # Period end logic
+    # Determine period end
     if period_type == "weekly":
         period_end = start_date + timedelta(days=7)
     elif period_type == "monthly":
@@ -82,6 +80,7 @@ def create_hierarchy_aggregate(site, period_type, start_date, meters):
                     continue
 
                 measurement_keys = last.data.keys()
+
                 meter_data = {}
 
                 for key in measurement_keys:
@@ -90,7 +89,7 @@ def create_hierarchy_aggregate(site, period_type, start_date, meters):
                         last_value = last.data.get(key, 0) if last else 0
                         value = last_value - first_value
                     else:
-                        # Average
+                        # Average for instantaneous/rate
                         values = readings.values_list('data', flat=True)
                         total = 0
                         count = 0
@@ -130,10 +129,13 @@ def create_hierarchy_aggregate(site, period_type, start_date, meters):
 
 
 # ============================
-# MAIN LOOP
+# Loop sites / periods / dates
 # ============================
 
-meters = list(Meters.objects.all())  # For ALL meters (electric + others)
+# ✅ Get only your defined meters, 3 per type
+meters = []
+for meter_type in METER_DEFINITIONS.keys():
+    meters += list(Meters.objects.filter(meterType=meter_type)[:3])
 
 sites = Site.objects.all()
 period_types = ["weekly", "monthly", "yearly"]

@@ -1,0 +1,124 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+<!-- Leaflet CSS & JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+  #map {
+    height: 600px;
+    width: 100%;
+  }
+
+  /* Blinking effect for alarm marker */
+  .blinking-icon {
+    animation: blinker 1s linear infinite;
+  }
+
+  @keyframes blinker {
+    50% { opacity: 0; }
+  }
+</style>
+
+<div class="container">
+
+    <div class="mt-4 d-flex flex-wrap gap-2">
+        {% for site in sites %}
+          <a href="/dashboard/siteDashboard/{{ site.id }}" class="btn btn-info fw-bold">
+            {{ site.name }}
+          </a>
+        {% endfor %}
+    </div>
+      
+    <div id="map" class="mt-3"></div>
+
+</div>
+<script>
+  var map = L.map('map').setView([0, 0], 2);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  var bounds = [];
+  var markers = {};
+
+  // Custom default icon
+  var defaultIcon = L.icon({
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  // Custom red icon for alarm
+  var redIcon = L.icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  {% for site in sites %}
+    {% if site.latitude and site.longitude %}
+      (function() {
+        var siteID = '{{ site.id }}';
+        var lat = parseFloat('{{ site.latitude|escapejs }}');
+        var lng = parseFloat('{{ site.longitude|escapejs }}');
+        var name = '{{ site.name|escapejs }}';
+        var href = '/alarms/allAlarms';
+
+        var marker = L.marker([lat, lng], { icon: defaultIcon })
+          .addTo(map)
+          .bindPopup('<strong>' + name + '</strong><br><a href="' + href + '">View Site</a>');
+
+        markers[siteID] = marker;
+        bounds.push([lat, lng]);
+      })();
+    {% endif %}
+  {% endfor %}
+
+  if (bounds.length > 0) {
+    map.fitBounds(bounds);
+  }
+
+  // Function to poll alarms every minute
+  function checkAlarms() {
+    {% for site in sites %}
+      (function() {
+        var siteID = '{{ site.id }}';
+        fetch('/location/triggerAlarm/' + siteID)
+          .then(response => response.json())
+          .then(data => {
+            var marker = markers[siteID];
+            if (!marker) return;
+
+            if (data.alarm) {
+              marker.setIcon(redIcon);
+              marker.getElement().classList.add('blinking-icon');
+            } else {
+              marker.setIcon(defaultIcon);
+              if (marker.getElement()) {
+                marker.getElement().classList.remove('blinking-icon');
+              }
+            }
+          })
+          .catch(error => console.error('Error checking alarm for site', siteID, error));
+      })();
+    {% endfor %}
+  }
+
+  // Call once now & every minute
+  checkAlarms();
+  setInterval(checkAlarms, 60000);
+
+</script>
+
+{% endblock %}

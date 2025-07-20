@@ -256,20 +256,25 @@
               <li class="nav-item">
                 <a class="nav-link {% if 'dashboard' in request.path %} text-info fw-bold {% endif %}" aria-current="page" href="/dashboard">Dashboards</a>
               </li>
+              {% if request.user.is_superuser or request.user.userModel.first.role == 'Administrator' %}
               <li class="nav-item">
+                <a class="nav-link {% if 'location' in request.path %} text-info fw-bold {% endif %}" aria-current="page" href="/location">Site Locations</a>
+              </li>
+              {% endif %}
+              <!-- <li class="nav-item">
                 <a class="nav-link {% if 'diagram' in request.path %} text-info fw-bold {% endif %}" href="">Diagrams</a>
               </li>
               <li class="nav-item">
                 <a class="nav-link {% if 'trend' in request.path %} text-info fw-bold {% endif %}" href="/trends">Trends</a>
-              </li>
+              </li> -->
               <li class="nav-item">
                 <a class="nav-link {% if 'alarm' in request.path %} text-info fw-bold {% endif %}" href="/alarms/allAlarms">Alarms</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link {% if 'addReport' in request.path %} text-info fw-bold {% endif %}" href="/reports">Reports</a>
+                <a class="nav-link {% if 'reports' in request.path and 'viewSavedReports' not in request.path %} text-info fw-bold {% endif %}" href="/reports">Reports</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link {% if 'savedReport' in request.path %} text-info fw-bold {% endif %}" href="/reports/viewSavedReports">Saved Reports</a>
+                <a class="nav-link {% if 'viewSavedReports' in request.path %} text-info fw-bold {% endif %}" href="/reports/viewSavedReports">Saved Reports</a>
               </li>
               {% if request.user.is_superuser %}
               <li class="nav-item">
