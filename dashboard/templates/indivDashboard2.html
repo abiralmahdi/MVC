@@ -363,6 +363,75 @@
                         {{ dashboard.title }}
 
                     </h1>
+                    <button id="weather-btn" class="btn btn-dark bg-black me-auto" style="font-weight: 400; margin-left: 80px;" data-bs-toggle="modal" data-bs-target="#weatherModal">
+                        Loading weather...
+                      </button>
+                    
+                      <!-- Bootstrap Weather Modal -->
+                        <div class="modal fade" id="weatherModal" tabindex="-1" aria-labelledby="weatherModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                            <div class="modal-content bg-dark text-white">
+                                <div class="modal-header">
+                                <h5 class="modal-title" id="weatherModalLabel">Weather Forecast</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body" id="weather-modal-body">
+                                <!-- Weather details will be injected here -->
+                                <p>Loading...</p>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+
+
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function () {
+                              const apiKey = 'efefdf01f1944806b0a64921250206';
+                              const city = 'Dhaka';
+                              const days = 7;
+                          
+                              fetch(`https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${city}&days=${days}&aqi=no&alerts=no`)
+                                .then(response => response.json())
+                                .then(data => {
+                                  const current = data.current;
+                                  const forecast = data.forecast.forecastday;
+                          
+                                  // Update button with summary
+                                  const summary = `${current.temp_c}°C, ${current.condition.text}`;
+                                  document.getElementById('weather-btn').innerHTML = `
+                                  <img src="${current.condition.icon}" alt="${current.condition.text}" style="height: 20px; vertical-align: middle;"> ${summary} 
+                                  `;
+                          
+                                  // Build modal content
+                                  let html = `
+                                    <div class="mb-2">
+                                      <strong>Current:</strong> ${current.temp_c}°C, ${current.condition.text}
+                                      <img src="${current.condition.icon}" alt="${current.condition.text}">
+                                    </div>
+                                    <div>
+                                      <strong>7-Day Forecast:</strong>
+                                      <ul class="list-unstyled">
+                                  `;
+                          
+                                  forecast.forEach(day => {
+                                    html += `
+                                      <li class="mb-1">
+                                        <strong>${day.date}:</strong> ${day.day.avgtemp_c}°C, ${day.day.condition.text}
+                                        <img src="${day.day.condition.icon}" alt="${day.day.condition.text}">
+                                      </li>
+                                    `;
+                                  });
+                          
+                                  html += '</ul></div>';
+                                  document.getElementById('weather-modal-body').innerHTML = html;
+                                })
+                                .catch(error => {
+                                  console.error('Error fetching weather data:', error);
+                                  document.getElementById('weather-btn').innerText = 'Weather unavailable';
+                                  document.getElementById('weather-modal-body').innerHTML = '<p>Error loading weather data.</p>';
+                                });
+                            });
+                          </script>
                     {% if request.user.is_superuser %}
                     <span>
                     <button class="btn btn-info fw-bold" data-bs-toggle="modal"
@@ -379,7 +448,7 @@
                     </span>
                     {% endif %}
                 </div>
-                <div class="container">
+                <div class="container d-flex">
                     <div class="ticker-container container shadow">
                         {% for alarm in alarms %}
                         <div class="ticker-item{% if forloop.first %} active{% endif %}">
@@ -389,7 +458,7 @@
                         </div>
                         {% endfor %}
                     </div>
-                    
+                
                     <script>
                         const items = document.querySelectorAll('.ticker-item');
                         let currentIndex = 0;

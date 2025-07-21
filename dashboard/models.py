@@ -39,6 +39,7 @@ class MeterReading(models.Model):
     meter = models.ForeignKey(Meters, related_name='data', on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=False, db_index=True)
     data = models.JSONField()
+
     def __str__(self):
         return f"{self.meter.name} - {self.timestamp.strftime('%d-%m-%y %H:%M:%S')}"
 
@@ -81,6 +82,10 @@ class MeterReading(models.Model):
                     date=datetime.now(),
                     acknowledged=False
                 )
+    class Meta:
+        indexes = [
+            models.Index(fields=['meter', 'timestamp']),
+        ]
 
 class LatestMeterReading(models.Model):
     meter = models.ForeignKey(Meters, related_name='dataLatest', on_delete=models.CASCADE)
@@ -115,3 +120,6 @@ class HierarchyDataAggregate(models.Model):
 
     def __str__(self):
         return self.site.name + " - " + str(self.start_date) + " - " + self.period_type
+    
+    class Meta:
+        unique_together = ('site', 'period_type', 'start_date')

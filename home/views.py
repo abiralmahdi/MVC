@@ -1,7 +1,15 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from dynamic.models import *
 
 # Create your views here.
+
+def introPage(request):
+    if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
+        return redirect('/location')
+    else:
+        return redirect('/dashboard/siteDashboard/'+str(request.user.userModel.first().site.id))
+
+
 def energyCostComparison(request):
     return render(request, 'energyCostComparison.html')
 
