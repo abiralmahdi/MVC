@@ -5,21 +5,29 @@ from django.db.models import Count, Prefetch
 from dashboard.models import *
 from django.contrib.auth.decorators import login_required, user_passes_test
 
-
 # Create your views here.
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
 def configureDashboard(request):
-    return render(request, "configureDashboard.html")
+    config = GlobalConfiguration.objects.first()
+    context = {
+        'config':config
+        }
+    return render(request, "configureDashboard.html", context)
 
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
 def settings(request):
-    return render(request, 'settings.html')
+    config = GlobalConfiguration.objects.first()
+    context = {
+        'config':config
+        }
+    return render(request, 'settings.html', context)
 
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
 def hierarchy(request):
+    config = GlobalConfiguration.objects.first()
     site = Site.objects.all().prefetch_related(
         Prefetch(
             'buildings',
@@ -42,6 +50,7 @@ def hierarchy(request):
         'areas': areas,
         'loadTypes': load_types,
         'meters': meters,
+        'config':config
     }
     return render(request, 'hierarchy.html', context)
 
@@ -106,21 +115,25 @@ def addLoadType(request):
 @user_passes_test(lambda u: u.is_superuser)
 def deleteSite(request, siteID):
     Site.objects.get(id=siteID).delete()
+    return redirect('/settings/hierarchy')
 
 
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
 def deleteBuilding(request, siteID):
     Buildings.objects.get(id=siteID).delete()
+    return redirect('/settings/hierarchy')
 
 
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
 def deleteArea(request, siteID):
     Areas.objects.get(id=siteID).delete()
+    return redirect('/settings/hierarchy')
 
 
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
 def deleteMeter(request, siteID):
     Meters.objects.get(id=siteID).delete()
+    return redirect('/settings/hierarchy')

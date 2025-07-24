@@ -12,12 +12,10 @@ from django.utils.dateparse import parse_date
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from accounts.models import UserModel
 
-
-
-
 # Create your views here.
 @login_required
 def reports(request):
+    config = GlobalConfiguration.objects.first()
     if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
         sites = Site.objects.all()
         reports = ReportFormat.objects.all()
@@ -34,7 +32,8 @@ def reports(request):
         'gadgets':Gadgets.objects.all(),
         'meters':meters,
         'measurements':measurements,
-        'sites':sites
+        'sites':sites,
+        'config':config
     }
     return render(request, 'reports.html', context)
 
@@ -103,6 +102,7 @@ def createReportFormat(request):
 
 @login_required
 def viewReport(request, reportID):
+    config = GlobalConfiguration.objects.first()
     reports = []
     sites = []
     if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
@@ -122,7 +122,8 @@ def viewReport(request, reportID):
             'reports': reports,
             'individualReport': individualReport,
             'diagrams': diagrams, 
-            'sites':sites
+            'sites':sites,
+            'config':config
         }
         return render(request, 'reportView2.html', context=context)
     else:
@@ -346,6 +347,7 @@ def generate_pdf(request, filename, reportID):
 
 @login_required
 def savedReportsPage(request):
+    config = GlobalConfiguration.objects.first()
     if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
         reports = ReportFormat.objects.all()
         sites = Site.objects.all()
@@ -356,7 +358,8 @@ def savedReportsPage(request):
 
     context = {
         'reports':reports,
-        'sites':sites
+        'sites':sites,
+        'config':config
     }
     return render(request, 'savedReportPage.html', context)
 
@@ -364,6 +367,7 @@ from django.views.decorators.clickjacking import xframe_options_exempt
 
 @xframe_options_exempt
 def viewSavedReports(request, reportID):
+    config = GlobalConfiguration.objects.first()
     report = ReportFormat.objects.get(id=reportID)    
     if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
         reports = ReportFormat.objects.all()
@@ -379,7 +383,8 @@ def viewSavedReports(request, reportID):
             'report': report,
             'pdf_url': pdf_url,
             'reports':reports, 
-            'sites':sites
+            'sites':sites,
+            'config':config
         }
         return render(request, 'savedReportView.html', context=context)
     else:

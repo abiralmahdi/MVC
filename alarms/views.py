@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 # Create your views here.
 @login_required
 def allAlarms(request):
+    config = GlobalConfiguration.objects.first()
     if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
         alarms = Alarms.objects.all().order_by('-date')
     else:
@@ -22,12 +23,14 @@ def allAlarms(request):
             alarm.color = "white"
 
     context = {
-        "alarms": alarms
+        "alarms": alarms,
+        'config':config
     }
     return render(request, 'activeAlarms.html', context)
 
 @login_required
 def setAlarmRange(request):
+    config = GlobalConfiguration.objects.first()
     if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
         meters = Meters.objects.all().prefetch_related('alarms')
         sites = Site.objects.all().prefetch_related('buildings')
@@ -58,6 +61,7 @@ def setAlarmRange(request):
         "sites": sites,
         "areas": areas,
         "buildings": buildings,
+        'config':config
     }
 
     return render(request, 'setAlarmRange.html', context)

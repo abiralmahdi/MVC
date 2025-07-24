@@ -70,6 +70,14 @@
         <input type="file" class="form-control" id="profilePic" name="profilePic" placeholder="Upload Photo" required>
       </div>
       <div class="mb-3">
+        <label for="site" class="form-label">Site</label>
+        <select type="text" class="form-control" id="site" name="site" placeholder="Enter Site" required>
+          {% for site in sites %}  
+          <option value="{{site.id}}">{{site.name}}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
         <label for="role" class="form-label">Role</label>
         <select type="text" class="form-control" id="role" name="role" placeholder="Enter Role" required>
             <option value="Administrator">Administrator</option>

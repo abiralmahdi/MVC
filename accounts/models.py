@@ -4,13 +4,13 @@ from dynamic.models import Site
 
 
 class UserModel(models.Model):
-    name = models.CharField(max_length=100)
-    site = models.ForeignKey(Site, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, null=True, blank=True)
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, null=True, blank=True)
     email = models.CharField(max_length=100)
     password = models.CharField(max_length=100)
     role = models.CharField(max_length=100)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='userModel')
-    profilePic = models.ImageField(upload_to='media/images')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='userModel', null=True, blank=True)
+    profilePic = models.ImageField(upload_to='media/images', null=True, blank=True)
     last_activity = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):

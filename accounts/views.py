@@ -3,6 +3,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from .models import *
 from django.contrib.auth.decorators import login_required, user_passes_test
+from home.models import GlobalConfiguration
+
 
 # Create your views here.
 import httpagentparser
@@ -57,6 +59,7 @@ def logout_view(request):
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
 def register(request):
+    config = GlobalConfiguration.objects.first()
     if request.method == 'POST':
         name = request.POST['name']
         role = request.POST['role']
@@ -65,6 +68,7 @@ def register(request):
         password1 = request.POST['password1']
         password2 = request.POST['password2']
         profilePic = request.FILES['profilePic']
+        siteID = request.POST['site']
 
         if password1 != password2:
             return HttpResponse('Passwords do not match.')
@@ -77,18 +81,21 @@ def register(request):
 
         user = User.objects.create_user(username=username, email=email, password=password1, first_name=name)
         user.save()
-        usermodel = UserModel.objects.create(user=user, name=name, role=role, email=email, password=password1, profilePic=profilePic)
+        usermodel = UserModel.objects.create(user=user, name=name, role=role, email=email, password=password1, profilePic=profilePic, site=Site.objects.get(id=siteID))
         usermodel.save()
 
         return redirect('/accounts/accountSettings')
-    return render(request, 'register.html')
+    return render(request, 'register.html', {'sites':Site.objects.all(), 'config':config})
 
 @login_required
 def accountSettings(request):
+    config = GlobalConfiguration.objects.first()
     if (request.user.userModel.first() and ("Administrator" in request.user.userModel.first().role or "Manager" in request.user.userModel.first().role)) or request.user.is_superuser:
         users = UserModel.objects.all()
         context = {
-            'users':users
+            'users':users,
+            'sites':Site.objects.all(),
+            'config':config
         }
         return render(request, 'accountSettings.html', context)
     else:
@@ -98,6 +105,7 @@ def accountSettings(request):
 from datetime import datetime, timedelta
 @login_required
 def loginHistory(request):
+    config = GlobalConfiguration.objects.first()
     if (request.user.userModel.first() and ("Administrator" in request.user.userModel.first().role or "Manager" in request.user.userModel.first().role)) or request.user.is_superuser:
         history = LoginHistory.objects.all().order_by('-timestamp')
 
@@ -118,7 +126,7 @@ def loginHistory(request):
                 # Invalid date format, ignore filter or handle error as you want
                 pass
 
-        return render(request, 'loginHistory.html', {'history': history})
+        return render(request, 'loginHistory.html', {'history': history, 'config':config})
     else:
         return HttpResponse("You are not authorized to view this page")
 

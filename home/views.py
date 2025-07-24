@@ -4,10 +4,13 @@ from dynamic.models import *
 # Create your views here.
 
 def introPage(request):
-    if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
-        return redirect('/location')
+    if not request.user.is_anonymous:
+        if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
+            return redirect('/location')
+        else:
+            return redirect('/dashboard/siteDashboard/'+str(request.user.userModel.first().site.id))
     else:
-        return redirect('/dashboard/siteDashboard/'+str(request.user.userModel.first().site.id))
+        return redirect('/accounts/login')
 
 
 def energyCostComparison(request):

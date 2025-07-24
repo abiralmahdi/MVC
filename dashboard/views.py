@@ -17,9 +17,11 @@ sites = Site.objects.prefetch_related(
         'buildings__areas__meters'
     ).all()
 
+
 # Create your views here.
 @login_required
 def dashboard(request):
+    config = GlobalConfiguration.objects.first()
     sites = Site.objects.prefetch_related(
         'buildings__areas__meters'
     ).all()
@@ -35,6 +37,7 @@ def dashboard(request):
         'dashboards': dashboards,
         'gadgets': gadgets,
         'meters': meters,
+        'config':config
     }
     return render(request, 'dashboard.html', context)
 
@@ -53,6 +56,7 @@ def siteDashbaord(request, siteID):
 
 @login_required
 def indivDashboard(request, dashboardID):
+    config = GlobalConfiguration.objects.first()
     dashboard_ = get_object_or_404(Dashboard, id=dashboardID)
     sites = Site.objects.prefetch_related(
         'buildings__areas__meters'
@@ -101,7 +105,8 @@ def indivDashboard(request, dashboardID):
             'readingData':readingArray,
             'gadgetTypes':GADGET_TYPES,
             'accessControl':ACCESS_CONSTROL,
-            'alarms':alarms
+            'alarms':alarms,
+            'config':config
             
         }
 

@@ -4,6 +4,7 @@ from dynamic.models import Site
 from alarms.models import *
 from django.contrib.auth.decorators import login_required
 
+
 # Create your views here.
 def triggerAlarm(request, siteID):
     site = get_object_or_404(Site, id=siteID)
@@ -29,10 +30,12 @@ def triggerAlarm(request, siteID):
 
 @login_required
 def location(request):
+    config = GlobalConfiguration.objects.first()
     if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
         sites = Site.objects.all()
         context = {
             'sites': sites,
+            'config':config
         }
         return render(request, 'location.html', context)
     else:

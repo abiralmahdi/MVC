@@ -54,10 +54,11 @@
             </thead>
             <tbody>
                 {% for user in users %}
+                {% if not user.user.is_superuser %}
                 <tr>
                   <td>{{user.id}}</td>
                   <td>
-                    <img src="{{ user.profilePic.url }}" alt="Profile Picture" class="" style="width: 50px; height: 50px; object-fit: cover;">
+                    <img src="{% if user.profilePic %} {{user.profilePic.url}} {% endif %}" alt="Profile Picture" class="" style="width: 50px; height: 50px; object-fit: cover;">
                   </td>
                   <td>{{user.name}}</td>
                   <td>{{user.role}}</td>
@@ -83,6 +84,7 @@
                     {% endif %}                  
                   </td>
                 </tr>
+                {% endif %}
                 {% endfor %}
                 
               </tbody>
@@ -110,16 +112,33 @@
                         <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
                       </div>
                       <div class="mb-3">
-                        <label class="form-label">Role</label>
-                        <input type="text" class="form-control" name="role" value="{{ user.role }}" required>
+                        <label for="site" class="form-label">Site</label>
+                        <select class="form-control" id="site" name="site" required>
+                          {% for site in sites %}
+                            <option value="{{ site.id }}" {% if site.id == user.site.id %}selected{% endif %}>{{ site.name }}</option>
+                          {% endfor %}
+                        </select>
                       </div>
+                      
+                      <div class="mb-3">
+                        <label for="role" class="form-label">Role</label>
+                        <select class="form-control" id="role" name="role" required>
+                          <option value="Administrator" {% if user.role == 'Administrator' %}selected{% endif %}>Administrator</option>
+                          <option value="Operator" {% if user.role == 'Operator' %}selected{% endif %}>Operator</option>
+                          <option value="Quality Manager" {% if user.role == 'Quality Manager' %}selected{% endif %}>Quality Manager</option>
+                          <option value="Shift Manager" {% if user.role == 'Shift Manager' %}selected{% endif %}>Shift Manager</option>
+                          <option value="Maintenance Personnel" {% if user.role == 'Maintenance Personnel' %}selected{% endif %}>Maintenance Personnel</option>
+                          <option value="Setup Technician" {% if user.role == 'Setup Technician' %}selected{% endif %}>Setup Technician</option>
+                        </select>
+                      </div>
+                      
                       <div class="mb-3">
                         <label class="form-label">Password</label>
                         <input type="text" class="form-control" name="password" value="{{ user.password }}" required>
                       </div>
                       <div class="mb-3">
                         <label class="form-label">Profile Picture</label><br>
-                        <img src="{{ user.profilePic.url }}" alt="Current Photo" style="width: 50px; height: 50px; object-fit: cover;" class="mb-2">
+                        <img src="{% if user.profilePic %} {{user.profilePic.url}} {% endif %}" alt="Current Photo" style="width: 50px; height: 50px; object-fit: cover;" class="mb-2">
                         <input type="file" class="form-control" name="profilePic">
                       </div>
                     </div>

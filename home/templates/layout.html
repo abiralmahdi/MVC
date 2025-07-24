@@ -256,11 +256,33 @@
           <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mx-5 mb-2 mb-lg-0">
               <li class="nav-item">
+                {% if config.dashboard %}
                 <a class="nav-link {% if 'dashboard' in request.path %} text-info fw-bold {% endif %}" aria-current="page" href="/dashboard">Dashboards</a>
+                {% else %}
+                <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="This service is disabled. Please contact MARKS Automation for further enquiries.">
+                  <button 
+                    type="button"
+                    class="nav-link" 
+                    disabled>
+                    Dashboard
+                  </button>
+                </span>
+                {% endif %}
               </li>
               {% if request.user.is_superuser or request.user.userModel.first.role == 'Administrator' %}
               <li class="nav-item">
+                {% if config.siteLocations %}
                 <a class="nav-link {% if 'location' in request.path %} text-info fw-bold {% endif %}" aria-current="page" href="/location">Site Locations</a>
+                {% else %}
+                <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="This service is disabled. Please contact MARKS Automation for further enquiries.">
+                  <button 
+                    type="button"
+                    class="nav-link" 
+                    disabled>
+                    Site Locations
+                  </button>
+                </span>
+                {% endif %}
               </li>
               {% endif %}
               <!-- <li class="nav-item">
@@ -270,13 +292,46 @@
                 <a class="nav-link {% if 'trend' in request.path %} text-info fw-bold {% endif %}" href="/trends">Trends</a>
               </li> -->
               <li class="nav-item">
+                {% if config.alarm %}
                 <a class="nav-link {% if 'alarm' in request.path %} text-info fw-bold {% endif %}" href="/alarms/allAlarms">Alarms</a>
+                {% else %}
+                <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="This service is disabled. Please contact MARKS Automation for further enquiries.">
+                  <button 
+                    type="button"
+                    class="nav-link" 
+                    disabled>
+                    Alarms
+                  </button>
+                </span>
+                {% endif %}
               </li>
               <li class="nav-item">
+                {% if config.report %}
                 <a class="nav-link {% if 'reports' in request.path and 'viewSavedReports' not in request.path %} text-info fw-bold {% endif %}" href="/reports">Reports</a>
+                {% else %}
+                <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="This service is disabled. Please contact MARKS Automation for further enquiries.">
+                  <button 
+                    type="button"
+                    class="nav-link" 
+                    disabled>
+                    Reports
+                  </button>
+                </span>
+                {% endif %}
               </li>
               <li class="nav-item">
+                {% if config.report %}
                 <a class="nav-link {% if 'viewSavedReports' in request.path %} text-info fw-bold {% endif %}" href="/reports/viewSavedReports">Saved Reports</a>
+                {% else %}
+                <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="This service is disabled. Please contact MARKS Automation for further enquiries.">
+                  <button 
+                    type="button"
+                    class="nav-link" 
+                    disabled>
+                    Alarms
+                  </button>
+                </span>
+                {% endif %}
               </li>
               {% if request.user.is_superuser %}
               <li class="nav-item">
@@ -311,7 +366,7 @@
                           <strong>{{ request.user.first_name }}</strong> {{request.user.userModel.first.role}}
                         </td>
                         <td class="text-end text-white align-middle">
-                          {% if request.user.userModel.first.profilePic.url %}
+                          {% if request.user.userModel.first.profilePic %}
                           <img src="{{ request.user.userModel.first.profilePic.url }}" alt="Profile Picture" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
                           {% else %}
                           <i class="fa-solid fa-user"></i>
