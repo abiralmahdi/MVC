@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect
 from dynamic.models import *
+from utils.decorators import subscription_revoked, subscription_required
 
 # Create your views here.
-
+@subscription_required
 def introPage(request):
     if not request.user.is_anonymous:
         if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
@@ -12,6 +13,9 @@ def introPage(request):
     else:
         return redirect('/accounts/login')
 
+@subscription_revoked
+def subscriptionRevoked(request):
+    return render(request, 'subscriptionRevoked.html')
 
 def energyCostComparison(request):
     return render(request, 'energyCostComparison.html')

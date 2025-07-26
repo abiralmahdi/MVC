@@ -3,6 +3,65 @@
 
 {% block body %}
 
+
+<style>
+
+
+    .clock {
+        position: relative;
+        width: 250px;
+        height: 250px;
+        border: 8px solid #333;
+        border-radius: 50%;
+        background: black;
+        margin-left: 100px;
+    }
+
+    .center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 10px;
+        height: 10px;
+        background: #ffffff;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+    }
+
+    .hand {
+        position: absolute;
+        bottom: 50%;
+        left: 50%;
+        transform-origin: bottom center;
+        transform: rotate(90deg);
+        background: #ffffff;
+    }
+
+    .hour {
+        height: 60px;
+        width: 6px;
+        background: #525252;
+        z-index: 3;
+    }
+
+    .minute {
+        height: 80px;
+        width: 4px;
+        background: #525252;
+        z-index: 2;
+    }
+
+    .second {
+        height: 90px;
+        width: 2px;
+        background: red;
+        z-index: 1;
+    }
+</style>
+
+
+
 <style>
   .ticker-container {
     width: 1200px;  /* adjust as needed */
@@ -363,9 +422,33 @@
                         {{ dashboard.title }}
 
                     </h1>
-                    <button id="weather-btn" class="btn btn-dark bg-black me-auto" style="font-weight: 400; margin-left: 80px;" data-bs-toggle="modal" data-bs-target="#weatherModal">
+                    <button id="weather-btn" class="btn btn-dark bg-black" style="font-weight: 400; margin-left: 80px;" data-bs-toggle="modal" data-bs-target="#weatherModal">
                         Loading weather...
-                      </button>
+                    </button>
+                    <button id="weather-btn" class="btn btn-dark bg-black me-auto" style="font-weight: 400; margin-left: 10px;" data-bs-toggle="modal" data-bs-target="#clockModal">
+                        <i class="fa-solid fa-calendar me-2"></i>
+                        {{dateNow}}
+                    </button>
+
+                    <!-- Bootstrap clock modal -->
+                    <div class="modal fade" id="clockModal" tabindex="-1" aria-labelledby="clockModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content text-center bg-dark text-light">
+                                <div class="modal-header border-dark">
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body justify-content-center">
+                                    
+                                    <div class="clock">
+                                        <div class="center"></div>
+                                        <div class="hand hour" id="hourHand"></div>
+                                        <div class="hand minute" id="minuteHand"></div>
+                                        <div class="hand second" id="secondHand"></div>
+                                      </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
                       <!-- Bootstrap Weather Modal -->
                         <div class="modal fade" id="weatherModal" tabindex="-1" aria-labelledby="weatherModalLabel" aria-hidden="true">
@@ -2135,4 +2218,25 @@
     });
   </script>
 
+
+<script>
+    function updateClock() {
+      const now = new Date();
+  
+      const seconds = now.getSeconds();
+      const minutes = now.getMinutes();
+      const hours = now.getHours();
+  
+      const secDeg = seconds * 6; // 360 / 60
+      const minDeg = minutes * 6 + seconds * 0.1; // smooth minute hand
+      const hourDeg = (hours % 12) * 30 + minutes * 0.5; // 360 / 12 + smooth move
+  
+      document.getElementById('secondHand').style.transform = `translateX(-50%) rotate(${secDeg}deg)`;
+      document.getElementById('minuteHand').style.transform = `translateX(-50%) rotate(${minDeg}deg)`;
+      document.getElementById('hourHand').style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
+    }
+  
+    setInterval(updateClock, 1000);
+    updateClock(); // initial call
+  </script>
 {% endblock %}

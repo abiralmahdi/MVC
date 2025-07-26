@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.db.models.functions import TruncHour, TruncDate
 from django.contrib.auth.decorators import login_required, user_passes_test
 from alarms.models import *
-
+from utils.decorators import subscription_required
 
 GADGET_TYPES = ["pie", "bar", "line", "table", "tool", "sankey", "heatmap"]
 ACCESS_CONSTROL = ["Administrator", "Operator", "Quality Manager", "Shift Manager", "Maintenance Personnel", "Setup Technician"]
@@ -20,6 +20,7 @@ sites = Site.objects.prefetch_related(
 
 # Create your views here.
 @login_required
+@subscription_required
 def dashboard(request):
     config = GlobalConfiguration.objects.first()
     sites = Site.objects.prefetch_related(
@@ -43,6 +44,7 @@ def dashboard(request):
 
 
 @login_required
+@subscription_required
 def siteDashbaord(request, siteID):
     site = Site.objects.get(id=siteID)
     try:
@@ -53,9 +55,30 @@ def siteDashbaord(request, siteID):
         return redirect('/dashboard')
     
 
+def get_day_suffix(day):
+    if 11 <= day <= 13:
+        return 'th'
+    last_digit = day % 10
+    if last_digit == 1:
+        return 'st'
+    elif last_digit == 2:
+        return 'nd'
+    elif last_digit == 3:
+        return 'rd'
+    else:
+        return 'th'
+
+def format_custom_date(date_obj):
+    day = date_obj.day
+    suffix = get_day_suffix(day)
+    formatted = date_obj.strftime(f"%A - {day}{suffix} %B, %Y")
+    return formatted
+
 
 @login_required
+@subscription_required
 def indivDashboard(request, dashboardID):
+    dateNow = format_custom_date(datetime.now())
     config = GlobalConfiguration.objects.first()
     dashboard_ = get_object_or_404(Dashboard, id=dashboardID)
     sites = Site.objects.prefetch_related(
@@ -106,7 +129,8 @@ def indivDashboard(request, dashboardID):
             'gadgetTypes':GADGET_TYPES,
             'accessControl':ACCESS_CONSTROL,
             'alarms':alarms,
-            'config':config
+            'config':config,
+            'dateNow':dateNow
             
         }
 

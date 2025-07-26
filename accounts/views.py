@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from .models import *
 from django.contrib.auth.decorators import login_required, user_passes_test
 from home.models import GlobalConfiguration
-
+from utils.decorators import subscription_required
 
 # Create your views here.
 import httpagentparser
@@ -104,6 +104,7 @@ def accountSettings(request):
 
 from datetime import datetime, timedelta
 @login_required
+@subscription_required
 def loginHistory(request):
     config = GlobalConfiguration.objects.first()
     if (request.user.userModel.first() and ("Administrator" in request.user.userModel.first().role or "Manager" in request.user.userModel.first().role)) or request.user.is_superuser:
@@ -143,6 +144,7 @@ def logout_user(user):
             session.delete()
 
 @login_required
+@subscription_required
 def terminateUser(request, userID):
     if (request.user.userModel.first() and ("Administrator" in request.user.userModel.first().role or "Manager" in request.user.userModel.first().role)) or request.user.is_superuser:
         user = User.objects.get(id=userID)

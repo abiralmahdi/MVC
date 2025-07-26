@@ -4,6 +4,7 @@ from django.shortcuts import redirect
 from django.db.models import Count, Prefetch
 from dashboard.models import *
 from django.contrib.auth.decorators import login_required, user_passes_test
+from utils.decorators import subscription_required
 
 # Create your views here.
 @login_required

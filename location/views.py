@@ -3,9 +3,10 @@ from django.http import JsonResponse, HttpResponse
 from dynamic.models import Site
 from alarms.models import *
 from django.contrib.auth.decorators import login_required
-
+from utils.decorators import subscription_required
 
 # Create your views here.
+@subscription_required
 def triggerAlarm(request, siteID):
     site = get_object_or_404(Site, id=siteID)
 
@@ -29,6 +30,7 @@ def triggerAlarm(request, siteID):
 
 
 @login_required
+@subscription_required
 def location(request):
     config = GlobalConfiguration.objects.first()
     if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':

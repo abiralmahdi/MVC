@@ -11,9 +11,11 @@ from datetime import timedelta, datetime
 from django.utils.dateparse import parse_date
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from accounts.models import UserModel
+from utils.decorators import subscription_required
 
 # Create your views here.
 @login_required
+@subscription_required
 def reports(request):
     config = GlobalConfiguration.objects.first()
     if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
@@ -40,6 +42,7 @@ def reports(request):
 
 @login_required
 @csrf_protect
+@subscription_required
 def createReportFormat(request):
     if request.method == 'POST':
         title = request.POST.get('title')
@@ -101,6 +104,7 @@ def createReportFormat(request):
 
 
 @login_required
+@subscription_required
 def viewReport(request, reportID):
     config = GlobalConfiguration.objects.first()
     reports = []
@@ -138,6 +142,7 @@ import uuid
 import base64
 
 @login_required
+@subscription_required
 def saveDiagramImage(request, diagramID):
     if request.method == "POST":
         import json
@@ -197,6 +202,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 
 @login_required
+@subscription_required
 def generate_pdf(request, filename, reportID):
     report = ReportFormat.objects.get(id=reportID)
     diagrams = ReportDiagram.objects.filter(report_format=report)
@@ -346,6 +352,7 @@ def generate_pdf(request, filename, reportID):
 
 
 @login_required
+@subscription_required
 def savedReportsPage(request):
     config = GlobalConfiguration.objects.first()
     if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
@@ -393,6 +400,7 @@ def viewSavedReports(request, reportID):
 
 
 @xframe_options_exempt
+@subscription_required
 def viewSavedReport(request, reportID):
     report = ReportFormat.objects.get(id=reportID)
     file_path = os.path.join(settings.MEDIA_ROOT, "generatedReports", f"Report-{report.id}.pdf")
@@ -422,6 +430,7 @@ def get_period_start(date, period_type):
 
 @csrf_exempt
 @login_required
+@subscription_required
 def getDiagramData(request, diagramID):
     diagram = get_object_or_404(ReportDiagram, id=diagramID)
     meters = diagram.meters.all()
@@ -451,6 +460,7 @@ def getDiagramData(request, diagramID):
 
 @csrf_exempt
 @login_required
+@subscription_required
 def getLineDiagramData(request, diagramID):
     diagram = get_object_or_404(ReportDiagram, id=diagramID)
     meters = diagram.meters.all()
@@ -480,6 +490,7 @@ def getLineDiagramData(request, diagramID):
 
 
 @login_required
+@subscription_required
 def getTableData(request, diagramID):
     diagram = get_object_or_404(ReportDiagram, id=diagramID)
     meters = diagram.meters.all()
@@ -507,6 +518,7 @@ def getTableData(request, diagramID):
 
 
 @login_required
+@subscription_required
 def heatmap_data(request, diagramID):
     diagram = get_object_or_404(ReportDiagram, id=diagramID)
     measurement = diagram.measurements.first().name if diagram.measurements.exists() else None
@@ -548,6 +560,7 @@ def heatmap_data(request, diagramID):
 
 
 @login_required
+@subscription_required
 def sankey_data(request, diagramID):
     diagram = get_object_or_404(ReportDiagram, id=diagramID)
     site = diagram.site  # You must ensure ReportFormat → Site relation exists

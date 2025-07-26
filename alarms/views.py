@@ -1,9 +1,11 @@
 from django.shortcuts import render, HttpResponse, redirect
 from .models import *
 from django.contrib.auth.decorators import login_required
+from utils.decorators import subscription_required
 
 # Create your views here.
 @login_required
+@subscription_required
 def allAlarms(request):
     config = GlobalConfiguration.objects.first()
     if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
@@ -29,6 +31,7 @@ def allAlarms(request):
     return render(request, 'activeAlarms.html', context)
 
 @login_required
+@subscription_required
 def setAlarmRange(request):
     config = GlobalConfiguration.objects.first()
     if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
@@ -65,6 +68,8 @@ def setAlarmRange(request):
     }
 
     return render(request, 'setAlarmRange.html', context)
+
+
 @login_required
 def setRange(request, meterID):
     if request.method == 'POST':
@@ -88,6 +93,7 @@ def setRange(request, meterID):
         return redirect('/alarms/setAlarmRange')
 
 @login_required
+@subscription_required
 def ackAlarm(request, alarmID):
     try:
         alarm = Alarms.objects.get(id=alarmID)
