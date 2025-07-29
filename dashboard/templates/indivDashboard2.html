@@ -438,13 +438,12 @@
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body justify-content-center">
-                                    
                                     <div class="clock">
                                         <div class="center"></div>
                                         <div class="hand hour" id="hourHand"></div>
                                         <div class="hand minute" id="minuteHand"></div>
                                         <div class="hand second" id="secondHand"></div>
-                                      </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1040,7 +1039,7 @@
                                         }
                                     
                                         fetchDataAndUpdateChart();
-                                        setInterval(fetchDataAndUpdateChart, 60000);
+                                        setInterval(fetchDataAndUpdateChart, 3000);
                                     })();
                                     </script>
                                     
@@ -1213,7 +1212,7 @@
                                     fetchAndUpdateToolData();
                             
                                     // Update every 60 seconds
-                                    setInterval(fetchAndUpdateToolData, 60000);
+                                    setInterval(fetchAndUpdateToolData, 3000);
                                 })();
                             </script>
                             

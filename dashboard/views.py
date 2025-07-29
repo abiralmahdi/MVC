@@ -450,7 +450,7 @@ def fetchLatestToolData(request, dashboard_id, gadget_id):
             gadget = Gadgets.objects.prefetch_related('meters', 'measurement').get(id=gadget_id)
             meter = gadget.meters.first()
             measurements = gadget.measurement.all()
-            latest_reading = LatestMeterReading.objects.filter(meter=meter).first()
+            latest_reading = LatestMeterReading.objects.filter(meter=meter).order_by('-timestamp').first()
 
             if not latest_reading:
                 return JsonResponse({'error': 'No reading found'}, status=404)
