@@ -197,3 +197,5 @@ def deleteUser(request, userID):
     usermodel.delete()
     user.delete()
     return redirect('/accounts/accountSettings')
+
+

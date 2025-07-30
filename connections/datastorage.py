@@ -141,8 +141,9 @@ def main(ip):
 
     meter = Meters.objects.get(ip=ip)
     print(meter.name)
-    LatestMeterReading.objects.create(
+    reading = LatestMeterReading(
         meter=meter,
         timestamp=datetime.now(),
         data=sanitize_dict(result)
     )
+    reading.save()

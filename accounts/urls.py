@@ -9,6 +9,5 @@ urlpatterns = [
     path('accountSettings', views.accountSettings, name='accountSettings'),
     path('terminateUser/<str:userID>', views.terminateUser, name='terminateUser'),
     path('editUser/<str:userID>', views.editUser, name='editUser'),
-    path('deleteUser/<str:userID>', views.deleteUser, name='deleteUser'),
-    
+    path('deleteUser/<str:userID>', views.deleteUser, name='deleteUser'),    
 ]

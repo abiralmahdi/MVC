@@ -31,6 +31,7 @@ def dashboard(request):
     else:
         sites = [request.user.userModel.first().site]
     dashboards = Dashboard.objects.all()
+    centralDashboard = CentralDashboard.objects.all()
     gadgets = Gadgets.objects.all()
     meters = Meters.objects.all()
     context = {
@@ -38,7 +39,8 @@ def dashboard(request):
         'dashboards': dashboards,
         'gadgets': gadgets,
         'meters': meters,
-        'config':config
+        'config':config,
+        'centralDashboards':centralDashboard
     }
     return render(request, 'dashboard.html', context)
 
@@ -130,13 +132,51 @@ def indivDashboard(request, dashboardID):
             'accessControl':ACCESS_CONSTROL,
             'alarms':alarms,
             'config':config,
-            'dateNow':dateNow
+            'dateNow':dateNow,
+            'centralDashboards':CentralDashboard.objects.all()
             
         }
 
         return render(request, 'indivDashboard2.html', context)
     else:
         return redirect('/dashboard')
+    
+
+
+
+@login_required
+@subscription_required
+def indivCentralDashboard(request, dashboardID):
+    dateNow = format_custom_date(datetime.now())
+    config = GlobalConfiguration.objects.first()
+    dashboard_ = get_object_or_404(Dashboard, id=dashboardID)
+    sites = Site.objects.prefetch_related(
+        'buildings__areas__meters'
+    ).all()
+    if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
+        pass
+    else:
+        sites = [request.user.userModel.first().site]
+    if request.user.is_superuser or request.user.userModel.first().site.id == dashboard_.site.id or request.user.userModel.first().role == 'Administrator':
+
+        
+
+        context = {
+            'dashboard': dashboard_,
+            'sites': sites,
+            'gadgetTypes':GADGET_TYPES,
+            'accessControl':ACCESS_CONSTROL,
+            'config':config,
+            'dateNow':dateNow,
+            'centralDashboards':CentralDashboard.objects.all()
+            
+        }
+
+        return render(request, 'indivDashboard2.html', context)
+    else:
+        return redirect('/dashboard')
+
+
 
 @login_required
 def fetchLatestReadings(request, dashboardID, gadget_id):
@@ -551,12 +591,20 @@ def heatmap_data(request, dashboard_id, meter_id, start_date, end_date, measurem
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
 def newDashboard(request):
-    if request.method=='POST':
+    if request.method == 'POST':
         title = request.POST['title']
-        siteID = request.POST['site']
-        site = Site.objects.get(id=siteID)
-        Dashboard.objects.create(title=title, site=site).save()
+        isCentral = request.POST.get('is_central')  # returns None if checkbox is unchecked
+
+        if isCentral:
+            # Create a Central Dashboard (no site)
+            CentralDashboard.objects.create(title=title)
+        else:
+            siteID = request.POST['site']
+            site = get_object_or_404(Site, id=siteID)
+            Dashboard.objects.create(title=title, site=site)
+
     return redirect("/dashboard")
+
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
 def newGadget(request, dashboardID):

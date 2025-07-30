@@ -83,3 +83,12 @@ def updateSubscription(request):
         return JsonResponse({'status': 'done'})
 
     return JsonResponse({'error': 'Invalid method'}, status=405)
+
+
+
+from rest_framework.generics import ListAPIView
+from .serializers import UserModelSerializer
+
+class UserModelListView(ListAPIView):
+    queryset = UserModel.objects.all()
+    serializer_class = UserModelSerializer

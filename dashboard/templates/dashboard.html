@@ -9,36 +9,62 @@
       <form method="POST" action="/dashboard/newDashboard">
         {% csrf_token %}
         <div class="modal-content bg-dark text-white">
-          <div class="modal-header border-dark">
-            <h5 class="modal-title" id="addDashboardModalLabel">Create New Dashboard</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          
-          <div class="modal-body">
-            <div class="mb-3">
-              <label for="title" class="form-label">Dashboard Title</label>
-              <input type="text" class="form-control" id="title" name="title" required>
+            <div class="modal-header border-dark">
+                <h5 class="modal-title" id="addDashboardModalLabel">Create New Dashboard</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-  
-            <div class="mb-3">
-              <label for="site" class="form-label">Select Site</label>
-              <select class="form-select" id="site" name="site" required>
-                <option value="">-- Select Site --</option>
-                {% for site in sites %}
-                  <option value="{{ site.id }}">{{ site.name }}</option>
-                {% endfor %}
-              </select>
+    
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Dashboard Title</label>
+                    <input type="text" class="form-control" id="title" name="title" required>
+                </div>
+    
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="centralDashboard" name="is_central">
+                    <label class="form-check-label" for="centralDashboard">
+                        Central Dashboard
+                    </label>
+                </div>
+    
+                <div class="mb-3" id="siteField">
+                    <label for="site" class="form-label">Select Site</label>
+                    <select class="form-select" id="site" name="site">
+                        <option value="">-- Select Site --</option>
+                        {% for site in sites %}
+                            <option value="{{ site.id }}">{{ site.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
-          </div>
-  
-          <div class="modal-footer border-dark">
-            <button type="submit" class="btn btn-primary">Create Dashboard</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          </div>
+    
+            <div class="modal-footer border-dark">
+                <button type="submit" class="btn btn-primary">Create Dashboard</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
         </div>
-      </form>
+    </form>
     </div>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const centralCheckbox = document.getElementById('centralDashboard');
+        const siteField = document.getElementById('siteField');
+        const siteSelect = document.getElementById('site');
+
+        centralCheckbox.addEventListener('change', function () {
+            if (this.checked) {
+                siteField.style.display = 'none';
+                siteSelect.required = false;
+                siteSelect.value = ''; // reset selection
+            } else {
+                siteField.style.display = 'block';
+                siteSelect.required = true;
+            }
+        });
+    });
+</script>
   {% endif %}
 
 
@@ -66,9 +92,24 @@
         <button class="btn btn-block btn-info ms-3 fw-bold" disabled><i class="fa-solid me-2 fa-plus"></i>Create a new Dashboard</button>
       </span>
       {% endif %}
+
+      <ul class="list-unstyled mt-3 ms-2">
+        {% for dashboard in centralDashboards %}
+        <li>
+            <a href="/dashboard/central/{{dashboard.id}}"
+                class="text-white text-decoration-none">
+                <i class="fa-solid fa-building-columns"></i>
+                {{ dashboard.title }}
+            </a>
+        </li>
+        {% endfor %}
+      </ul>
+
+
         {% for site in sites %}
         <!-- Industry Accordion -->
         <div class="accordion-item bg-dark border-0">
+          
             <h2 class="accordion-header">
                 <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
                     data-bs-target="#industryCollapse{{forloop.counter}}">

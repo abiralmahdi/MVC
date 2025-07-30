@@ -5,6 +5,7 @@ urlpatterns = [
     path('', views.dashboard, name='dashboard'),
     path('newDashboard', views.newDashboard, name='newDashboard'),
     path('<str:dashboardID>', views.indivDashboard, name='indivDashboard'),
+    path('central/<str:dashboardID>', views.indivDashboard, name='indivDashboard'),
     path('siteDashboard/<str:siteID>', views.siteDashbaord, name='siteDashbaord'),
     path('<str:dashboardID>/newGadget', views.newGadget, name='newGadget'),
     path('<str:dashboardID>/fetchLatestReadings/<str:gadget_id>/', views.fetchLatestReadings, name='fetchLatestReadings'),
