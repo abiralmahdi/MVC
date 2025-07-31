@@ -60,7 +60,7 @@ def hierarchy(request):
 @user_passes_test(lambda u: u.is_superuser)
 def addSite(request):
     if request.method == 'POST':
-        Site.objects.create(name=request.POST.get('site_name'))
+        Site.objects.create(name=request.POST.get('site_name'), latitude=request.POST.get('latitude'), longitude=request.POST.get('longitude'))
         return redirect("/settings/hierarchy")
 
 @login_required

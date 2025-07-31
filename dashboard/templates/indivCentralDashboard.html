@@ -2,66 +2,6 @@
 {% load custom_tags %}
 
 {% block body %}
-
-
-<style>
-
-
-    .clock {
-        position: relative;
-        width: 250px;
-        height: 250px;
-        border: 8px solid #333;
-        border-radius: 50%;
-        background: black;
-        margin-left: 100px;
-    }
-
-    .center {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 10px;
-        height: 10px;
-        background: #ffffff;
-        border-radius: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 10;
-    }
-
-    .hand {
-        position: absolute;
-        bottom: 50%;
-        left: 50%;
-        transform-origin: bottom center;
-        transform: rotate(90deg);
-        background: #ffffff;
-    }
-
-    .hour {
-        height: 60px;
-        width: 6px;
-        background: #525252;
-        z-index: 3;
-    }
-
-    .minute {
-        height: 80px;
-        width: 4px;
-        background: #525252;
-        z-index: 2;
-    }
-
-    .second {
-        height: 90px;
-        width: 2px;
-        background: red;
-        z-index: 1;
-    }
-</style>
-
-
-
 <style>
   .ticker-container {
     width: 1200px;  /* adjust as needed */
@@ -98,20 +38,12 @@
         height: 0;
     }
 
-    /* Highlight for selected gadget */
-    .gadget-highlight {
-        border: 1px solid #00eaff;
-        /* Indigo border */
-    }
+
 
     a {
         text-decoration: none;
     }
 
-    .maximizeGadget:hover {
-        color: #00eaff;
-        cursor: pointer;
-    }
 
     ::-webkit-scrollbar {
         width: 2px !important;
@@ -145,190 +77,67 @@
     .deleteIcon:hover{
         color: rgb(246, 83, 83);
     }
-    canvas{
-        background-color: #212529 !important;
-        box-shadow: 0px 10px 50px rgb(27, 27, 27) !important;
-    }
+    .chart-container {
+    background-color: #212529;
+    box-shadow: 0px 10px 50px rgb(27, 27, 27);
+    width: 775px;
+    height: 340px;
+    padding: 1rem;
+    margin-right: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.chart-container canvas {
+    background-color: #212529 !important;
+    box-shadow: 0px 10px 50px rgb(27, 27, 27) !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+}
+
+
 </style>
-
-
-{% if request.user.is_superuser %}
 <!-- Dashboard generation modal -->
-<div class="modal fade" id="addDashboardModal" tabindex="-1" aria-labelledby="addDashboardModalLabel"
-    aria-hidden="true">
+{% if request.user.is_superuser %}
+<div class="modal fade" id="addDashboardModal" tabindex="-1" aria-labelledby="addDashboardModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <form method="POST" action="/dashboard/newDashboard">
-            {% csrf_token %}
-            <div class="modal-content bg-dark text-white">
-                <div class="modal-header border-dark">
-                    <h5 class="modal-title" id="addDashboardModalLabel">Create New Dashboard</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+      <form method="POST" action="/dashboard/newDashboard">
+        {% csrf_token %}
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header border-dark">
+                <h5 class="modal-title" id="addDashboardModalLabel">Create New Dashboard</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+    
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Dashboard Title</label>
+                    <input type="text" class="form-control" id="title" name="title" required>
                 </div>
-
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="title" class="form-label">Dashboard Title</label>
-                        <input type="text" class="form-control" id="title" name="title" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="site" class="form-label">Select Site</label>
-                        <select class="form-select" id="site" name="site" required>
-                            <option value="">-- Select Site --</option>
-                            {% for site in sites %}
+    
+                <div class="mb-3" id="siteField">
+                    <label for="site" class="form-label">Select Site</label>
+                    <select class="form-select" id="site" name="site">
+                        <option value="">-- Select Site --</option>
+                        {% for site in sites %}
                             <option value="{{ site.id }}">{{ site.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-
-                <div class="modal-footer border-dark">
-                    <button type="submit" class="btn btn-primary">Create Dashboard</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
-        </form>
-    </div>
-</div>
-
-<!-- New Gadget Modal -->
-<div class="modal fade" id="addGadgetModal" tabindex="-1" aria-labelledby="addGadgetModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <form method="POST" action="/dashboard/{{dashboard.id}}/newGadget">
-            {% csrf_token %}
-            <div class="modal-content bg-dark text-white">
-                <div class="modal-header border-dark">
-                    <h5 class="modal-title" id="addGadgetModalLabel">Create New Gadget</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                </div>
-
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Gadget Name</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="gadget_type" class="form-label">Gadget Type</label>
-                        <select class="form-select" id="gadget_type" name="gadget_type" required>
-                            <option value="">-- Select Type --</option>
-                            <option value="pie">Pie Chart</option>
-                            <option value="bar">Bar Chart</option>
-                            <option value="line">Trend Graph</option>
-                            <option value="table" id="table-option">Table</option>
-                            <option value="tool" id="tool-option">Tool</option>
-                            <option value="sankey" id="sankey-option">Sankey</option>
-                            <option value="heatmap" id="heat-map">Heat Map</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="meters" class="form-label">Meters</label>
-                        <select class="form-select" id="meters" name="meters" multiple required>
-                            {% for area in areas %}
-                            <optgroup label="{{ area.name }}">
-                                {% for meter in area.meters.all %}
-                                <option value="{{ meter.id }}">{{ meter.name }}</option>
-                                {% endfor %}
-                            </optgroup>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text text-light">Hold Ctrl (Windows) or Cmd (Mac) to select multiple meters.</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="measurement" class="form-label">Measurements</label>
-                        <select class="form-select" id="measurement" name="measurement" required>
-                            {% for measurement in measurements %}
-                            <option value="{{ measurement.id }}">{{ measurement.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="access" class="form-label">Access Control</label>
-                        <select class="form-select" id="access" name="access" multiple required>
-                            <optgroup label="Access Control">
-                                <option value="Administrator">Administrator</option>
-                                <option value="Operator">Operator</option>
-                                <option value="Quality Manager">Quality Manager</option>
-                                <option value="Shift Manager">Shift Manager</option>
-                                <option value="Maintenance Personnel">Maintenance Personnel</option>
-                                <option value="Setup Technician">Setup Technician</option>
-                            </optgroup>
-                        </select>
-                        <div class="form-text text-light">Hold Ctrl (Windows) or Cmd (Mac) to select multiple meters.</div>
-                    </div>
-                </div>
-
-                <div class="modal-footer border-dark">
-                    <button type="submit" class="btn btn-info">Add Gadget</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                </div>
+    
+            <div class="modal-footer border-dark">
+                <button type="submit" class="btn btn-primary">Create Dashboard</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             </div>
-        </form>
+        </div>
+    </form>
     </div>
-</div>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const metersSelect = document.getElementById('meters');
-        const gadgetTypeSelect = document.getElementById('gadget_type');
-        const tableOption = document.getElementById('table-option');
-        const measurementSelect = document.getElementById('measurement');
-
-        // Handle meter selection changes
-        metersSelect.addEventListener('change', function () {
-            const selectedMeters = Array.from(this.selectedOptions);
-            const moreThanOne = selectedMeters.length > 1;
-
-            // Disable "Table" option if more than one meter is selected
-            tableOption.disabled = moreThanOne;
-
-            // If "Table" is selected and it becomes disabled, reset the selection
-            if (moreThanOne && gadgetTypeSelect.value === 'table') {
-                gadgetTypeSelect.value = '';
-                measurementSelect.disabled = false;
-            }
-        });
-
-        // Handle gadget type selection changes
-        gadgetTypeSelect.addEventListener('change', function () {
-            const type = this.value;
-
-            if (type === 'table') {
-        measurementSelect.disabled = true;
-        metersSelect.multiple = true;      // likely keep meters multi-select
-        measurementSelect.multiple = false; // measurement single-select or disabled
-        measurementSelect.selectedIndex = -1;
-    } 
-    else if (type === 'line') {
-        measurementSelect.disabled = false;
-        metersSelect.multiple = true;      // multiple meters allowed
-        measurementSelect.multiple = true; // multiple measurements allowed
-        metersSelect.selectedIndex = -1;
-        measurementSelect.selectedIndex = -1;
-    } 
-    else if (type === 'tool') {
-        measurementSelect.disabled = false;
-        metersSelect.multiple = false;     // single meter only
-        measurementSelect.multiple = true; // multiple measurements allowed
-        metersSelect.selectedIndex = -1;
-        measurementSelect.selectedIndex = -1;
-    } 
-    else {
-        measurementSelect.disabled = false;
-        metersSelect.multiple = true;      // default meters multi-select
-        measurementSelect.multiple = false; // default measurement single-select
-        metersSelect.selectedIndex = -1;
-        measurementSelect.selectedIndex = -1;
-    }
-        });
-    });
-</script>
-
-{% endif %}
+  </div>
+  {% endif %}
 
 <div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
     style="overflow-y: auto;">
@@ -352,17 +161,17 @@
       </span>
       {% endif %}
 
+      {% if request.user.is_superuser or request.user.userModel.first.role == "Administrator" %}
       <ul class="list-unstyled mt-3 ms-2">
-        {% for dashboard in centralDashboards %}
         <li>
-            <a href="/dashboard/central/{{dashboard.id}}"
+            <a href="/dashboard/centralCommand/industryOverview"
                 class="text-white text-decoration-none">
                 <i class="fa-solid fa-building-columns"></i>
-                {{ dashboard.title }}
+                Central Dashboard
             </a>
         </li>
-        {% endfor %}
       </ul>
+    {% endif %}
 
 
         {% for site in sites %}
@@ -404,2040 +213,162 @@
 <div id="overlay" class="overlay"></div>
 
 <div class="" id="main-content">
-
     <div class="row">
         <main class="">
-            {% if gadgets == None %}
-            <div id="noDocument">
-                <h1 class="h1 text-center mt-5 pt-5 text-secondary"><i class="fa-solid fa-signal fa-2x"></i></h1>
-                <h3 class="text-center mt-5 text-secondary">No Gadgets Configured</h3>
-                <p class="text-center text-secondary">No Gadgets were configured for this dashboard. <br> Click below to
-                    configure gadgets.</p>
-                <p class="text-center">
-                    {% if request.user.is_superuser %}
-                    <span>
-                    <button class="btn btn-info fw-bold" data-bs-toggle="modal"
-                        data-bs-target="#addGadgetModal"><i class="fa-solid fa-plus me-2"></i>
-                        Add Gadget
-                    </button>
-                    </span>
-                    {% else %}
-                    <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="You are not authorized to configure a new Gadget">
-                        <button class="btn btn-info fw-bold" data-bs-toggle="modal" disabled
-                            data-bs-target="#addGadgetModal"><i class="fa-solid fa-plus me-2"></i>
-                            Add Gadget
-                        </button>
-                    </span>
-                    {% endif %}
-                </p>
+            
+            <div class="ms-4">
+                    <div class="" style="display: flex; flex-wrap: wrap;">
+                        
+                        {% for site in sites %}
+<div class="chart-container mb-4" id="chart-container-{{ site.id }}">
+    <!-- Toolbar -->
+    <div class="d-flex justify-content-between align-items-center text-light">
+        <div class="">
+            <!-- Measurement Selector -->
+            <select class="form-select form-select-sm d-inline w-auto measurement-selector" data-site="{{ site.id }}" style="background-color: #333; color: white;">
+                <option value="" selected>-- Select a Measurement --</option>
+                <option value="Total Active Power">Total Active Power</option>
+                <option value="Total Reactive Power">Total Reactive Power</option>
+                <option value="Total Gas Volume">Total Gas Volume</option>
+                <option value="Total Fuel">Total Fuel</option>
+                <option value="Total Steam">Total Steam</option>
+                <option value="Total Volume">Total Water Volume</option>
+                <option value="PM2.5">PM2.5</option>
+                <option value="PM10">PM10</option>
+                <option value="CO2 Level">CO2 Level</option>
+                
+
+            </select>
+
+            <!-- Period Selector -->
+            <select class="form-select form-select-sm d-inline w-auto period-selector" data-site="{{ site.id }}" style="background-color: #333; color: white;">
+                <option value="weekly" {% if period_type == 'weekly' %}selected{% endif %}>Weekly</option>
+                <option value="monthly" {% if period_type == 'monthly' %}selected{% endif %}>Monthly</option>
+                <option value="yearly" {% if period_type == 'yearly' %}selected{% endif %}>Yearly</option>
+            </select>
+        </div>
+
+        <!-- Date Pickers -->
+        <div class="d-flex align-items-center gap-2">
+            <!-- Start Date -->
+            <div class="position-relative">
+                <i class="fa fa-calendar-alt text-white" style="cursor: pointer;" onclick="document.getElementById('start-date-{{ site.id }}').showPicker()"></i>
+                <input type="date" id="start-date-{{ site.id }}" class="form-control form-control-sm start-date-selector" data-site="{{ site.id }}" style="background-color: #333; color: white; display:none;">
             </div>
-            {% else %}
-            <div class="">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h1 class="h5">
-                        {{ dashboard.title }}
 
-                    </h1>
-                    <button id="weather-btn" class="btn btn-dark bg-black" style="font-weight: 400; margin-left: 80px;" data-bs-toggle="modal" data-bs-target="#weatherModal">
-                        Loading weather...
-                    </button>
-                    <button id="weather-btn" class="btn btn-dark bg-black me-auto" style="font-weight: 400; margin-left: 10px;" data-bs-toggle="modal" data-bs-target="#clockModal">
-                        <i class="fa-solid fa-calendar me-2"></i>
-                        {{dateNow}}
-                    </button>
+            <!-- End Date -->
+            <div class="position-relative">
+                <i class="fa fa-calendar-check text-white" style="cursor: pointer;" onclick="document.getElementById('end-date-{{ site.id }}').showPicker()"></i>
+                <input type="date" id="end-date-{{ site.id }}" class="form-control form-control-sm end-date-selector" data-site="{{ site.id }}" style="background-color: #333; color: white; display: none;">
+            </div>
+        </div>
+    </div>
 
-                    <!-- Bootstrap clock modal -->
-                    <div class="modal fade" id="clockModal" tabindex="-1" aria-labelledby="clockModalLabel" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content text-center bg-dark text-light">
-                                <div class="modal-header border-dark">
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body justify-content-center">
-                                    <div class="clock">
-                                        <div class="center"></div>
-                                        <div class="hand hour" id="hourHand"></div>
-                                        <div class="hand minute" id="minuteHand"></div>
-                                        <div class="hand second" id="secondHand"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                      <!-- Bootstrap Weather Modal -->
-                        <div class="modal fade" id="weatherModal" tabindex="-1" aria-labelledby="weatherModalLabel" aria-hidden="true">
-                            <div class="modal-dialog">
-                            <div class="modal-content bg-dark text-white">
-                                <div class="modal-header">
-                                <h5 class="modal-title" id="weatherModalLabel">Weather Forecast</h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body" id="weather-modal-body">
-                                <!-- Weather details will be injected here -->
-                                <p>Loading...</p>
-                                </div>
-                            </div>
-                            </div>
-                        </div>
+    <!-- Chart -->
+    <canvas id="chart-{{ site.id }}"></canvas>
+</div>
+{% endfor %}
 
+<script>
+const colors = [
+  '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF',
+  '#8E44AD', '#E67E22', '#2ECC71', '#3498DB', '#E74C3C', '#1ABC9C'
+];
 
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function () {
-                              const apiKey = 'efefdf01f1944806b0a64921250206';
-                              const city = 'Dhaka';
-                              const days = 7;
-                          
-                              fetch(`https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${city}&days=${days}&aqi=no&alerts=no`)
-                                .then(response => response.json())
-                                .then(data => {
-                                  const current = data.current;
-                                  const forecast = data.forecast.forecastday;
-                          
-                                  // Update button with summary
-                                  const summary = `${current.temp_c}°C, ${current.condition.text}`;
-                                  document.getElementById('weather-btn').innerHTML = `
-                                  <img src="${current.condition.icon}" alt="${current.condition.text}" style="height: 20px; vertical-align: middle;"> ${summary} 
-                                  `;
-                          
-                                  // Build modal content
-                                  let html = `
-                                    <div class="mb-2">
-                                      <strong>Current:</strong> ${current.temp_c}°C, ${current.condition.text}
-                                      <img src="${current.condition.icon}" alt="${current.condition.text}">
-                                    </div>
-                                    <div>
-                                      <strong>7-Day Forecast:</strong>
-                                      <ul class="list-unstyled">
-                                  `;
-                          
-                                  forecast.forEach(day => {
-                                    html += `
-                                      <li class="mb-1">
-                                        <strong>${day.date}:</strong> ${day.day.avgtemp_c}°C, ${day.day.condition.text}
-                                        <img src="${day.day.condition.icon}" alt="${day.day.condition.text}">
-                                      </li>
-                                    `;
-                                  });
-                          
-                                  html += '</ul></div>';
-                                  document.getElementById('weather-modal-body').innerHTML = html;
-                                })
-                                .catch(error => {
-                                  console.error('Error fetching weather data:', error);
-                                  document.getElementById('weather-btn').innerText = 'Weather unavailable';
-                                  document.getElementById('weather-modal-body').innerHTML = '<p>Error loading weather data.</p>';
-                                });
-                            });
-                          </script>
-                    {% if request.user.is_superuser %}
-                    <span>
-                    <button class="btn btn-info fw-bold" data-bs-toggle="modal"
-                        data-bs-target="#addGadgetModal"><i class="fa-solid fa-plus me-2"></i>
-                        Add Gadget
-                    </button>
-                    </span>
-                    {% else %}
-                    <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="You are not authorized to configure a new Gadget">
-                        <button class="btn btn-info fw-bold" data-bs-toggle="modal" disabled
-                            data-bs-target="#addGadgetModal"><i class="fa-solid fa-plus me-2"></i>
-                            Add Gadget
-                        </button>
-                    </span>
-                    {% endif %}
-                </div>
-                <div class="container d-flex">
-                    <div class="ticker-container container shadow">
-                        {% for alarm in alarms %}
-                        <div class="ticker-item{% if forloop.first %} active{% endif %}">
-                            <a href="/alarms/allAlarms" style="color: {{alarm.color}}">
-                            🔔 {{alarm.date}} - {{alarm.meter.name}}, {{alarm.meter.area.name}}, {{alarm.meter.area.building.name}} - {{alarm.measurement.name}} - Value: {{alarm.value}}
-                            </a>
-                        </div>
-                        {% endfor %}
-                    </div>
-                
-                    <script>
-                        const items = document.querySelectorAll('.ticker-item');
-                        let currentIndex = 0;
-                    
-                        setInterval(() => {
-                        items[currentIndex].classList.remove('active');
-                        currentIndex = (currentIndex + 1) % items.length;
-                        items[currentIndex].classList.add('active');
-                        }, 2000); // every 2 seconds
-                    </script>
-                </div>
-                
-                <div class="d-flex mt-3">
-                    <!-- Tree Sidebar -->
-                    <div id="tree" class="me-1 border-end border-dark text-secondary"
-                        style="width: 220px; overflow-y: auto; height: 75vh; font-size: small;">
-                        <ul class="list-group text-secondary">
-                            {% for site in sites %}
-                            <li class="list-group-item bg-dark border-dark text-secondary">
-                                <strong>
-                                    <a class="text-secondary" href="#site-{{ site.id }}" data-bs-toggle="collapse"
-                                        role="button" aria-expanded="false" aria-controls="site-{{ site.id }}">
-                                        {{ site.name }}
-                                    </a>
-                                </strong>
-                                <ul class="list-group bg-dark border-dark text-secondary collapse"
-                                    id="site-{{ site.id }}">
-                                    {% for building in site.buildings.all %}
-                                    <li class="list-group-item bg-dark border-dark text-secondary">
-                                        <a class="text-secondary" href="#building-{{ building.id }}"
-                                            data-bs-toggle="collapse" role="button" aria-expanded="false"
-                                            aria-controls="building-{{ building.id }}">
-                                            {{ building.name }}
-                                        </a>
-                                        <ul class="list-group bg-dark border-dark text-secondary collapse"
-                                            id="building-{{ building.id }}">
-                                            {% for area in building.areas.all %}
-                                            <li class="list-group-item bg-dark border-dark text-secondary">
-                                                <a class="text-secondary" href="#area-{{ area.id }}"
-                                                    data-bs-toggle="collapse" role="button" aria-expanded="false"
-                                                    aria-controls="area-{{ area.id }}">
-                                                    {{ area.name }}
-                                                </a>
-                                                <ul class="list-group bg-dark border-dark text-secondary collapse"
-                                                    style="font-size: smaller; width: 150px;" id="area-{{ area.id }}">
-                                                    {% for meter in area.meters.all %}
-                                                    <li class="list-group-item bg-dark border-dark text-secondary meter-item"
-                                                        id="meter-{{ meter.id }}">
-                                                        {{ meter.name }}
-                                                    </li>
-                                                    {% endfor %}
-                                                </ul>
-                                            </li>
-                                            {% endfor %}
-                                        </ul>
-                                    </li>
-                                    {% endfor %}
-                                </ul>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
+const charts = {};  // Hold chart instances by site
 
-                    
-                    <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
-                    <div id="masonry-grid">
-                        {% for gadget in gadgets %}
-                        {% if request.user.userModel.first.role in gadget.access or request.user.is_superuser %}
-                            <div class="p-3 shadow mb-1 gadget-item" id="gadget-wrapper-{{ gadget.id }}"
-                                style="height: 290px; width: 330px;"
-                                data-meter-ids='[{% for m in gadget.meters.all %}{{ m.id }}{% if not forloop.last %},{% endif %}{% endfor %}]'>
-                                <div class="d-flex">
-                                    <p class="" id="gadget-title{{gadget.id}}" style="font-size: smaller;">{{ gadget.name }}</p>
-                                    
+function fetchAndRenderChart(siteId, measurement, period_type, startDate=null, endDate=null) {
+  let url = `/dashboard/centralCommand/industryOverview/${siteId}/${measurement}/${period_type}`;
+  const params = new URLSearchParams();
+  if (startDate) params.append('start_date', startDate);
+  if (endDate) params.append('end_date', endDate);
+  if ([...params].length) url += `?${params.toString()}`;
 
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      const ctx = document.getElementById(`chart-${siteId}`).getContext('2d');
+      
+      // Add colors to datasets
+      data.datasets.forEach((ds, idx) => {
+        ds.backgroundColor = colors[idx % colors.length];
+      });
 
+      // If chart exists, destroy and recreate
+      if (charts[siteId]) charts[siteId].destroy();
 
-
-                                    <!-- Edit gadget Modal -->
-                                    <div class="modal fade" id="editGadgetModal{{gadget.id}}" tabindex="-1" aria-labelledby="editGadgetModalLabel{{gadget.id}}" aria-hidden="true">
-                                        <div class="modal-dialog">
-                                          <form method="POST" action="/dashboard/{{ dashboard.id }}/editGadget/{{ gadget.id }}/">
-                                            {% csrf_token %}
-                                            <div class="modal-content bg-dark text-white">
-                                              <div class="modal-header border-dark">
-                                                <h5 class="modal-title" id="editGadgetModalLabel{{gadget.id}}">Edit Gadget</h5>
-                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                              </div>
-                                      
-                                              <div class="modal-body">
-                                                <!-- Gadget Name -->
-                                                <div class="mb-3">
-                                                  <label for="name" class="form-label">Gadget Name</label>
-                                                  <input type="text" class="form-control" id="name" name="name" value="{{ gadget.name }}" required>
-                                                </div>
-                                      
-                                                <!-- Gadget Type -->
-                                                <div class="mb-3">
-                                                  <label for="gadget_type" class="form-label">Gadget Type</label>
-                                                  <select class="form-select" id="gadget_type" name="gadget_type" required>
-                                                    {% for option in gadgetTypes %}
-                                                      <option value="{{ option }}" {% if option == gadget.gadget_type %}selected{% endif %}>{{ option|title }}</option>
-                                                    {% endfor %}
-                                                  </select>
-                                                </div>
-                                      
-                                                <!-- Meters -->
-                                                <div class="mb-3">
-                                                  <label for="meters" class="form-label">Meters</label>
-                                                  <select class="form-select" id="meters" name="meters" multiple required>
-                                                    {% for area in areas %}
-                                                      <optgroup label="{{ area.name }}">
-                                                        {% for meter in area.meters.all %}
-                                                          <option value="{{ meter.id }}"
-                                                            {% if meter in gadget.meters.all %}selected{% endif %}>
-                                                            {{ meter.name }}
-                                                          </option>
-                                                        {% endfor %}
-                                                      </optgroup>
-                                                    {% endfor %}
-                                                  </select>
-                                                  <div class="form-text text-light">Hold Ctrl (Windows) or Cmd (Mac) to select multiple meters.</div>
-                                                </div>
-                                      
-                                                <!-- Measurements -->
-                                                <div class="mb-3">
-                                                  <label for="measurement" class="form-label">Measurements</label>
-                                                  <select class="form-select" id="measurement" name="measurement" {% if gadget.gadget_type == "tool" %}multiple{% endif %} required>
-                                                    {% for measurement in measurements %}
-                                                      <option value="{{ measurement.id }}"
-                                                        {% if measurement in gadget.measurement.all %}selected{% endif %}>
-                                                        {{ measurement.name }}
-                                                      </option>
-                                                    {% endfor %}
-                                                  </select>
-                                                </div>
-                                      
-                                                <!-- Access Control -->
-                                                <div class="mb-3">
-                                                  <label for="access" class="form-label">Access Control</label>
-                                                  <select class="form-select" id="access" name="access" multiple required>
-                                                    {% for option in accessControl %}
-                                                      <option value="{{ option }}" {% if option in gadget.access %}selected{% endif %}>{{ option }}</option>
-                                                    {% endfor %}
-                                                  </select>
-                                                  <div class="form-text text-light">Hold Ctrl (Windows) or Cmd (Mac) to select multiple access levels.</div>
-                                                </div>
-                                              </div>
-                                      
-                                              <div class="modal-footer border-dark">
-                                                <button type="submit" class="btn btn-info">Update Gadget</button>
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                              </div>
-                                            </div>
-                                          </form>
-                                        </div>
-                                      </div>
-                                      <script>
-                                        document.addEventListener('DOMContentLoaded', function () {
-                                          // Find all edit gadget modals on the page
-                                          document.querySelectorAll('[id^="editGadgetModal"]').forEach(function (modal) {
-                                            const gadgetId = modal.id.replace('editGadgetModal', '');
-                                            const metersSelect = modal.querySelector(`#meters`);
-                                            const gadgetTypeSelect = modal.querySelector(`#gadget_type`);
-                                            const measurementSelect = modal.querySelector(`#measurement`);
-                                            const tableOption = modal.querySelector(`#gadget_type option[value="table"]`);
-                                      
-                                            if (!metersSelect || !gadgetTypeSelect || !measurementSelect) return;
-                                      
-                                            // Meter selection changes
-                                            metersSelect.addEventListener('change', function () {
-                                              const selectedMeters = Array.from(this.selectedOptions);
-                                              const moreThanOne = selectedMeters.length > 1;
-                                      
-                                              // Disable "Table" if multiple meters
-                                              if (tableOption) tableOption.disabled = moreThanOne;
-                                      
-                                              if (moreThanOne && gadgetTypeSelect.value === 'table') {
-                                                gadgetTypeSelect.value = '';
-                                                measurementSelect.disabled = false;
-                                              }
-                                            });
-                                      
-                                           // Gadget type selection changes
-                                            gadgetTypeSelect.addEventListener('change', function () {
-                                                const type = this.value;
-
-                                                if (type === 'line') {
-                                                    metersSelect.multiple = true;
-                                                    measurementSelect.multiple = true;
-                                                    measurementSelect.disabled = false;
-                                                } else if (type === 'table') {
-                                                    metersSelect.multiple = true;
-                                                    measurementSelect.multiple = false;
-                                                    measurementSelect.disabled = true;
-                                                } else if (type === 'tool') {
-                                                    metersSelect.multiple = false;
-                                                    measurementSelect.multiple = true;
-                                                    measurementSelect.disabled = false;
-                                                } else {
-                                                    // default fallback
-                                                    metersSelect.multiple = true;
-                                                    measurementSelect.multiple = false;
-                                                    measurementSelect.disabled = false;
-                                                }
-
-                                                // Reset selections
-                                                metersSelect.selectedIndex = -1;
-                                                measurementSelect.selectedIndex = -1;
-                                            });
-
-                                          });
-                                        });
-                                      </script>
-                                      
-
-                                    {% if gadget.gadget_type == 'pie' %}
-                                    <!-- Hidden Date Input -->
-                                    <input type="date" id="datepicker-{{ gadget.id }}" class="form-control form-control-sm d-none"/>
-                                    <select id="period-selector-{{ gadget.id }}" class="form-select form-select-sm me-1" style="height: 20px; width: 100px; padding: 0; font-size: smaller;">
-                                        <option value="daily">Daily</option>
-                                        <option value="weekly">Weekly</option>
-                                        <option value="monthly">Monthly</option>
-                                        <option value="3monthly">3-Monthly</option>
-                                        <option value="6monthly">6-Monthly</option>
-                                        <option value="yearly">Yearly</option>
-                                    </select>
-
-                                    <!-- Clickable Icon -->
-                                    <i class="fa fa-calendar-alt ms-auto" style="cursor: pointer;" onclick="document.getElementById('datepicker-{{ gadget.id }}').showPicker()"></i>
-
-                                    <i class="fa-solid fa-up-right-and-down-left-from-center ms-1 maximizeGadget" data-bs-toggle="modal"
-                                    data-bs-target="#maximizeModal{{gadget.id}}"></i>
-
-                                    {% elif gadget.gadget_type == 'sankey' %}
-                                    <!-- Hidden Date Input -->
-                                    <input type="date" id="datepicker-{{ gadget.id }}" class="form-control form-control-sm d-none"/>
-                                    <select id="period-selector-{{ gadget.id }}" class="form-select form-select-sm me-1 ms-auto" style="height: 20px; width: 100px; padding: 0; font-size: smaller;">
-                                        <option value="weekly">Weekly</option>
-                                        <option value="monthly">Monthly</option>
-                                        <option value="yearly">Yearly</option>
-                                    </select>
-
-                                    <!-- Clickable Icon -->
-                                    <i class="fa fa-calendar-alt ms-1" style="cursor: pointer;" onclick="document.getElementById('datepicker-{{ gadget.id }}').showPicker()"></i>
-
-                                    <i class="fa-solid fa-up-right-and-down-left-from-center ms-1 maximizeGadget" data-bs-toggle="modal"
-                                    data-bs-target="#maximizeModal{{gadget.id}}"></i>
-
-
-                                    {% elif gadget.gadget_type == 'line' %}
-                                    <!-- Hidden Date Input -->
-                                    <input type="datetime-local" id="datepicker-{{ gadget.id }}" class="form-control form-control-sm d-none"/>
-
-                                    <!-- Clickable Icon -->
-                                    <i class="fa fa-calendar-alt ms-auto" style="cursor: pointer;" onclick="document.getElementById('datepicker-{{ gadget.id }}').showPicker()"></i>
-                                    <i class="fa-solid fa-up-right-and-down-left-from-center ms-1 maximizeGadget" data-bs-toggle="modal"
-                                    data-bs-target="#maximizeModal{{gadget.id}}"></i>
-                                    
-                                    {% elif gadget.gadget_type == 'bar' %}
-                                    <!-- Range Selection Dropdown -->
-                                    <input type="date" id="datepicker-{{ gadget.id }}" class="form-control form-control-sm d-none" />
-                                    <select id="period-selector-{{ gadget.id }}" class="form-select form-select-sm me-1 ms-auto" style="height: 20px; width: 100px; padding: 0; font-size: smaller;">
-                                        <option value="weekly">Weekly</option>
-                                        <option value="monthly">Monthly</option>
-                                        <option value="3monthly">3-Monthly</option>
-                                        <option value="6monthly">6-Monthly</option>
-                                        <option value="yearly">Yearly</option>
-                                    </select>
-
-
-                                    <!-- Hidden Inputs -->
-                                    <div class="d-flex align-items-center gap-2">
-                                        <!-- Hidden but functional pickers -->
-                                        <input type="date" id="start-date-{{ gadget.id }}" class="invisible-picker" />
-                                        <input type="date" id="end-date-{{ gadget.id }}" class="invisible-picker" />
-
-                                        <input type="week" id="start-week-{{ gadget.id }}" class="invisible-picker" />
-                                        <input type="week" id="end-week-{{ gadget.id }}" class="invisible-picker" />
-
-                                        <input type="month" id="start-month-{{ gadget.id }}" class="invisible-picker" />
-                                        <input type="month" id="end-month-{{ gadget.id }}" class="invisible-picker" />
-
-                                    </div>
-                                    
-                                    <!-- FontAwesome Pickers (VISIBLE) -->
-                                    <div id="range-selectors-{{ gadget.id }}" class="d-none" style="margin-top: -5px;">
-                                        <i id="open-start-picker-{{ gadget.id }}"
-                                           class="fas fa-calendar-alt"
-                                           style="cursor: pointer;"
-                                           data-bs-toggle="tooltip"
-                                           data-bs-placement="top"
-                                           title="Select Start Date"></i>
-                                      
-                                        <i id="open-end-picker-{{ gadget.id }}"
-                                           class="fas fa-calendar-check"
-                                           style="cursor: pointer;"
-                                           data-bs-toggle="tooltip"
-                                           data-bs-placement="top"
-                                           title="Select End Date"></i>
-                                    </div>
-
-                                    <!-- Clickable Icon -->
-                                    <i class="fa fa-calendar-alt" id="dateInputAlternate{{gadget.id}}" style="cursor: pointer;" onclick="document.getElementById('datepicker-{{ gadget.id }}').showPicker()"></i>
-                                      <i class="fa-solid fa-up-right-and-down-left-from-center ms-1 maximizeGadget" data-bs-toggle="modal"
-                                    data-bs-target="#maximizeModal{{gadget.id}}"></i>
-
-                                        
-                                  {% elif gadget.gadget_type == 'heatmap' %}                                 
-                                    <!-- FontAwesome Pickers (VISIBLE) -->
-                                    <div id="range-selectors-{{ gadget.id }}" class="ms-auto" style="margin-top: -5px;">
-                                        <i id="open-start-picker-{{ gadget.id }}"
-                                           class="fas fa-calendar-alt"
-                                           style="cursor: pointer;"
-                                           data-bs-toggle="tooltip"
-                                           data-bs-placement="top"
-                                           title="Select Start Date"></i>
-                                      
-                                        <i id="open-end-picker-{{ gadget.id }}"
-                                           class="fas fa-calendar-check"
-                                           style="cursor: pointer;"
-                                           data-bs-toggle="tooltip"
-                                           data-bs-placement="top"
-                                           title="Select End Date"></i>
-                                    </div>
-
-                                    <input type="date" id="start-date-{{ gadget.id }}" class="invisible-picker" />
-                                    <input type="date" id="end-date-{{ gadget.id }}" class="invisible-picker" />
-
-
-                                        {% elif gadget.gadget_type != 'tool' %}
-                                        <i class="fa-solid fa-up-right-and-down-left-from-center ms-auto maximizeGadget" data-bs-toggle="modal"
-                                    data-bs-target="#maximizeModal{{gadget.id}}"></i>
-                                    {% endif %}
-                                    {% if request.user.is_superuser %}
-                                    <i class="fa-solid fa-pen {% if gadget.gadget_type != 'tool' %}ms-1{% else %}ms-auto {% endif %} maximizeGadget" data-bs-toggle="modal"
-                                    data-bs-target="#editGadgetModal{{gadget.id}}"></i>
-                                    <a href="/dashboard/{{gadget.dashboard.id}}/deleteGadget/{{gadget.id}}" class="ms-1" style="margin-top: -5px !important;"><i class="fa-solid fa-trash deleteIcon"></i></a>
-                                    {% endif %}
-                                </div>
-                                
-                                <!-- Maximize Gadget Modal -->
-                                <div class="modal fade" id="maximizeModal{{gadget.id}}" tabindex="-1"
-                                    aria-labelledby="maximizeModalLabel" aria-hidden="true">
-                                    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-                                        <div class="modal-content bg-dark text-white">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="maximizeModalLabel">{{gadget.name}}</h5>
-                                                <button type="button" class="btn-close btn-close-white"
-                                                    data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body" id="maximizeModalBody{{gadget.id}}">
-                                                <canvas id="gadget-{{ gadget.id }}-max"
-                                                width="700" height="300" style="width: 700px; height: 300px;"></canvas>
-                                                <!-- Gadget will be injected here -->
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {% if gadget.gadget_type == 'line' %}
-
-                                <canvas id="gadget-{{ gadget.id }}" width="300" height="200"></canvas>
-
-                                <!-- <script>
-                                    (function () {
-                                        const gadgetId = {{ gadget.id }};
-                                        const selectedMeasurement = "{{ gadget.measurement.all.0 }}";
-                                        const dashboardId = {{ dashboard.id }};
-                                    
-                                        // Main canvas
-                                        const ctx = document.getElementById(`gadget-${gadgetId}`).getContext('2d');
-                                    
-                                        // Maximized canvas
-                                        const ctxMax = document.getElementById(`gadget-${gadgetId}-max`)?.getContext('2d');
-                                    
-                                        let chartInstance = null;
-                                        let chartInstanceMax = null;
-                                    
-                                        function generateColor(index) {
-                                            return `hsl(${(index * 137) % 360}, 70%, 50%)`;
-                                        }
-                                    
-                                        const meterNames = {
-                                            {% for meter in gadget.meters.all %}
-                                                {{ meter.id }}: "{{ meter.name }}",
-                                            {% endfor %}
-                                        };
-                                    
-                                        function updateChart(readingData) {
-                                            const meterGroups = {};
-                                    
-                                            readingData.forEach(entry => {
-                                                const meterId = entry.meter_id;
-                                                const timestamp = entry.timestamp;
-                                                const value = entry.data[selectedMeasurement];
-                                    
-                                                if (!meterGroups[meterId]) {
-                                                    meterGroups[meterId] = [];
-                                                }
-                                    
-                                                meterGroups[meterId].push({ timestamp, value });
-                                    
-                                                if (meterGroups[meterId].length > 10) {
-                                                    meterGroups[meterId].shift();
-                                                }
-                                            });
-                                    
-                                            const datasets = Object.entries(meterGroups).map(([meterId, entries], index) => {
-                                                const meterName = meterNames[meterId] || `Meter ${meterId}`;
-                                                return {
-                                                    label: meterName,
-                                                    data: entries.map(e => e.value),
-                                                    borderColor: generateColor(index),
-                                                    borderWidth: 1.2,
-                                                    pointRadius: 2,
-                                                    tension: 0.3,
-                                                    fill: false,
-                                                };
-                                            });
-                                    
-                                            const labels = Object.values(meterGroups)[0]?.map(e => e.timestamp) || [];
-                                    
-                                            const allValues = datasets.flatMap(ds => ds.data);
-                                            const minValue = Math.min(...allValues);
-                                            const maxValue = Math.max(...allValues);
-                                            const padding = (maxValue - minValue) * 0.05 || 1;
-                                            const yMin = minValue - padding;
-                                            const yMax = maxValue + padding;
-                                    
-                                            // Destroy old chart(s)
-                                            if (chartInstance) chartInstance.destroy();
-                                            if (chartInstanceMax) chartInstanceMax.destroy();
-                                    
-                                            // Chart config
-                                            const config = {
-                                                type: 'line',
-                                                data: {
-                                                    labels: labels,
-                                                    datasets: datasets
-                                                },
-                                                options: {
-                                                    responsive: true,
-                                                    animation: false,
-                                                    plugins: {
-                                                        legend: {
-                                                            position: 'top',
-                                                            labels: {
-                                                                boxWidth: 10,
-                                                                boxHeight: 10,
-                                                                font: { size: 10 },
-                                                                padding: 8
-                                                            }
-                                                        },
-                                                        title: {
-                                                            display: true,
-                                                            text: selectedMeasurement
-                                                        }
-                                                    },
-                                                    scales: {
-                                                        x: {
-                                                            title: {
-                                                                display: true,
-                                                                text: 'Time'
-                                                            }
-                                                        },
-                                                        y: {
-                                                            title: {
-                                                                display: true,
-                                                                text: selectedMeasurement
-                                                            },
-                                                            min: yMin,
-                                                            max: yMax
-                                                        }
-                                                    }
-                                                }
-                                            };
-                                    
-                                            // Render on both canvases
-                                            chartInstance = new Chart(ctx, config);
-                                    
-                                            if (ctxMax) {
-                                                chartInstanceMax = new Chart(ctxMax, config);
-                                            }
-                                        }
-                                    
-                                        // Date picker event
-                                        document.getElementById("datepicker-{{ gadget.id }}").addEventListener("change", function () {
-                                            const selectedDatetime = this.value;
-                                            if (!selectedDatetime) return;
-                                    
-                                            const url = `/dashboard/${dashboardId}/fetchDateTimeWindow/${gadgetId}/${selectedDatetime}/`;                                    
-                                            axios.get(url)
-                                                .then(response => updateChart(response.data.readingData))
-                                                .catch(error => console.error("Error fetching windowed data:", error));
-                                        });
-                                    
-                                        function fetchDataAndUpdateChart() {
-                                            axios.get(`/dashboard/${dashboardId}/fetchLatestReadings/${gadgetId}`)
-                                                .then(response => updateChart(response.data.readingData))
-                                                .catch(error => console.error("Error fetching data:", error));
-                                        }
-                                    
-                                        fetchDataAndUpdateChart();
-                                        setInterval(fetchDataAndUpdateChart, 3000);
-                                    })();
-                                    </script> -->
-
-
-                                    <script>
-                                        (function () {
-                                            const gadgetId = {{ gadget.id }};
-                                            const dashboardId = {{ dashboard.id }};
-                                        
-                                            // Get all measurements as a JS array of strings
-                                            const measurements = [
-                                                {% for m in gadget.measurement.all %}
-                                                    "{{ m }}"{% if not forloop.last %}, {% endif %}
-                                                {% endfor %}
-                                            ];
-                                        
-                                            // Main canvas
-                                            const ctx = document.getElementById(`gadget-${gadgetId}`).getContext('2d');
-                                        
-                                            // Maximized canvas
-                                            const ctxMax = document.getElementById(`gadget-${gadgetId}-max`)?.getContext('2d');
-                                        
-                                            let chartInstance = null;
-                                            let chartInstanceMax = null;
-                                        
-                                            function generateColor(index) {
-                                                return `hsl(${(index * 137) % 360}, 70%, 50%)`;
-                                            }
-                                        
-                                            const meterNames = {
-                                                {% for meter in gadget.meters.all %}
-                                                    {{ meter.id }}: "{{ meter.name }}",
-                                                {% endfor %}
-                                            };
-                                        
-                                            function updateChart(readingData) {
-                                                /*
-                                                readingData format assumed:
-                                                [
-                                                    {meter_id: X, timestamp: "2025-07-29T12:00:00", data: {Measurement1: val1, Measurement2: val2, ...}},
-                                                    ...
-                                                ]
-                                                */
-                                        
-                                                // Group data by meter and measurement
-                                                const groupedData = {};  // {meterId: {measurement: [{timestamp, value}, ...]}}
-                                        
-                                                readingData.forEach(entry => {
-                                                    const meterId = entry.meter_id;
-                                                    const timestamp = entry.timestamp;
-                                                    const data = entry.data;
-                                        
-                                                    if (!groupedData[meterId]) groupedData[meterId] = {};
-                                        
-                                                    measurements.forEach(measurement => {
-                                                        if (!(measurement in groupedData[meterId])) {
-                                                            groupedData[meterId][measurement] = [];
-                                                        }
-                                                        groupedData[meterId][measurement].push({
-                                                            timestamp,
-                                                            value: data[measurement] !== undefined ? data[measurement] : null
-                                                        });
-                                        
-                                                        // Limit last 10 points
-                                                        if (groupedData[meterId][measurement].length > 10) {
-                                                            groupedData[meterId][measurement].shift();
-                                                        }
-                                                    });
-                                                });
-                                        
-                                                // Prepare datasets: one line per meter+measurement
-                                                let datasetIndex = 0;
-                                                const datasets = [];
-                                        
-                                                Object.entries(groupedData).forEach(([meterId, measurementsData]) => {
-                                                    Object.entries(measurementsData).forEach(([measurement, entries]) => {
-                                                        // Filter out null values if any
-                                                        const filteredEntries = entries.filter(e => e.value !== null);
-                                        
-                                                        const meterName = meterNames[meterId] || `Meter ${meterId}`;
-                                                        datasets.push({
-                                                            label: `${meterName} - ${measurement}`,
-                                                            data: filteredEntries.map(e => e.value),
-                                                            borderColor: generateColor(datasetIndex++),
-                                                            borderWidth: 1.2,
-                                                            pointRadius: 2,
-                                                            tension: 0.3,
-                                                            fill: false,
-                                                        });
-                                                    });
-                                                });
-                                        
-                                                // Use timestamps from the first available dataset as labels
-                                                const firstEntries = Object.values(groupedData)[0];
-                                                const firstMeasurementEntries = firstEntries ? Object.values(firstEntries)[0] : [];
-                                                const labels = firstMeasurementEntries ? firstMeasurementEntries.map(e => e.timestamp) : [];
-                                        
-                                                // Y axis scale calculation across all datasets
-                                                const allValues = datasets.flatMap(ds => ds.data);
-                                                const minValue = Math.min(...allValues);
-                                                const maxValue = Math.max(...allValues);
-                                                const padding = (maxValue - minValue) * 0.05 || 1;
-                                                const yMin = minValue - padding;
-                                                const yMax = maxValue + padding;
-                                        
-                                                // Destroy old chart(s)
-                                                if (chartInstance) chartInstance.destroy();
-                                                if (chartInstanceMax) chartInstanceMax.destroy();
-                                        
-                                                // Chart config
-                                                const config = {
-                                                    type: 'line',
-                                                    data: {
-                                                        labels: labels,
-                                                        datasets: datasets
-                                                    },
-                                                    options: {
-                                                        responsive: true,
-                                                        animation: false,
-                                                        plugins: {
-                                                            legend: {
-                                                                position: 'top',
-                                                                labels: {
-                                                                    boxWidth: 10,
-                                                                    boxHeight: 10,
-                                                                    font: { size: 10 },
-                                                                    padding: 8
-                                                                }
-                                                            },
-                                                            title: {
-                                                                display: true,
-                                                                text: 'Measurements over Time'
-                                                            }
-                                                        },
-                                                        scales: {
-                                                            x: {
-                                                                title: {
-                                                                    display: true,
-                                                                    text: 'Time'
-                                                                }
-                                                            },
-                                                            y: {
-                                                                title: {
-                                                                    display: true,
-                                                                    text: 'Value'
-                                                                },
-                                                                min: yMin,
-                                                                max: yMax
-                                                            }
-                                                        }
-                                                    }
-                                                };
-                                        
-                                                // Render charts
-                                                chartInstance = new Chart(ctx, config);
-                                                if (ctxMax) {
-                                                    chartInstanceMax = new Chart(ctxMax, config);
-                                                }
-                                            }
-                                        
-                                            // Date picker event
-                                            document.getElementById(`datepicker-${gadgetId}`).addEventListener("change", function () {
-                                                const selectedDatetime = this.value;
-                                                if (!selectedDatetime) return;
-                                        
-                                                const url = `/dashboard/${dashboardId}/fetchDateTimeWindow/${gadgetId}/${selectedDatetime}/`;
-                                                axios.get(url)
-                                                    .then(response => updateChart(response.data.readingData))
-                                                    .catch(error => console.error("Error fetching windowed data:", error));
-                                            });
-                                        
-                                            function fetchDataAndUpdateChart() {
-                                                axios.get(`/dashboard/${dashboardId}/fetchLatestReadings/${gadgetId}`)
-                                                    .then(response => updateChart(response.data.readingData))
-                                                    .catch(error => console.error("Error fetching data:", error));
-                                            }
-                                        
-                                            fetchDataAndUpdateChart();
-                                            setInterval(fetchDataAndUpdateChart, 3000);
-                                        })();
-                                        </script>
-                                        
-                                    
-
-                                {% elif gadget.gadget_type == 'pie' %}
-
-                                <canvas id="gadget-{{ gadget.id }}" width="300" height="200"></canvas>
-
-                                <script>
-                                    (function() {
-                                        const gadgetId = {{ gadget.id }};
-                                        const dashboardId = {{ dashboard.id }};
-                                        const pieCanvas = document.getElementById(`gadget-${gadgetId}`);
-                                        const pieCanvasMax = document.getElementById(`gadget-${gadgetId}-max`);
-                                        const dateInput = document.getElementById(`datepicker-{{ gadget.id }}`);
-                                        const periodSelector = document.getElementById(`period-selector-{{ gadget.id }}`);
-                                    
-                                        let pieChart = null;
-                                        let pieChartMax = null;
-                                    
-                                        function fetchPieData() {
-                                            const date = dateInput.value;
-                                            const measurement = '{{ gadget.measurement.all.0.name }}';
-                                            const period = periodSelector.value;
-                                    
-                                            if (!date) return;
-                                    
-                                            const url = `/dashboard/${dashboardId}/data/${gadgetId}/${encodeURIComponent(measurement)}/${date}/${period}`;
-                                    
-                                            axios.get(url)
-                                                .then(response => {
-                                                    const data = response.data.data;                                    
-                                                    const labels = data.map(d => d.meter);
-                                                    const values = data.map(d => d.value);
-                                                    const colors = labels.map((_, i) => `hsl(${(i * 137) % 360}, 70%, 50%)`);
-                                    
-                                                    const chartConfig = {
-                                                        type: 'pie',
-                                                        data: {
-                                                            labels: labels,
-                                                            datasets: [{
-                                                                data: values,
-                                                                backgroundColor: colors,
-                                                                borderWidth: 0,
-                                                                borderColor: 'transparent'
-                                                            }]
-                                                        },
-                                                        options: {
-                                                            responsive: false,
-                                                            maintainAspectRatio: false,
-                                                            layout: { padding: { bottom: 10 } },
-                                                            plugins: {
-                                                                legend: {
-                                                                    position: 'top',
-                                                                    align: 'start',
-                                                                    labels: {
-                                                                        color: '#6c757d',
-                                                                        font: { size: 10 },
-                                                                        boxWidth: 10,
-                                                                        boxHeight: 10,
-                                                                        generateLabels: function(chart) {
-                                                                            const data = chart.data;
-                                                                            return data.labels.map((label, i) => {
-                                                                                const backgroundColor = data.datasets[0].backgroundColor[i];
-                                                                                const value = data.datasets[0].data[i];
-                                                                                return {
-                                                                                    text: `${label} (${value})`,
-                                                                                    fillStyle: backgroundColor,
-                                                                                    strokeStyle: undefined,
-                                                                                    lineWidth: 0,
-                                                                                    color: '#6c757d',
-                                                                                    index: i,
-                                                                                };
-                                                                            });
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    };
-                                    
-                                                    if (pieChart) pieChart.destroy();
-                                                    if (pieChartMax) pieChartMax.destroy();
-                                    
-                                                    pieChart = new Chart(pieCanvas, chartConfig);
-                                    
-                                                    if (pieCanvasMax) {
-                                                        pieChartMax = new Chart(pieCanvasMax, chartConfig);
-                                                    }
-                                                })
-                                                .catch(error => {
-                                                    console.error("Error fetching pie data:", error);
-                                                });
-                                        }
-                                    
-                                        const today = new Date().toISOString().split("T")[0];
-                                        dateInput.value = today;
-                                    
-                                        dateInput.addEventListener("change", fetchPieData);
-                                        periodSelector.addEventListener("change", fetchPieData);
-                                        document.addEventListener('DOMContentLoaded', function () {
-                                            // Loop through options and select the matching one
-                                            for (const option of periodSelector.options) {
-                                            if (option.value === 'monthly') {
-                                                option.selected = true;
-                                                break;
-                                            }
-                                            }
-                                        });                                        
-                                        window.addEventListener("DOMContentLoaded", fetchPieData);
-                                    })();
-                                    </script>
-                                    
-
-                            
-                            {% elif gadget.gadget_type == 'tool' %}
-                            <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
-                                <table id="gadget-{{ gadget.id }}" class="table table-dark border-none table-sm mb-0" style="border-collapse: collapse">
-                                    <thead >
-                                        <tr>
-                                            <th scope="col" style="font-size: smaller;">Field</th>
-                                            <th scope="col" style="font-size: smaller;">Value</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <!-- Rows will be populated by JavaScript -->
-                                    </tbody>
-                                </table>
-                            </div>
-                            <script>
-                                (function () {
-                                    const gadgetId = {{ gadget.id }};
-                                    const dashboardId = {{ dashboard.id }};
-                                    const meterId = {{ gadget.meters.all.0.id }};
-                                    const selectedMeasurementNames = [
-                                        {% for m in gadget.measurement.all %}
-                                            "{{ m.name }}",
-                                        {% endfor %}
-                                    ];
-                            
-                                    const tableBody = document.querySelector(`#gadget-{{ gadget.id }} tbody`);
-                            
-                                    function updateToolTable(reading) {
-                                        tableBody.innerHTML = ''; // Clear old rows
-                            
-                                        selectedMeasurementNames.forEach(measurement => {
-                                            const value = reading.data[measurement];
-                                            const row = document.createElement('tr');
-                                            row.innerHTML = `
-                                                <td style="border: none; font-size: smaller;">${measurement}</td>
-                                                <td style="border: none;">
-                                                    <input class="form-control form-control-sm" value="${value !== undefined ? value : 'N/A'}" style="width: 70px; height: 15px; font-size: smaller;">
-                                                </td>
-                                            `;
-                                            tableBody.appendChild(row);
-                                        });
-                                    }
-                            
-                                    function fetchAndUpdateToolData() {
-                                        axios.get(`/dashboard/${dashboardId}/fetchLatestToolData/${gadgetId}/`)
-                                            .then(response => {
-                                                updateToolTable(response.data.reading);
-                                            })
-                                            .catch(error => {
-                                                console.error("Error fetching tool data:", error);
-                                            });
-                                    }
-                            
-                                    // Initial load
-                                    fetchAndUpdateToolData();
-                            
-                                    // Update every 60 seconds
-                                    setInterval(fetchAndUpdateToolData, 3000);
-                                })();
-                            </script>
-                            
-                            
-
-                                {% elif gadget.gadget_type == 'bar' %}
-                                <canvas id="gadget-{{ gadget.id }}" width="300" height="200"></canvas>
-                                <div class="form-check form-switch d-inline-block ms-2">
-                                    <input class="form-check-input" type="checkbox" id="toggle-current-year-{{ gadget.id }}" checked>
-                                    <label class="form-check-label small" for="toggle-current-year-{{ gadget.id }}">Show Only Current Year</label>
-                                  </div>
-                                  <script>
-                                    (function () {
-                                        const gadgetId = {{ gadget.id }};
-                                        const dashboardId = {{ dashboard.id }};
-                                        const barCanvas = document.getElementById(`gadget-{{ gadget.id }}`);
-                                        const barCanvasMax = document.getElementById(`gadget-{{ gadget.id }}-max`);
-                                        const dateInput = document.getElementById(`datepicker-{{ gadget.id }}`);
-                                        const periodSelector = document.getElementById(`period-selector-{{ gadget.id }}`);
-                                    
-                                        // Range inputs
-                                        const startDateInput = document.getElementById(`start-date-${gadgetId}`);
-                                        const endDateInput = document.getElementById(`end-date-${gadgetId}`);
-                                        const startWeekInput = document.getElementById(`start-week-${gadgetId}`);
-                                        const endWeekInput = document.getElementById(`end-week-${gadgetId}`);
-                                        const startMonthInput = document.getElementById(`start-month-${gadgetId}`);
-                                        const endMonthInput = document.getElementById(`end-month-${gadgetId}`);
-                                    
-                                        let barChart = null;
-                                        let barChartMax = null;
-                                    
-                                        function updateRangeSelectorsVisibility() {
-                                            const period = periodSelector.value;
-                                            const iconContainer = document.getElementById(`range-selectors-${gadgetId}`);
-                                    
-                                            [
-                                                startDateInput, endDateInput,
-                                                startWeekInput, endWeekInput,
-                                                startMonthInput, endMonthInput
-                                            ].forEach(input => input.classList.add('d-none'));
-                                    
-                                            if (['daily', 'weekly', 'monthly'].includes(period)) {
-                                                iconContainer.classList.remove('d-none');
-                                                document.getElementById('dateInputAlternate{{gadget.id}}').classList.add('d-none');
-                                            } else {
-                                                iconContainer.classList.add('d-none');
-                                                document.getElementById('dateInputAlternate{{gadget.id}}').classList.remove('d-none');
-                                            }
-                                        }
-                                    
-                                        function generateYearColors(baseHue) {
-                                            return {
-                                                older: `hsl(${baseHue}, 70%, 80%)`,   // pale
-                                                latest: `hsl(${baseHue}, 70%, 50%)`   // vivid
-                                            };
-                                            }
-                                    
-                                            function fetchGroupedBarData() {
-    const date = dateInput.value;
-    const measurement = '{{ gadget.measurement.all.0.name }}';
-    const period = periodSelector.value;
-    if (!date) return;
-
-    let url = `/dashboard/${dashboardId}/multiYearBarData/${gadgetId}/${encodeURIComponent(measurement)}/${date}/${period}`;
-
-    let start = null;
-    let end = null;
-
-    if (period === 'daily') {
-        start = startDateInput.value;
-        end = endDateInput.value;
-    } else if (period === 'weekly') {
-        start = startWeekInput.value;
-        end = endWeekInput.value;
-    } else if (period === 'monthly') {
-        start = startMonthInput.value;
-        end = endMonthInput.value;
-    }
-
-    const params = new URLSearchParams();
-    if (start) params.append('start', start);
-    if (end) params.append('end', end);
-
-    if ([...params].length) {
-        url += `?${params.toString()}`;
-    }
-
-    axios.get(url)
-        .then(response => {
-            const labels = response.data.labels;
-            const years = response.data.years;
-            const latestYear = new Date(date).getFullYear().toString();
-            const data = response.data.data;
-
-            if (barChart) barChart.destroy();
-            if (barChartMax) barChartMax.destroy();
-
-            const datasets = [];
-            const allYValues = [];
-
-            data.forEach((meterData, meterIndex) => {
-                const baseHue = (meterIndex * 137) % 360;
-                const colors = generateYearColors(baseHue);
-
-                years.forEach(year => {
-                    const isLatest = year === latestYear;
-                    const values = meterData.values[year] || [];
-
-                    if (!values.length || values.every(v => v === 0 || v === null)) {
-                        return;
-                    }
-
-                    // Collect all Y values
-                    values.forEach(v => {
-                        if (v !== null && v !== undefined) {
-                            allYValues.push(v);
-                        }
-                    });
-
-                    datasets.push({
-                        label: `${meterData.meter} ${year}`,
-                        data: values,
-                        backgroundColor: isLatest ? colors.latest : colors.older,
-                        borderWidth: 0,
-                        customYear: year,
-                    });
-                });
-            });
-
-            // Compute min, max, and buffer
-            const minY = Math.min(...allYValues);
-            const maxY = Math.max(...allYValues);
-            const range = maxY - minY;
-            const buffer = range * 0.1;
-
-            const chartConfig = {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    layout: { padding: { bottom: 10 } },
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: '#6c757d',
-                                font: { size: 10 },
-                                boxWidth: 10,
-                                boxHeight: 10,
-                                filter: function (item) {
-                                    return item.text !== '';
-                                }
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: `${measurement} - ${period.charAt(0).toUpperCase() + period.slice(1)}`
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    const value = context.parsed.y;
-                                    const year = context.dataset.customYear;
-                                    return `${year} - ${value}`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            stacked: false,
-                            ticks: {
-                                color: '#6c757d',
-                                font: { size: 10 }
-                            },
-                            grid: { display: false }
-                        },
-                        y: {
-                            beginAtZero: false,
-                            min: minY - buffer < 0 ? 0 : minY - buffer,
-                            max: maxY + buffer,
-                            ticks: {
-                                color: '#6c757d',
-                                font: { size: 10 }
-                            }
-                        }
-                    }
-                }
-            };
-
-            barChart = new Chart(barCanvas, chartConfig);
-            barChartMax = new Chart(barCanvasMax, chartConfig);
-        })
-        .catch(error => {
-            console.error("Error fetching grouped bar chart data:", error);
-        });
+      charts[siteId] = new Chart(ctx, {
+        type: 'bar',
+        data: data,
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { color: '#ccc' }
+            },
+            title: {
+              display: true,
+              text: `${data.site} - ${data.measurement}`,
+              color: '#ccc'
+            }
+          },
+          scales: {
+            x: {
+              stacked: true,
+              ticks: { color: '#ccc' }
+            },
+            y: {
+              stacked: true,
+              ticks: { color: '#ccc' }
+            }
+          }
+        }
+      });
+    })
+    .catch(err => console.error(`Failed to load data for site ${siteId}:`, err));
 }
 
-                                    
-                                        const today = new Date().toISOString().split("T")[0];
-                                        dateInput.value = today;
-                                        function loadMonth() {
-                                            // Loop through options and select the matching one
-                                            for (const option of periodSelector.options) {
-                                                if (option.value === 'monthly') {
-                                                    option.selected = true;
-                                                    break;
-                                                }
-                                            }
-                                        }; 
-                                        loadMonth();
-                                        updateRangeSelectorsVisibility();
-                                        fetchGroupedBarData();
-                                    
-                                        function updateDateInputFromRange() {
-                                            if (startDateInput.value) {
-                                                dateInput.value = startDateInput.value;
-                                            } else if (startWeekInput.value) {
-                                                const [year, week] = startWeekInput.value.split('-W');
-                                                const simpleDate = new Date(year, 0, (week - 1) * 7 + 1);
-                                                dateInput.value = simpleDate.toISOString().slice(0, 10);
-                                            } else if (startMonthInput.value) {
-                                                dateInput.value = startMonthInput.value + "-01";
-                                            }
-                                            dateInput.dispatchEvent(new Event('change'));
-                                        }
-                                    
-                                        startDateInput.addEventListener('change', updateDateInputFromRange);
-                                        startWeekInput.addEventListener('change', updateDateInputFromRange);
-                                        startMonthInput.addEventListener('change', updateDateInputFromRange);
-                                    
-                                        dateInput.addEventListener("change", fetchGroupedBarData);
-                                        periodSelector.addEventListener("change", () => {
-                                            updateRangeSelectorsVisibility();
-                                            fetchGroupedBarData();
-                                        });
-                                    
-                                        [startDateInput, endDateInput, startWeekInput, endWeekInput, startMonthInput, endMonthInput]
-                                            .forEach(input => input.addEventListener("change", fetchGroupedBarData));
-                                    
-                                        document.getElementById(`toggle-current-year-{{ gadget.id }}`).addEventListener("change", fetchGroupedBarData);
-                                    
-                                        const openStartIcon = document.getElementById(`open-start-picker-{{ gadget.id }}`);
-                                        const openEndIcon = document.getElementById(`open-end-picker-{{ gadget.id }}`);
-                                    
-                                        openStartIcon.addEventListener("click", () => {
-                                            const period = periodSelector.value;
-                                            if (period === "daily") startDateInput.showPicker();
-                                            else if (period === "weekly") startWeekInput.showPicker();
-                                            else if (period === "monthly") startMonthInput.showPicker();
-                                        });
-                                    
-                                        openEndIcon.addEventListener("click", () => {
-                                            const period = periodSelector.value;
-                                            if (period === "daily") endDateInput.showPicker();
-                                            else if (period === "weekly") endWeekInput.showPicker();
-                                            else if (period === "monthly") endMonthInput.showPicker();
-                                        });
+document.addEventListener('DOMContentLoaded', function () {
+  // Initial load
+  {% for site in sites %}
+    fetchAndRenderChart("{{ site.id }}", "{{ measurement }}", "{{ period_type }}");
+  {% endfor %}
 
-                                        
-                                    
-                                    })();
-                                    </script>
-                                    
-                                    {% elif gadget.gadget_type == 'table' %}
+  // Event listeners for all selectors
+  const selectorClasses = ['period-selector', 'measurement-selector', 'start-date-selector', 'end-date-selector'];
+  selectorClasses.forEach(cls => {
+    document.querySelectorAll(`.${cls}`).forEach(el => {
+      el.addEventListener('change', function () {
+        const siteId = this.dataset.site;
+        const measurement = document.querySelector(`.measurement-selector[data-site="${siteId}"]`).value;
+        const period_type = document.querySelector(`.period-selector[data-site="${siteId}"]`).value;
+        const startDate = document.querySelector(`.start-date-selector[data-site="${siteId}"]`).value;
+        const endDate = document.querySelector(`.end-date-selector[data-site="${siteId}"]`).value;
 
-                                    <!-- Table container -->
-                                    <div style="max-height: 200px; min-width: 300px; max-width: 450px; overflow-y: auto;">
-                                      <table id="gadget-{{ gadget.id }}" class="table table-sm table-striped table-dark text-light" style="font-size: 12px; width: 100%;">
-                                        <thead style="margin-top: 0;">
-                                          <tr id="table-head-{{ gadget.id }}"></tr>
-                                        </thead>
-                                        <tbody id="table-body-{{ gadget.id }}"></tbody>
-                                      </table>
-                                    </div>
-                                    
-                                    
-                                    <script>
-                                    (function() {
-                                      const gadgetId = {{ gadget.id }};
-                                      const dashboardId = {{ dashboard.id }};
-                                      const tableHead = document.getElementById(`table-head-${gadgetId}`);
-                                      const tableBody = document.getElementById(`table-body-${gadgetId}`);
-                                      const modalBody = document.getElementById(`maximizeModalBody${gadgetId}`);
-                                    
-                                      function updateTable(rows) {
-                                        if (!rows.length) return;
-                                    
-                                        // Determine unique fields
-                                        const fields = Object.keys(rows[0]);
-                                    
-                                        // Build header
-                                        tableHead.innerHTML = fields.map(f => `<th>${f}</th>`).join('');
-                                    
-                                        // Build body
-                                        tableBody.innerHTML = rows.map(row => {
-                                          const tds = fields.map(f => `<td>${row[f] !== undefined ? row[f] : ''}</td>`).join('');
-                                          return `<tr>${tds}</tr>`;
-                                        }).join('');
-                                    
-                                        // Same for modal
-                                        const modalTable = `
-                                          <div style="overflow-y: auto;">
-                                            <table class="table table-striped table-dark text-light" style="font-size: 12px; width: 100%;">
-                                              <thead><tr>${fields.map(f => `<th>${f}</th>`).join('')}</tr></thead>
-                                              <tbody>
-                                                ${rows.map(row => `<tr>${fields.map(f => `<td>${row[f] !== undefined ? row[f] : ''}</td>`).join('')}</tr>`).join('')}
-                                              </tbody>
-                                            </table>
-                                          </div>
-                                        `;
-                                        modalBody.innerHTML = modalTable;
-                                      }
-                                    
-                                      function fetchTableData() {
-                                        axios.get(`/dashboard/${dashboardId}/fetchTableData/${gadgetId}`)
-                                          .then(response => updateTable(response.data.rows))
-                                          .catch(error => console.error('Error fetching table data:', error));
-                                      }
-                                    
-                                      fetchTableData();
-                                      setInterval(fetchTableData, 60000);
-                                    })();
-                                    </script>
-
-
-
-                                    {% elif gadget.gadget_type == 'sankey' %}
-                                   
-                                   
-                                    <!-- Include ECharts -->
-                                    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
-
-                                    <div id="sankey_echarts_{{ gadget.id }}" style="width: 990px; height: 400px;"></div>
-
-
-                                        <script>
-                                            const sankeyEcharts = echarts.init(document.getElementById("sankey_echarts_{{ gadget.id }}"));
-                                        
-                                            const measurement = "{{ gadget.measurement.all.0 }}";
-                                            const siteId = "{{ dashboard.site.id }}";
-                                            const dashboardId = "{{ dashboard.id }}";
-                                        
-                                            const datePicker = document.getElementById("datepicker-{{ gadget.id }}");
-                                            const periodSelector = document.getElementById("period-selector-{{ gadget.id }}");
-                                        
-                                            const gadgetWrapper = document.getElementById("gadget-wrapper-{{gadget.id}}");
-                                            gadgetWrapper.style.width = '1025px';
-                                            gadgetWrapper.style.height = '480px';
-                                        
-                                            function roundDate(date, periodType) {
-                                            const d = new Date(date);
-                                            if (periodType === 'weekly') {
-                                                // Set to Monday of this week
-                                                const day = d.getUTCDay();
-                                                const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1);
-                                                d.setUTCDate(diff);
-                                            } else if (periodType === 'monthly') {
-                                                d.setUTCDate(1);
-                                            } else if (periodType === '6monthly') {
-                                                const month = d.getUTCMonth();
-                                                const roundedMonth = month < 6 ? 0 : 6;
-                                                d.setUTCMonth(roundedMonth);
-                                                d.setUTCDate(1);
-                                            } else if (periodType === 'yearly') {
-                                                d.setUTCMonth(0);
-                                                d.setUTCDate(1);
-                                            }
-                                            return d.toISOString().split('T')[0];
-                                            }
-                                        
-                                            function drawEchartsSankey() {
-                                            const periodType = periodSelector.value;
-                                        
-                                            const rawDate = datePicker.value || "{{ start_date|default:'2025-01-01' }}";
-                                            const roundedDate = roundDate(rawDate, periodType);
-                                        
-                                            const url = `/dashboard/${dashboardId}/hierarchyy/${siteId}/${measurement}/${periodType}/${roundedDate}/`;
-                                        
-                                            fetch(url)
-                                                .then(res => res.json())
-                                                .then(data => {
-                                                const hierarchy = data.hierarchy_data;
-                                                console.log(hierarchy)
-                                                const hierarchyy = {
-    "site_total": {
-        "Total Active Power": 40.5,
-        "Active Power L1": 19.5,
-        "Active Power L2": 13.0,
-        "Active Power L3": 8.0
-    },
-    "buildings": {
-        "Building A": {
-        "building_total": {
-            "Total Active Power": 15.0,
-            "Active Power L1": 7.0,
-            "Active Power L2": 5.0,
-            "Active Power L3": 3.0
-        },
-        "areas": {
-            "Ground Floor": {
-            "area_total": {
-                "Total Active Power": 8.0,
-                "Active Power L1": 4.5,
-                "Active Power L2": 2.5,
-                "Active Power L3": 1.0
-            },
-            "meters": {
-                "MFM 1": {
-                "data": {
-                    "Total Active Power": 5.0,
-                    "Active Power L1": 2.5,
-                    "Active Power L2": 1.5,
-                    "Active Power L3": 1.0
-                }, "loadType": "HVAC"
-                },
-                "MFM 2": {
-                "data": {
-                    "Total Active Power": 3.0,
-                    "Active Power L1": 2.0,
-                    "Active Power L2": 1.0,
-                    "Active Power L3": -1.0
-                }, "loadType": "Manufacturing"
-                }
-            }
-            },
-            "First Floor": {
-            "area_total": {
-                "Total Active Power": 7.0,
-                "Active Power L1": 2.5,
-                "Active Power L2": 2.5,
-                "Active Power L3": 2.0
-            },
-            "meters": {
-                "MFM 3": {
-                "data": {
-                    "Total Active Power": 4.0,
-                    "Active Power L1": 2.0,
-                    "Active Power L2": 1.0,
-                    "Active Power L3": 1.0
-                }, "loadType": "HVAC"
-                },
-                "MFM 4": {
-                "data": {
-                    "Total Active Power": 3.0,
-                    "Active Power L1": 0.5,
-                    "Active Power L2": 1.5,
-                    "Active Power L3": 1.0
-                }, "loadType": "Manufacturing"
-                }
-            }
-            }
+        if (!measurement) {
+          console.warn(`Please select a measurement for site ${siteId}`);
+          return;
         }
-        },
-        "Building C": {
-        "building_total": {
-            "Total Active Power": 15.0,
-            "Active Power L1": 7.0,
-            "Active Power L2": 5.0,
-            "Active Power L3": 3.0
-        },
-        "areas": {
-            "Ground Floor": {
-            "area_total": {
-                "Total Active Power": 8.0,
-                "Active Power L1": 4.5,
-                "Active Power L2": 2.5,
-                "Active Power L3": 1.0
-            },
-            "meters": {
-                "MFM 1": {
-                "data": {
-                    "Total Active Power": 5.0,
-                    "Active Power L1": 2.5,
-                    "Active Power L2": 1.5,
-                    "Active Power L3": 1.0
-                }, "loadType": "Manufacturing"
-                },
-                "MFM 2": {
-                "data": {
-                    "Total Active Power": 3.0,
-                    "Active Power L1": 2.0,
-                    "Active Power L2": 1.0,
-                    "Active Power L3": -1.0
-                }, "loadType": "Manufacturing"
-                }
-            }
-            },
-            "First Floor": {
-            "area_total": {
-                "Total Active Power": 7.0,
-                "Active Power L1": 2.5,
-                "Active Power L2": 2.5,
-                "Active Power L3": 2.0
-            },
-            "meters": {
-                "MFM 3": {
-                "data": {
-                    "Total Active Power": 4.0,
-                    "Active Power L1": 2.0,
-                    "Active Power L2": 1.0,
-                    "Active Power L3": 1.0
-                }, "loadType": "Manufacturing"
-                },
-                "MFM 4": {
-                "data": {
-                    "Total Active Power": 3.0,
-                    "Active Power L1": 0.5,
-                    "Active Power L2": 1.5,
-                    "Active Power L3": 1.0
-                }, "loadType": "Manufacturing"
-                }
-            }
-            }
-        }
-        },
-        "Building B": {
-        "building_total": {
-            "Total Active Power": 10.5,
-            "Active Power L1": 5.5,
-            "Active Power L2": 3.0,
-            "Active Power L3": 2.0
-        },
-        "areas": {
-            "Basement": {
-            "area_total": {
-                "Total Active Power": 5.5,
-                "Active Power L1": 2.5,
-                "Active Power L2": 2.0,
-                "Active Power L3": 1.0
-            },
-            "meters": {
-                "MFM 5": {
-                "data": {
-                    "Total Active Power": 2.5,
-                    "Active Power L1": 1.5,
-                    "Active Power L2": 1.0,
-                    "Active Power L3": 0.0
-                }, "loadType": "Lighting"
-                },
-                "MFM 6": {
-                "data": {
-                    "Total Active Power": 3.0,
-                    "Active Power L1": 1.0,
-                    "Active Power L2": 1.0,
-                    "Active Power L3": 1.0
-                }, "loadType": "Lighting"
-                }
-            }
-            },
-            "Second Floor": {
-            "area_total": {
-                "Total Active Power": 5.0,
-                "Active Power L1": 3.0,
-                "Active Power L2": 1.0,
-                "Active Power L3": 1.0
-            },
-            "meters": {
-                "MFM 7": {
-                "data": {
-                    "Total Active Power": 2.0,
-                    "Active Power L1": 1.0,
-                    "Active Power L2": 1.0,
-                    "Active Power L3": 0.0
-                }, "loadType": "Lighting"
-                },
-                "MFM 8": {
-                "data": {
-                    "Total Active Power": 3.0,
-                    "Active Power L1": 2.0,
-                    "Active Power L2": 0.0,
-                    "Active Power L3": 1.0
-                }, "loadType": "Manufacturing"
-                }
-            }
-            }
-        }
-        }
-    }
-    }
-                                                
-                                                const siteName = data.site?.name || "Site";
-                                        
-                                                const nodes = [];
-                                                const links = [];
-                                                const colors = {};
-                                                const added = new Set();
-                                                const loadTypeTotals = {};
-                                        
-                                                function getColor(name) {
-                                                    if (colors[name]) return colors[name];
-                                                    if (name === siteName) colors[name] = '#1f77b4';
-                                                    else if (name.includes('Building')) colors[name] = '#ff7f0e';
-                                                    else if (name.includes('Area')) colors[name] = '#2ca02c';
-                                                    else if (name.includes('Meter')) colors[name] = '#d62728';
-                                                    else if (name.includes('Load Type')) colors[name] = '#9467bd';
-                                                    else colors[name] = '#999';
-                                                    return colors[name];
-                                                }
-                                        
-                                                for (const [buildingName, buildingData] of Object.entries(hierarchy.buildings)) {
-                                                    links.push({ source: siteName, target: buildingName, value: buildingData.building_total[measurement] || 0 });
-                                                    added.add(siteName);
-                                                    added.add(buildingName);
-                                        
-                                                    for (const [areaName, areaData] of Object.entries(buildingData.areas)) {
-                                                    let areaSum = 0;
-                                        
-                                                    for (const [meterName, meterData] of Object.entries(areaData.meters)) {
-                                                        const val = meterData.data[measurement] || 0;
-                                        
-                                                        if (val > 0) {
-                                                        links.push({ source: areaName, target: meterName, value: val });
-                                                        added.add(areaName);
-                                                        added.add(meterName);
-                                                        areaSum += val;
-                                        
-                                                        const loadTypeName = "Load Type: " + (meterData.loadType || "Unknown");
-                                                        links.push({ source: meterName, target: loadTypeName, value: val });
-                                                        added.add(loadTypeName);
-                                        
-                                                        if (!loadTypeTotals[loadTypeName]) {
-                                                            loadTypeTotals[loadTypeName] = 0;
-                                                        }
-                                                        loadTypeTotals[loadTypeName] += val;
-                                                        }
-                                                    }
-                                        
-                                                    if (areaSum > 0) {
-                                                        links.push({ source: buildingName, target: areaName, value: areaSum });
-                                                        added.add(areaName);
-                                                    }
-                                                    }
-                                                }
-                                        
-                                                for (const name of added) {
-                                                    const node = { name, itemStyle: { color: getColor(name) } };
-                                                    if (loadTypeTotals[name]) {
-                                                    node.loadTypeTotal = loadTypeTotals[name];
-                                                    }
-                                                    nodes.push(node);
-                                                }
-                                        
-                                                sankeyEcharts.setOption({
-                                                    backgroundColor: '#212529',
-                                                    tooltip: {
-                                                    trigger: 'item',
-                                                    formatter: function (params) {
-                                                        if (params.dataType === 'edge') {
-                                                        return `${params.data.source} → ${params.data.target}<br/>${measurement}: ${params.data.value}`;
-                                                        } else if (params.dataType === 'node') {
-                                                        if (params.data.loadTypeTotal) {
-                                                            return `${params.data.name}<br/>Total ${measurement}: ${params.data.loadTypeTotal.toFixed(2)}`;
-                                                        }
-                                                        return `${params.data.name}`;
-                                                        }
-                                                    }
-                                                    },
-                                                    series: [{
-                                                    type: 'sankey',
-                                                    data: nodes,
-                                                    links: links,
-                                                    emphasis: { focus: 'adjacency' },
-                                                    lineStyle: { color: 'source', curveness: 0.5 },
-                                                    label: { color: '#eee' }
-                                                    }]
-                                                });
-                                                });
-                                            }
-                                        
-                                            window.addEventListener("DOMContentLoaded", drawEchartsSankey);
-                                            datePicker.addEventListener("change", drawEchartsSankey);
-                                            periodSelector.addEventListener("change", drawEchartsSankey);
-                                        </script>
 
+        fetchAndRenderChart(siteId, measurement, period_type, startDate, endDate);
+      });
+    });
+  });
+});
 
+</script>
 
+                          
 
-
-                                        {% elif gadget.gadget_type == 'heatmap' %}
-                                        <!-- ECharts CDN -->
-                                        <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
-
-                                        <div id="heatmap_container_{{ gadget.id }}" style="width: 990px; height: 500px;"></div>
-
-                                        <script>
-                                        const heatmapChart = echarts.init(document.getElementById('heatmap_container_{{ gadget.id }}'));
-
-                                        const gadgetWrapper{{gadget.id}} = document.getElementById("gadget-wrapper-{{gadget.id}}");
-                                        gadgetWrapper{{gadget.id}}.style.width = '1025px';
-                                        gadgetWrapper{{gadget.id}}.style.height = '580px';
-
-
-
-                                        // Your measurement from Django
-                                        const measurement{{gadget.id}} = "{{ gadget.measurement.all.0 }}";
-                                        const meterId{{gadget.id}} = {{ gadget.meters.all.0.id }};  // Adjust if needed
-
-
-                                        // Your custom hidden pickers
-                                        const startPicker{{gadget.id}} = document.getElementById("start-date-{{ gadget.id }}");
-                                        const endPicker{{gadget.id}} = document.getElementById("end-date-{{ gadget.id }}");
-
-
-                                        // The icons that open the pickers
-                                        const openStart{{gadget.id}} = document.getElementById("open-start-picker-{{ gadget.id }}");
-                                        const openEnd{{gadget.id}} = document.getElementById("open-end-picker-{{ gadget.id }}");
-
-
-                                        // When icon clicked, open the hidden input
-                                        openStart{{gadget.id}}.addEventListener('click', () => startPicker{{gadget.id}}.showPicker());
-                                        openEnd{{gadget.id}}.addEventListener('click', () => endPicker{{gadget.id}}.showPicker());
-
-                                        // When date changes, refresh the heatmap
-                                        [startPicker{{gadget.id}}, endPicker{{gadget.id}}].forEach(picker => {
-                                        picker.addEventListener('change', loadHeatmap);
-                                        });
-
-                                        function loadHeatmap() {
-                                            const gadgetTitle = document.getElementById('gadget-title{{gadget.id}}')
-                                            
-                                            const start = startPicker{{gadget.id}}.value;
-                                            const end = endPicker{{gadget.id}}.value;
-
-                                            gadgetTitle.innerHTML = "{{ gadget.name }} - ("+start+" to "+end+")";
-
-                                            if (!start || !end) {
-                                                console.log("Select both dates first");
-                                                return;
-                                            }
-
-                                            const url = `/dashboard/{{gadget.dashboard.id}}/heatmap/{{gadget.meters.all.0.id}}/${start}/${end}/${encodeURIComponent("{{ gadget.measurement.all.0 }}")}/`;
-
-                                            fetch(url)
-                                                .then(res => res.json())
-                                                .then(res => {
-                                                const raw = res.data;
-                                                if (!raw || raw.length === 0) {
-                                                    heatmapChart.clear();
-                                                    console.warn("No data for selected range");
-                                                    return;
-                                                }
-
-                                                const days = [...new Set(raw.map(d => d.day))];
-                                                const hours = Array.from({ length: 24 }, (_, i) => i);
-
-                                                const heatmapData = raw.map(d => [
-                                                    days.indexOf(d.day),
-                                                    d.hour,
-                                                    d.value
-                                                ]);
-
-                                                const allValues = raw.map(d => d.value);
-                                            const dataMin = Math.min(...allValues);
-                                            const dataMax = Math.max(...allValues);
-                                            const option = {
-                                            tooltip: {
-                                                position: 'top',
-                                                formatter: p => {
-                                                const d = days[p.data[0]];
-                                                const h = p.data[1];
-                                                const v = p.data[2];
-                                                return `${d} ${h}:00<br>${measurement{{gadget.id}}}: ${v.toFixed(2)}`;
-                                                }
-                                            },
-                                            grid: { height: '70%', top: '10%' },
-                                            xAxis: {
-                                                type: 'category',
-                                                data: days,
-                                                name: 'Date',
-                                                nameTextStyle: { color: '#fff' },
-                                                axisLabel: { color: '#eee' },
-                                                splitArea: { show: false },  // Disable gridlines
-                                                splitLine: { show: false }
-                                            },
-                                            yAxis: {
-                                                type: 'category',
-                                                data: hours.map(h => `${h}:00`),
-                                                name: 'Hour',
-                                                nameTextStyle: { color: '#fff' },
-                                                axisLabel: { color: '#eee' },
-                                                splitArea: { show: false },  // Disable gridlines
-                                                splitLine: { show: false }
-                                            },
-                                            backgroundColor: '#212529',
-                                            visualMap: {
-                                                min: dataMin,
-                                                max: dataMax,
-                                                calculable: true,
-                                                orient: 'horizontal',
-                                                left: 'center',
-                                                bottom: '5%',
-                                                textStyle: { color: '#eee' },
-                                                inRange: {
-                                                color: ['#00FF00', '#FFFF00', '#FF0000']  // Green → Yellow → Red
-                                                }
-                                            },
-                                            series: [{
-                                                name: measurement{{gadget.id}},
-                                                type: 'heatmap',
-                                                data: heatmapData,
-                                                itemStyle: {
-                                                borderWidth: 0  // Remove cell borders
-                                                },
-                                                emphasis: {
-                                                itemStyle: {
-                                                    shadowBlur: 10,
-                                                    shadowColor: 'rgba(0,0,0,0.5)'
-                                                }
-                                                }
-                                            }],
-                                            };
-
-
-
-
-                                            heatmapChart.setOption(option);
-                                            })
-                                            .catch(err => {
-                                            console.error("Error loading heatmap:", err);
-                                            });
-                                        }
-
-                                        document.addEventListener("DOMContentLoaded", function() {
-                                        const startPicker = document.getElementById("start-date-{{ gadget.id }}");
-                                        const endPicker = document.getElementById("end-date-{{ gadget.id }}");
-
-                                        const today = new Date();
-                                        const yesterday = new Date(today);
-                                        yesterday.setDate(yesterday.getDate() - 1);
-
-                                        const oneMonthAgo = new Date(today);
-                                        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-                                        // Format to YYYY-MM-DD
-                                        function formatDate(date) {
-                                            const year = date.getFullYear();
-                                            const month = String(date.getMonth() + 1).padStart(2, '0');
-                                            const day = String(date.getDate()).padStart(2, '0');
-                                            return `${year}-${month}-${day}`;
-                                        }
-
-                                        startPicker.value = formatDate(oneMonthAgo);
-                                        endPicker.value = formatDate(yesterday);
-                                        });
-
-                                        document.addEventListener("DOMContentLoaded", loadHeatmap)
-
-                                        </script>
                         
-                                    {% endif %}
-                                    
-                            </div>
-                            {% endif %}
-                        {% endfor %}
 
                     </div>
-                </div>
             </div>
-            {% endif %}
 
         </main>
     </div>
 </div>
 
-<!-- maximuze gadget script -->
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const maximizeIcons = document.querySelectorAll(".maximizeGadget");
-        const modal = new bootstrap.Modal(document.getElementById('maximizeModal'));
-        const modalBody = document.getElementById('maximizeModalBody');
 
-        maximizeIcons.forEach(icon => {
-            icon.addEventListener("click", function (e) {
-                e.stopPropagation();
-
-                // Find the gadget card div
-                const gadgetCard = this.closest(".gadget-item");
-                if (!gadgetCard) return;
-
-                // Clone the gadget content (deep clone)
-                const clone = gadgetCard.cloneNode(true);
-
-                // Remove previous modal content
-                modalBody.innerHTML = "";
-                modalBody.appendChild(clone);
-
-                // Re-render any Chart.js instances
-                const canvas = clone.querySelector("canvas");
-                if (canvas) {
-                    const ctx = canvas.getContext("2d");
-                    const type = gadgetCard.querySelector("script").textContent.match(/type:\s*['"](\w+)['"]/)[1];
-                    const data = JSON.parse(gadgetCard.querySelector("script").textContent.match(/data:\s*({[\s\S]*?})\s*,\s*options/)[1]);
-                    const options = JSON.parse(gadgetCard.querySelector("script").textContent.match(/options:\s*({[\s\S]*?})\s*\)?;/)[1]);
-
-                    new Chart(ctx, {
-                        type: type,
-                        data: data,
-                        options: options
-                    });
-                }
-
-                modal.show();
-            });
-        });
-    });
-</script>
-
-
-
-<!-- Tree script -->
-<script>
-    let tree = document.getElementById('tree');
-    document.addEventListener("DOMContentLoaded", function () {
-        // 1. Tree toggle (show/hide child UL)
-        document.querySelectorAll("#tree li").forEach(function (li) {
-            const childUl = li.querySelector("ul");
-            if (childUl) {
-                childUl.style.display = "none";
-                li.style.cursor = "pointer";
-                li.addEventListener("click", function (e) {
-                    e.stopPropagation();
-                    childUl.style.display = (childUl.style.display === "none") ? "block" : "none";
-                });
-            }
-        });
-
-        // 2. Gadget-meter highlight & tree expand
-        const gadgets = document.querySelectorAll(".gadget-item");
-        const meters = document.querySelectorAll(".meter-item");
-
-        // Helper: expand parents of a meter element to make it visible
-        function expandParents(meterElem) {
-            let tree = document.getElementById('tree');
-            tree.style.display = "block";
-            let current = meterElem.parentElement; // the <ul> containing the meter
-            while (current && current.id !== "tree") {
-                if (current.tagName.toLowerCase() === "ul") {
-                    current.style.display = "block";
-                }
-                current = current.parentElement;
-            }
-        }
-
-        gadgets.forEach(gadget => {
-            gadget.addEventListener("click", (event) => {
-                event.stopPropagation();
-
-                // Remove all highlights (but do NOT collapse tree)
-                gadgets.forEach(g => g.classList.remove("gadget-highlight"));
-                meters.forEach(m => m.classList.remove("text-info"));
-
-                // Highlight clicked gadget
-                gadget.classList.add("gadget-highlight");
-
-                // Get related meters (expects JSON array or comma-separated string)
-                const meterIdsStr = gadget.getAttribute("data-meter-ids");
-                if (!meterIdsStr) return;
-
-                let meterIds = [];
-                try {
-                    meterIds = JSON.parse(meterIdsStr);
-                } catch (e) {
-                    meterIds = meterIdsStr.split(",").map(id => id.trim());
-                }
-
-                // Highlight meters and expand their parents
-                meterIds.forEach(id => {
-                    const meterElem = document.getElementById(`meter-${id}`);
-                    if (meterElem) {
-                        meterElem.classList.add("text-info");
-                        expandParents(meterElem);
-                    }
-                });
-            });
-        });
-
-        // Clicking outside gadgets clears highlights ONLY (not tree)
-        document.addEventListener("click", () => {
-            gadgets.forEach(g => g.classList.remove("gadget-highlight"));
-            meters.forEach(m => m.classList.remove("text-info"));
-
-        });
-        // ✅ 3. Expand entire tree on load
-        document.querySelectorAll("#tree ul").forEach(ul => {
-            ul.style.display = "block";
-        });
-    });
-</script>
-<script>
-    window.addEventListener('load', function() {
-      var grid = document.querySelector('#masonry-grid');
-      new Masonry(grid, {
-        itemSelector: '.gadget-item',
-        gutter: 20,
-        fitWidth: true
-      });
-    });
-  </script>
-
-
-<script>
-    function updateClock() {
-      const now = new Date();
-  
-      const seconds = now.getSeconds();
-      const minutes = now.getMinutes();
-      const hours = now.getHours();
-  
-      const secDeg = seconds * 6; // 360 / 60
-      const minDeg = minutes * 6 + seconds * 0.1; // smooth minute hand
-      const hourDeg = (hours % 12) * 30 + minutes * 0.5; // 360 / 12 + smooth move
-  
-      document.getElementById('secondHand').style.transform = `translateX(-50%) rotate(${secDeg}deg)`;
-      document.getElementById('minuteHand').style.transform = `translateX(-50%) rotate(${minDeg}deg)`;
-      document.getElementById('hourHand').style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
-    }
-  
-    setInterval(updateClock, 1000);
-    updateClock(); // initial call
-  </script>
 {% endblock %}

@@ -1,6 +1,19 @@
 {% extends 'layout.html' %}
 {% block body %}
 
+
+<!-- Include Leaflet CSS and JS for OpenStreetMap -->
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  crossorigin=""
+/>
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  crossorigin=""
+></script>
+
+
 <style>
   .modal-content.bg-dark-custom {
     color: #fff;
@@ -114,10 +127,21 @@
           <form method="post" action="/settings/hierarchy/addSite">
             {% csrf_token %}
             <div class="mb-3">
-              <input type="text" class="form-control" id="siteName" name="site_name" placeholder="Enter Site Name"
-                required>
+              <input type="text" class="form-control" id="siteName" name="site_name" placeholder="Enter Site Name" required>
             </div>
-            <!-- Add more fields as needed -->
+          
+            <div class="mb-3">
+              <label for="latitude" class="form-label text-white">Latitude</label>
+              <input type="text" class="form-control" id="latitude" name="latitude" placeholder="Latitude" required>
+            </div>
+          
+            <div class="mb-3">
+              <label for="longitude" class="form-label text-white">Longitude</label>
+              <input type="text" class="form-control" id="longitude" name="longitude" placeholder="Longitude" required>
+            </div>
+          
+            <div id="map" style="height: 300px; margin-bottom: 1rem;"></div>
+          
             <div class="modal-footer border-dark">
               <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Cancel</button>
               <button type="submit" class="btn btn-info">Save</button>
@@ -128,6 +152,63 @@
       </div>
     </div>
   </div>
+  <script>
+    // Initialize map variable globally
+let map, marker;
+
+// Function to initialize map at given coords
+function initMap(lat, lon) {
+  map = L.map('map').setView([lat, lon], 13); // Zoom 13 for city-level
+
+  // Add OpenStreetMap tile layer
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Add marker at user location initially
+  marker = L.marker([lat, lon]).addTo(map);
+
+  // On map click, update lat/lon inputs and move marker
+  map.on('click', function (e) {
+    const latClicked = e.latlng.lat.toFixed(6);
+    const lonClicked = e.latlng.lng.toFixed(6);
+
+    document.getElementById('latitude').value = latClicked;
+    document.getElementById('longitude').value = lonClicked;
+
+    marker.setLatLng(e.latlng);
+  });
+
+  // Update the lat/lon input with initial location
+  document.getElementById('latitude').value = lat.toFixed(6);
+  document.getElementById('longitude').value = lon.toFixed(6);
+}
+
+// Try to get user's current location via browser
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      initMap(position.coords.latitude, position.coords.longitude);
+    },
+    (error) => {
+      console.warn('Geolocation failed or denied. Using default location.');
+      initMap(23.8103, 90.4125); // Dhaka fallback
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 5000,
+      maximumAge: 0
+    }
+  );
+} else {
+  // Browser doesn't support Geolocation
+  console.warn('Geolocation not supported. Using default location.');
+  initMap(23.8103, 90.4125); // Dhaka fallback
+}
+
+  </script>
+    
   <!-- Tab Content -->
   <div class="tab-content p-3 shadow" id="myTabContent">
     <div class="tab-pane fade show active" id="site" role="tabpanel" aria-labelledby="site-tab">

@@ -3,8 +3,8 @@ from django.db import models
 # Create your models here.
 class Site(models.Model):
     name = models.CharField(max_length=100)
-    latitude = models.CharField(max_length=1000, default='')
-    longitude = models.CharField(max_length=1000, default='')
+    latitude = models.CharField(max_length=1000)
+    longitude = models.CharField(max_length=1000)
     def __str__(self):
         return self.name
 

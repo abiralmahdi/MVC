@@ -5,7 +5,8 @@ urlpatterns = [
     path('', views.dashboard, name='dashboard'),
     path('newDashboard', views.newDashboard, name='newDashboard'),
     path('<str:dashboardID>', views.indivDashboard, name='indivDashboard'),
-    path('central/<str:dashboardID>', views.indivDashboard, name='indivDashboard'),
+    path('centralCommand/industryOverview', views.indivCentralDashboard, name='indivCentralDashboard'),
+    path("centralCommand/industryOverview/<int:site_id>/<str:measurement>/<str:period_type>/", views.grouped_chart_data_for_site),
     path('siteDashboard/<str:siteID>', views.siteDashbaord, name='siteDashbaord'),
     path('<str:dashboardID>/newGadget', views.newGadget, name='newGadget'),
     path('<str:dashboardID>/fetchLatestReadings/<str:gadget_id>/', views.fetchLatestReadings, name='fetchLatestReadings'),
@@ -18,6 +19,7 @@ urlpatterns = [
     path("<int:dashboard_id>/heatmap/<int:meter_id>/<str:start_date>/<str:end_date>/<path:measurement>/", views.heatmap_data, name="heatmap_data"),
     path('<str:dashboardID>/deleteGadget/<str:gadgetID>/', views.deleteGadget, name='deleteGadget'),
     path('<str:dashboardID>/editGadget/<str:gadgetID>/', views.editGadget, name='editGadget'),
+    
 
 
     

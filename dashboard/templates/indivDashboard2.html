@@ -152,183 +152,46 @@
 </style>
 
 
-{% if request.user.is_superuser %}
 <!-- Dashboard generation modal -->
-<div class="modal fade" id="addDashboardModal" tabindex="-1" aria-labelledby="addDashboardModalLabel"
-    aria-hidden="true">
+{% if request.user.is_superuser %}
+<div class="modal fade" id="addDashboardModal" tabindex="-1" aria-labelledby="addDashboardModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <form method="POST" action="/dashboard/newDashboard">
-            {% csrf_token %}
-            <div class="modal-content bg-dark text-white">
-                <div class="modal-header border-dark">
-                    <h5 class="modal-title" id="addDashboardModalLabel">Create New Dashboard</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+      <form method="POST" action="/dashboard/newDashboard">
+        {% csrf_token %}
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header border-dark">
+                <h5 class="modal-title" id="addDashboardModalLabel">Create New Dashboard</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+    
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Dashboard Title</label>
+                    <input type="text" class="form-control" id="title" name="title" required>
                 </div>
+    
 
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="title" class="form-label">Dashboard Title</label>
-                        <input type="text" class="form-control" id="title" name="title" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="site" class="form-label">Select Site</label>
-                        <select class="form-select" id="site" name="site" required>
-                            <option value="">-- Select Site --</option>
-                            {% for site in sites %}
+                <div class="mb-3" id="siteField">
+                    <label for="site" class="form-label">Select Site</label>
+                    <select class="form-select" id="site" name="site">
+                        <option value="">-- Select Site --</option>
+                        {% for site in sites %}
                             <option value="{{ site.id }}">{{ site.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-
-                <div class="modal-footer border-dark">
-                    <button type="submit" class="btn btn-primary">Create Dashboard</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
-        </form>
-    </div>
-</div>
-
-<!-- New Gadget Modal -->
-<div class="modal fade" id="addGadgetModal" tabindex="-1" aria-labelledby="addGadgetModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <form method="POST" action="/dashboard/{{dashboard.id}}/newGadget">
-            {% csrf_token %}
-            <div class="modal-content bg-dark text-white">
-                <div class="modal-header border-dark">
-                    <h5 class="modal-title" id="addGadgetModalLabel">Create New Gadget</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                </div>
-
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Gadget Name</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="gadget_type" class="form-label">Gadget Type</label>
-                        <select class="form-select" id="gadget_type" name="gadget_type" required>
-                            <option value="">-- Select Type --</option>
-                            <option value="pie">Pie Chart</option>
-                            <option value="bar">Bar Chart</option>
-                            <option value="line">Trend Graph</option>
-                            <option value="table" id="table-option">Table</option>
-                            <option value="tool" id="tool-option">Tool</option>
-                            <option value="sankey" id="sankey-option">Sankey</option>
-                            <option value="heatmap" id="heat-map">Heat Map</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="meters" class="form-label">Meters</label>
-                        <select class="form-select" id="meters" name="meters" multiple required>
-                            {% for area in areas %}
-                            <optgroup label="{{ area.name }}">
-                                {% for meter in area.meters.all %}
-                                <option value="{{ meter.id }}">{{ meter.name }}</option>
-                                {% endfor %}
-                            </optgroup>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text text-light">Hold Ctrl (Windows) or Cmd (Mac) to select multiple meters.</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="measurement" class="form-label">Measurements</label>
-                        <select class="form-select" id="measurement" name="measurement" required>
-                            {% for measurement in measurements %}
-                            <option value="{{ measurement.id }}">{{ measurement.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="access" class="form-label">Access Control</label>
-                        <select class="form-select" id="access" name="access" multiple required>
-                            <optgroup label="Access Control">
-                                <option value="Administrator">Administrator</option>
-                                <option value="Operator">Operator</option>
-                                <option value="Quality Manager">Quality Manager</option>
-                                <option value="Shift Manager">Shift Manager</option>
-                                <option value="Maintenance Personnel">Maintenance Personnel</option>
-                                <option value="Setup Technician">Setup Technician</option>
-                            </optgroup>
-                        </select>
-                        <div class="form-text text-light">Hold Ctrl (Windows) or Cmd (Mac) to select multiple meters.</div>
-                    </div>
-                </div>
-
-                <div class="modal-footer border-dark">
-                    <button type="submit" class="btn btn-info">Add Gadget</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                </div>
+    
+            <div class="modal-footer border-dark">
+                <button type="submit" class="btn btn-primary">Create Dashboard</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             </div>
-        </form>
+        </div>
+    </form>
     </div>
-</div>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const metersSelect = document.getElementById('meters');
-        const gadgetTypeSelect = document.getElementById('gadget_type');
-        const tableOption = document.getElementById('table-option');
-        const measurementSelect = document.getElementById('measurement');
+  </div>
 
-        // Handle meter selection changes
-        metersSelect.addEventListener('change', function () {
-            const selectedMeters = Array.from(this.selectedOptions);
-            const moreThanOne = selectedMeters.length > 1;
-
-            // Disable "Table" option if more than one meter is selected
-            tableOption.disabled = moreThanOne;
-
-            // If "Table" is selected and it becomes disabled, reset the selection
-            if (moreThanOne && gadgetTypeSelect.value === 'table') {
-                gadgetTypeSelect.value = '';
-                measurementSelect.disabled = false;
-            }
-        });
-
-        // Handle gadget type selection changes
-        gadgetTypeSelect.addEventListener('change', function () {
-            const type = this.value;
-
-            if (type === 'table') {
-        measurementSelect.disabled = true;
-        metersSelect.multiple = true;      // likely keep meters multi-select
-        measurementSelect.multiple = false; // measurement single-select or disabled
-        measurementSelect.selectedIndex = -1;
-    } 
-    else if (type === 'line') {
-        measurementSelect.disabled = false;
-        metersSelect.multiple = true;      // multiple meters allowed
-        measurementSelect.multiple = true; // multiple measurements allowed
-        metersSelect.selectedIndex = -1;
-        measurementSelect.selectedIndex = -1;
-    } 
-    else if (type === 'tool') {
-        measurementSelect.disabled = false;
-        metersSelect.multiple = false;     // single meter only
-        measurementSelect.multiple = true; // multiple measurements allowed
-        metersSelect.selectedIndex = -1;
-        measurementSelect.selectedIndex = -1;
-    } 
-    else {
-        measurementSelect.disabled = false;
-        metersSelect.multiple = true;      // default meters multi-select
-        measurementSelect.multiple = false; // default measurement single-select
-        metersSelect.selectedIndex = -1;
-        measurementSelect.selectedIndex = -1;
-    }
-        });
-    });
-</script>
-
-{% endif %}
+  {% endif %}
 
 <div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
     style="overflow-y: auto;">
@@ -352,17 +215,17 @@
       </span>
       {% endif %}
 
+    {% if request.user.is_superuser or request.user.userModel.first.role == "Administrator" %}
       <ul class="list-unstyled mt-3 ms-2">
-        {% for dashboard in centralDashboards %}
         <li>
-            <a href="/dashboard/central/{{dashboard.id}}"
+            <a href="/dashboard/centralCommand/industryOverview"
                 class="text-white text-decoration-none">
                 <i class="fa-solid fa-building-columns"></i>
-                {{ dashboard.title }}
+                Central Dashboard
             </a>
         </li>
-        {% endfor %}
       </ul>
+    {% endif %}
 
 
         {% for site in sites %}

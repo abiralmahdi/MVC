@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import *
 from dynamic.models import *
 from datetime import datetime
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from pprint import pprint
 from datetime import timedelta
 from django.utils import timezone
@@ -31,7 +31,6 @@ def dashboard(request):
     else:
         sites = [request.user.userModel.first().site]
     dashboards = Dashboard.objects.all()
-    centralDashboard = CentralDashboard.objects.all()
     gadgets = Gadgets.objects.all()
     meters = Meters.objects.all()
     context = {
@@ -40,7 +39,6 @@ def dashboard(request):
         'gadgets': gadgets,
         'meters': meters,
         'config':config,
-        'centralDashboards':centralDashboard
     }
     return render(request, 'dashboard.html', context)
 
@@ -133,7 +131,6 @@ def indivDashboard(request, dashboardID):
             'alarms':alarms,
             'config':config,
             'dateNow':dateNow,
-            'centralDashboards':CentralDashboard.objects.all()
             
         }
 
@@ -142,39 +139,112 @@ def indivDashboard(request, dashboardID):
         return redirect('/dashboard')
     
 
-
+from django.shortcuts import render
+from django.http import JsonResponse
+from collections import defaultdict
+from .models import HierarchyDataAggregate, Site
 
 @login_required
 @subscription_required
-def indivCentralDashboard(request, dashboardID):
-    dateNow = format_custom_date(datetime.now())
-    config = GlobalConfiguration.objects.first()
-    dashboard_ = get_object_or_404(Dashboard, id=dashboardID)
-    sites = Site.objects.prefetch_related(
-        'buildings__areas__meters'
-    ).all()
+def indivCentralDashboard(request):
     if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
-        pass
-    else:
-        sites = [request.user.userModel.first().site]
-    if request.user.is_superuser or request.user.userModel.first().site.id == dashboard_.site.id or request.user.userModel.first().role == 'Administrator':
-
-        
+        # You can customize which sites to show
+        config = GlobalConfiguration.objects.first()
+        sites = Site.objects.all()
+        measurement = "CO2 Level"  # or pass via GET param
+        period_type = "monthly"  # or weekly/yearly
 
         context = {
-            'dashboard': dashboard_,
-            'sites': sites,
-            'gadgetTypes':GADGET_TYPES,
-            'accessControl':ACCESS_CONSTROL,
-            'config':config,
-            'dateNow':dateNow,
-            'centralDashboards':CentralDashboard.objects.all()
-            
+            "sites": sites,
+            "measurement": measurement,
+            "period_type": period_type,
+            'config':config
         }
-
-        return render(request, 'indivDashboard2.html', context)
+        return render(request, "indivCentralDashboard.html", context)
     else:
-        return redirect('/dashboard')
+        return HttpResponse("You are not authorized to enter this page.")
+
+
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import Dashboard, Site, HierarchyDataAggregate
+from django.utils.dateparse import parse_date
+
+def grouped_chart_data_for_site(request, site_id, measurement, period_type):
+    if not (request.user.is_superuser or request.user.userModel.first().role == 'Administrator'):
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    site = get_object_or_404(Site, id=site_id)
+
+    # Parse date filters from GET params
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    start_date = parse_date(start_date_str) if start_date_str else None
+    end_date = parse_date(end_date_str) if end_date_str else None
+
+    aggregates = HierarchyDataAggregate.objects.filter(
+        site=site, period_type=period_type
+    ).order_by("start_date")
+
+    # Apply date range filtering if provided
+    if start_date:
+        aggregates = aggregates.filter(start_date__gte=start_date)
+    if end_date:
+        aggregates = aggregates.filter(start_date__lte=end_date)
+
+    # Collect all unique building names
+    building_set = set()
+    for agg in aggregates:
+        data = agg.data
+        for b in data.get("buildings", {}):
+            building_set.add(b)
+    buildings = sorted(list(building_set))
+
+    # Initialize data holders
+    labels = []  # X-axis (start_date of each period)
+    building_data = {b: [] for b in buildings}  # Y values per building
+
+    for agg in aggregates:
+        labels.append(str(agg.start_date))  # X-axis label
+        data = agg.data
+        buildings_json = data.get("buildings", {})
+
+        for b in buildings:
+            # Safely get building_total[measurement], default to 0
+            val = buildings_json.get(b, {}).get("building_total", {}).get(measurement, 0)
+            building_data[b].append(val)
+
+    # Define distinct colors
+    color_palette = [
+        "rgba(255, 99, 132, 0.8)",
+        "rgba(54, 162, 235, 0.8)",
+        "rgba(255, 206, 86, 0.8)",
+        "rgba(75, 192, 192, 0.8)",
+        "rgba(153, 102, 255, 0.8)",
+        "rgba(255, 159, 64, 0.8)",
+        "rgba(199, 199, 199, 0.8)",
+        "rgba(83, 102, 255, 0.8)",
+    ]
+
+    # Build dataset list for Chart.js
+    datasets = []
+    for i, b in enumerate(buildings):
+        datasets.append({
+            "label": b,
+            "data": building_data[b],
+            "backgroundColor": color_palette[i % len(color_palette)],
+            "stack": 'stack1'
+        })
+
+    return JsonResponse({
+        "labels": labels,
+        "datasets": datasets,
+        "site": site.name,
+        "measurement": measurement
+    })
+
+
 
 
 
@@ -593,15 +663,9 @@ def heatmap_data(request, dashboard_id, meter_id, start_date, end_date, measurem
 def newDashboard(request):
     if request.method == 'POST':
         title = request.POST['title']
-        isCentral = request.POST.get('is_central')  # returns None if checkbox is unchecked
-
-        if isCentral:
-            # Create a Central Dashboard (no site)
-            CentralDashboard.objects.create(title=title)
-        else:
-            siteID = request.POST['site']
-            site = get_object_or_404(Site, id=siteID)
-            Dashboard.objects.create(title=title, site=site)
+        siteID = request.POST['site']
+        site = get_object_or_404(Site, id=siteID)
+        Dashboard.objects.create(title=title, site=site)
 
     return redirect("/dashboard")
 
