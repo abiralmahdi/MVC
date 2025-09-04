@@ -307,7 +307,7 @@
               </li>
               <li class="nav-item">
                 {% if config.report %}
-                <a class="nav-link {% if 'reports' in request.path and 'viewSavedReports' not in request.path %} text-info fw-bold {% endif %}" href="/reports">Reports</a>
+                <a class="nav-link {% if 'reports' in request.path and 'viewSavedReports' not in request.path and 'billing' not in request.path %} text-info fw-bold {% endif %}" href="/reports">Reports</a>
                 {% else %}
                 <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="This service is disabled. Please contact MARKS Automation for further enquiries.">
                   <button 
@@ -328,7 +328,21 @@
                     type="button"
                     class="nav-link" 
                     disabled>
-                    Alarms
+                    Saved Reports
+                  </button>
+                </span>
+                {% endif %}
+              </li>
+              <li class="nav-item">
+                {% if config.report %}
+                <a class="nav-link {% if 'billing' in request.path %} text-info fw-bold {% endif %}" href="/reports/billing">Billing</a>
+                {% else %}
+                <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="This service is disabled. Please contact MARKS Automation for further enquiries.">
+                  <button 
+                    type="button"
+                    class="nav-link" 
+                    disabled>
+                    Billing
                   </button>
                 </span>
                 {% endif %}
@@ -337,6 +351,7 @@
               <li class="nav-item">
                 <a class="nav-link {% if 'setting' in request.path %} text-info fw-bold {% endif %}" href="/settings">Settings</a>
               </li>
+
               {% else %}
               <li class="nav-item">
                 <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="You are not authorized to view this page">

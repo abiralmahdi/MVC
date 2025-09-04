@@ -1,0 +1,230 @@
+{% extends 'layout.html' %}
+{% block body %}
+
+<style>
+    .accordion-button::after {
+    display: none !important;
+}
+</style>
+
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
+    style="overflow-y: auto;">
+    <div class="d-flex m-3">
+        <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
+        <h3 class="h6">Vision Center</h3>
+    </div>
+
+    <form class="form m-3">
+        <div class="form-group">
+            <input type="text" class="form-control" placeholder="Search...">
+        </div>
+    </form>
+
+    <div class="accordion accordion-flush" id="sidebarAccordion">
+      {% for site in sites %}
+      <!-- Site Accordion -->
+      <div class="accordion-item bg-dark border-0">
+          <h2 class="accordion-header">
+              <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#siteCollapse{{ forloop.counter }}">
+                  <i class="fa-solid fa-folder"></i> 
+                  <span class="mx-2">{{ site.name }}</span>
+              </button>
+          </h2>
+          <div id="siteCollapse{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+              <div class="accordion-body pl-3">
+  
+                  <ul class="list-unstyled">
+                      {% for billing in billings %}
+                      <li>
+                          <a href="/reports/billing/{{ billing.id }}"
+                              class="text-white text-decoration-none">
+                              <i class="fa-solid fa-file"></i> 
+                              {{ billing.meter.name }}, {{ billing.meter.area.name }}, {{ billing.meter.area.building.name }} - ({{billing.date_range_start}}-{{billing.date_range_end}})
+                          </a>
+                      </li>
+                      {% endfor %}
+                  </ul>
+  
+              </div>
+          </div>
+      </div>
+  {% endfor %}
+  
+    </div>
+</div>
+
+
+<!-- Overlay -->
+<div id="overlay" class="overlay"></div>
+<div class="container mt-4 d-flex justify-content-center align-items-center">
+    
+        
+    <div class="w-100">
+        <form method="post" action="/reports/create_billing" id="billing-form">
+          {% csrf_token %}
+      
+          <div class="card shadow bg-dark text-light border-0 rounded-3">
+            <div class="card-header bg-black text-white">
+              <h5 class="mb-0">Billing Information</h5>
+            </div>
+            <div class="card-body p-4">
+
+              <div class="row">
+                <!-- Billing Authority -->
+                <div class="col-md-12 mb-3">
+                  <label class="form-label fw-bold">Billing Authority</label>
+                  <input type="text" name="authority" class="form-control" placeholder="Enter billing authority" required>
+                </div>
+              </div>
+      
+              <div class="row">
+                <!-- Meter -->
+                <div class="col-md-12 mb-3">
+                  <label class="form-label fw-bold">Meter</label>
+                  <select name="meter" class="form-select">
+                    {% for meter in meters %}
+                      <option value="{{ meter.id }}">{{ meter.name }}, {{ meter.area.name }}, {{ meter.area.building.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+      
+              <div class="row">
+                <!-- Rate -->
+                <div class="col-md-4 mb-3">
+                  <label class="form-label fw-bold">Rate</label>
+                  <input type="number" step="0.0001" name="rate" class="form-control" placeholder="Enter rate">
+                </div>
+                <!-- Tax -->
+                <div class="col-md-4 mb-3">
+                  <label class="form-label fw-bold">Tax (%)</label>
+                  <input type="number" step="0.01" name="tax" class="form-control" placeholder="e.g. 15">
+                </div>
+                <!-- Tax -->
+                <div class="col-md-4 mb-3">
+                  <label class="form-label fw-bold">Penalty if paid after due date</label>
+                  <input type="number" step="0.01" name="penalty" class="form-control" placeholder="Penalty">
+                </div>
+              </div>
+      
+              <div class="row">
+                <!-- Date Range Start -->
+                <div class="col-md-4 mb-3">
+                  <label class="form-label fw-bold">Previous Date</label>
+                  <input type="date" name="date_range_start" class="form-control">
+                </div>
+      
+                <!-- Date Range End -->
+                <div class="col-md-4 mb-3">
+                  <label class="form-label fw-bold">Current Date</label>
+                  <input type="date" name="date_range_end" class="form-control">
+                </div>
+      
+                <!-- Due Date (Auto set to +1 month) -->
+                <div class="col-md-4 mb-3">
+                  <label class="form-label fw-bold">Billing Due Date</label>
+                  <input type="date" name="date_due" id="date_due" class="form-control" readonly>
+                </div>
+              </div>
+      
+              <!-- Dynamic Extra Fields -->
+              <div class="mb-3">
+                <label class="form-label fw-bold">Extra Fields</label>
+                <div id="extra-fields-container"></div>
+                <button type="button" class="btn btn-sm btn-outline-light mt-2" id="add-field-btn">+ Add Field</button>
+                <input type="hidden" name="extra_fields" id="extra-fields-json"> <!-- invisible field -->
+              </div>
+      
+              <!-- Remarks -->
+              <div class="mb-3">
+                <label class="form-label fw-bold">Remarks</label>
+                <textarea name="remarks" class="form-control" rows="3" placeholder="Additional notes..."></textarea>
+              </div>
+      
+            </div>
+      
+            <div class="card-footer text-end">
+              <button type="reset" class="btn btn-light">Reset</button>
+              <!-- 👇 Changed to normal button -->
+              <button type="button" class="btn btn-secondary" id="save-billing-btn">💾 Save Billing</button>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <script>
+        const addBtn = document.getElementById("add-field-btn");
+        const container = document.getElementById("extra-fields-container");
+        const hiddenInput = document.getElementById("extra-fields-json");
+        const dueDateInput = document.getElementById("date_due");
+        const form = document.getElementById("billing-form");
+        const saveBtn = document.getElementById("save-billing-btn");
+      
+        // Auto set Billing Due Date = today + 1 month
+        function setBillingDueDate() {
+          const today = new Date();
+          today.setMonth(today.getMonth() + 1); // Add 1 month
+          const yyyy = today.getFullYear();
+          const mm = String(today.getMonth() + 1).padStart(2, "0");
+          const dd = String(today.getDate()).padStart(2, "0");
+          dueDateInput.value = `${yyyy}-${mm}-${dd}`;
+        }
+        setBillingDueDate();
+      
+        // Add extra field row
+        addBtn.addEventListener("click", function () {
+          const row = document.createElement("div");
+          row.className = "row mb-2 extra-field-row";
+      
+          row.innerHTML = `
+            <div class="col-md-6">
+              <input type="text" class="form-control field-name" placeholder="Field Name">
+            </div>
+            <div class="col-md-6">
+              <input type="number" step="0.01" class="form-control field-value" placeholder="Value">
+            </div>
+          `;
+      
+          container.appendChild(row);
+        });
+      
+        // Function to collect extra fields
+        function updateHiddenInput() {
+          const rows = container.getElementsByClassName("extra-field-row");
+          const data = {};
+      
+          for (let i = 0; i < rows.length; i++) {
+            const nameInput = rows[i].getElementsByClassName("field-name")[0];
+            const valueInput = rows[i].getElementsByClassName("field-value")[0];
+            const key = nameInput.value.trim();
+            const val = parseFloat(valueInput.value);
+            if (key && !isNaN(val)) {
+              data[key] = val;
+            }
+          }
+      
+          hiddenInput.value = JSON.stringify(data);
+        }
+      
+        // Handle save button click
+        saveBtn.addEventListener("click", function () {
+          updateHiddenInput();   // 1. update JSON
+          form.submit();         // 2. submit form manually
+        });
+      </script>
+      
+      
+
+
+
+  </div>
+  
+      
+  
+
+
+
+{% endblock %}

@@ -9,7 +9,7 @@ CUMULATIVE_FIELDS = {
     "Total Gas Volume",
     "Total Steam",
     "Total Volume",
-}
+ }
 
 # ✅ Define your meter types exactly like you generated them
 METER_DEFINITIONS = {
@@ -153,6 +153,6 @@ for site in tqdm(sites, desc="Sites", unit="site"):
         for raw_date in raw_dates:
             norm = normalize_start_date(raw_date.date(), period_type)
             normalized_dates.add(norm)
-
+                                                                                                                        
         for norm_date in tqdm(sorted(normalized_dates), desc=f"{period_type} dates", unit="date", leave=False):
             create_hierarchy_aggregate(site, period_type, norm_date, meters)

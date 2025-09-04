@@ -3,15 +3,9 @@
 
 
 <!-- Include Leaflet CSS and JS for OpenStreetMap -->
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  crossorigin=""
-/>
-<script
-  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  crossorigin=""
-></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 
 
 <style>
@@ -234,7 +228,7 @@ if (navigator.geolocation) {
               <td>{{site.buildings.count}}</td>
               <td><a class="btn btn-sm btn-info" data-bs-toggle="modal"
                   data-bs-target="#siteDetailsModal{{ site.id }}"><i class="fa-solid fa-eye"></i></a></td>
-              <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteSite"><i class="fa-solid fa-trash"></i></a></td>
+              <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteSite/{{site.id}}"><i class="fa-solid fa-trash"></i></a></td>
             </tr>
             {% endfor %}
           </tbody>
@@ -411,7 +405,7 @@ if (navigator.geolocation) {
               <td>{{building.areas.count}}</td>
               <td>{{building.meter_count}}</td>
               <td><a class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#buildingDetailsModal{{ building.id }}"><i class="fa-solid fa-eye"></i></a></td>
-              <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteBuilding"><i class="fa-solid fa-trash"></i></a></td>
+              <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteBuilding/{{building.id}}"><i class="fa-solid fa-trash"></i></a></td>
             </tr>
             {% endfor %}
           </tbody>
@@ -553,7 +547,7 @@ if (navigator.geolocation) {
               <td>{{area.building.name}}</td>
               <td>{{area.meters.count}}</td>
               <td><a class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#areaDetailsModal{{ area.id }}"><i class="fa-solid fa-eye"></i></a></td>
-              <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteArea"><i class="fa-solid fa-trash"></i></a></td>            
+              <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteArea/{{area.id}}"><i class="fa-solid fa-trash"></i></a></td>            
             </tr>
             {% endfor %}
           </tbody>
@@ -710,7 +704,7 @@ if (navigator.geolocation) {
               <td>{{meter.area.building.name}}</td>
               <td>{{meter.area.name}}</td>
               <td><a class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#meterDetailsModal{{ meter.id }}"><i class="fa-solid fa-eye"></i></a></td>
-              <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteMeter"><i class="fa-solid fa-trash"></i></a></td>
+              <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteMeter/{{meter.id}}"><i class="fa-solid fa-trash"></i></a></td>
             </tr>
             {% endfor %}
           </tbody>

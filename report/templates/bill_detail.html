@@ -1,0 +1,266 @@
+{% extends 'layout.html' %}
+{% load humanize %}
+{% block body %}
+
+<style>
+  body {
+    background-color: #212529; /* Bootstrap bg-dark */
+    color: #f8f9fa; /* Light text for dark bg */
+  }
+
+  table {
+    background-color: #f8f9fa !important; /* Bootstrap bg-light */
+    color: #212529 !important; /* Dark text inside table */
+  }
+
+  @media print {
+    @page {
+        size: landscape; /* Landscape orientation */
+        margin: 10mm;
+    }
+    
+    body * {
+        visibility: hidden;
+    }
+
+    #printable, #printable * {
+        visibility: visible;
+    }
+
+    #printable {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+        background: white !important;
+        color: black !important;
+    }
+
+    th, td {
+        padding: 2px 4px !important;
+        font-size: 12pt !important;
+    }
+}
+
+</style>
+
+<!-- html2pdf.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+  .accordion-button::after {
+  display: none !important;
+}
+</style>
+
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
+  style="overflow-y: auto;">
+  <div class="d-flex m-3">
+      <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
+      <h3 class="h6">Vision Center</h3>
+  </div>
+
+  <form class="form m-3">
+      <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search...">
+      </div>
+  </form>
+
+  <div class="accordion accordion-flush" id="sidebarAccordion">
+    {% for site in sites %}
+    <!-- Site Accordion -->
+    <div class="accordion-item bg-dark border-0">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+                data-bs-target="#siteCollapse{{ forloop.counter }}">
+                <i class="fa-solid fa-folder"></i> 
+                <span class="mx-2">{{ site.name }}</span>
+            </button>
+        </h2>
+        <div id="siteCollapse{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+            <div class="accordion-body pl-3">
+
+                <ul class="list-unstyled">
+                    {% for billing in billings %}
+                    <li>
+                        <a href="/reports/billing/{{ billing.id }}"
+                            class="text-white text-decoration-none">
+                            <i class="fa-solid fa-file"></i> 
+                            {{ billing.meter.name }}, {{ billing.meter.area.name }}, {{ billing.meter.area.building.name }} - ({{billing.date_range_start}}-{{billing.date_range_end}})
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
+  </div>
+</div>
+
+
+<!-- Overlay -->
+<div id="overlay" class="overlay"></div>
+
+<div class="container">
+
+  <!-- Buttons at top-right -->
+  <div class="d-flex justify-content-end mb-2 mt-4 no-print gap-2">
+    <button class="btn btn-info fw-bold" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button>
+    <button class="btn btn-info fw-bold" onclick="downloadPDF()"><i class="fa-solid fa-file"></i> Download PDF</button>
+  </div>
+
+  <!-- Printable Section -->
+  <div class="p-5" id="printable" style="background-color: white;">
+
+    <!-- Section 1 -->
+    <span class="fw-bold text-dark mt-5 pt-5">Billing Authority:</span><br>
+    <span class="text-dark">{{billing.authority}}</span>
+    <table class="table table-bordered mt-2">
+      <tbody>
+        <tr>
+          <td>
+            <h5><strong>CompanyX</strong></h5>
+            <p>
+              Meter: {{ billing.meter.name }} <br>
+              Floor: {{ billing.meter.area.name }} <br>
+              Building: {{ billing.meter.area.building.name }}
+            </p>
+          </td>
+          <td>
+            <h6><strong>Tariff:</strong> {{ billing.rate|floatformat:2 }}</h6>
+            <h6><strong>VAT:</strong> {{ billing.tax|floatformat:2 }}%</h6>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Section 2 -->
+    <!-- Section 2 -->
+<div class="row">
+  <!-- Left side table -->
+  <div class="col-md-6">
+    <table class="table table-bordered">
+      <tbody>
+        <tr>
+          <td><strong>Billing Month</strong></td>
+          <td>{{ billing_month }}</td>
+        </tr>
+        <tr>
+          <td><strong>Bill No</strong></td>
+          <td>{{ billing.id }}</td>
+        </tr>
+        <tr>
+          <td><strong>Issue Date</strong></td>
+          <td>{{ billing.created_at }}</td>
+        </tr>
+        <tr>
+          <td><strong>Current Date</strong></td>
+          <td class="d-flex justify-content-between">
+            <span>{{ billing.date_range_end }}</span>
+            <span>{{ last_value|floatformat:2|intcomma }}</span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Previous Date</strong></td>
+          <td class="d-flex justify-content-between">
+            <span>{{ billing.date_range_start }}</span>
+            <span>{{ first_value|floatformat:2|intcomma }}</span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Difference</strong></td>
+          <td class="d-flex justify-content-end">
+            <span>{{ total_consumption|floatformat:2|intcomma }}</span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>KWH Consumed</strong></td>
+          <td class="d-flex justify-content-end">
+            <span>{{ total_consumption|floatformat:2|intcomma }}</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Right side table -->
+  <div class="col-md-6">
+    <table class="table table-bordered">
+      <tbody>
+        {% for key, value in extra_fields.items %}
+        <tr>
+          <td><strong>{{ key }}</strong></td>
+          <td class="text-end">{{ value }}</td> <!-- already formatted in view -->
+        </tr>
+        {% endfor %}
+
+        <tr>
+          <td><strong>Total Energy Charges</strong></td>
+          <td class="text-end">{{ total_energy_charges }}</td>
+        </tr>
+        <tr>
+          <td><strong>Total Bill without VAT</strong></td>
+          <td class="text-end"><strong>{{ total_bill }}</strong></td>
+        </tr>
+        <tr>
+          <td><strong>VAT ({{ billing.tax }}%)</strong></td>
+          <td class="text-end">{{ vat_amount }}</td>
+        </tr>
+        <tr>
+          <td><strong>Total Bill with VAT</strong></td>
+          <td class="text-end"><strong>{{ total_with_vat }}</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Total if paid after due date</strong></td>
+          <td class="text-end"><strong>{{ total_with_penalty }}</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="mt-3 container">
+  <p class=" text-dark"><strong>Amount in words: </strong>{{ total_bill_words }}</p>
+  <p class=" text-dark">{{ billing.remarks }}</p>
+</div>
+
+    <!-- Report generated by -->
+    <div class="d-flex justify-content-end mt-4">
+      <p class="mb-0 text-dark">
+        <strong>Report generated by:</strong> {{ billing.generatedBy.name }} - {{ billing.generatedBy.role }}
+      </p>
+    </div>
+
+  </div> <!-- /printable -->
+
+</div>
+
+<script>
+function downloadPDF() {
+    const element = document.getElementById('printable');
+    const opt = {
+        margin: 0.5,
+        filename: 'Billing_{{ billing.id }}.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } // landscape here
+    };
+    html2pdf().set(opt).from(element).save();
+}
+</script>
+
+{% endblock %}

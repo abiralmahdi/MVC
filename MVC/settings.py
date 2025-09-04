@@ -41,12 +41,13 @@ INSTALLED_APPS = [
     'dynamic',
     'dashboard',
     'django.contrib.admin',
+    'django.contrib.humanize',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'fontawesomefree' 
+    'fontawesomefree'
 ]
 
 MIDDLEWARE = [

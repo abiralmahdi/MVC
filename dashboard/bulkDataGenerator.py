@@ -1,17 +1,17 @@
 import random
 from datetime import datetime, timedelta
 from tqdm import tqdm
-from dashboard.models import MeterReading
+from dashboard.models import *
 from dynamic.models import Meters
 
 # Get the meter instance
-meter, _ = Meters.objects.get_or_create(name="Meter A1-7-1")
+meter, _ = Meters.objects.get_or_create(name="Meter A1-2-3")
 
 # Starting timestamp
-start_time = datetime.strptime("03-09-25 00:00", "%d-%m-%y %H:%M")
+start_time = datetime.strptime("03-05-25 00:00", "%d-%m-%y %H:%M")
 
 # Number of entries to generate
-num_entries = 144  # 105120 for 2 year at 10-minute intervals, or 144 for daily. 13140 for 3 month
+num_entries = 13140  # 105120 for 2 year at 10-minute intervals, or 144 for daily. 13140 for 3 month
 
 current_time = start_time
 
@@ -19,9 +19,10 @@ current_time = start_time
 total_active_power = 1000.0  # e.g., kWh counter
 total_reactive_power = 100.0
 
-print("Generating and saving readings...")
+# List to hold objects for bulk creation
+readings_to_create = []
 
-for _ in tqdm(range(num_entries), desc="Saving readings"):
+for _ in tqdm(range(num_entries), desc="Generating readings"):
     # Small realistic deltas
     active_increment = round(random.uniform(1.5, 3.5), 3)
     reactive_increment = round(random.uniform(0.2, 0.5), 3)
@@ -97,14 +98,18 @@ for _ in tqdm(range(num_entries), desc="Saving readings"):
         "Minimum Power Factor L3": round(random.uniform(0.96, 0.97), 2), 
     }
 
-    # Use MeterReading.objects.create() to trigger the save() method
-    MeterReading.objects.create(
+    # Create an instance but DO NOT save it yet
+    reading_instance = MeterReading(
         meter=meter,
         timestamp=current_time,
         data=data
     )
+    readings_to_create.append(reading_instance)
 
     # Advance time
     current_time += timedelta(minutes=10)
 
-print(f"Successfully created and processed {num_entries} new records.")
+# Finally, save all the objects in one go
+print("Saving all records with bulk_create...")
+MeterReading.objects.bulk_create(readings_to_create)
+print(f"Successfully created {len(readings_to_create)} new records.")
