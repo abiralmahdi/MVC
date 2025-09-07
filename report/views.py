@@ -590,11 +590,11 @@ def billing(request):
     if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
         sites = Site.objects.all()
         billings = Billing.objects.all()
-        meters = Meters.objects.all()
+        meters = Meters.objects.filter(meterType='Electricity Meter')
         measurements = Measurements.objects.all()
     else:
         sites = [UserModel.objects.filter(user=request.user).first().site]
-        meters = Meters.objects.filter(area__building__site=UserModel.objects.get(user=request.user).site)
+        meters = Meters.objects.filter(area__building__site=UserModel.objects.get(user=request.user).site, meterType='Electricity Meter')
         billings = Billing.objects.filter(meter__in=meters)
         measurements = Measurements.objects.all()
     

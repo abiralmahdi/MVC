@@ -19,7 +19,7 @@ class ReportDiagram(models.Model):
         on_delete=models.CASCADE
     )
 
-    site = models.ForeignKey(Site, on_delete=models.PROTECT, null=True, blank=True)
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, null=True, blank=True)
     diagram_type = models.CharField(max_length=50)
 
     # Meters can be empty for Sankey, single for Table

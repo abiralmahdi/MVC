@@ -3,7 +3,7 @@ import random
 import string
 
 # --- Site names: A, B, C ---
-site_letters = list(string.ascii_uppercase)[:3]  # ['A', 'B', 'C']
+site_letters = list(string.ascii_uppercase)[:2]  # ['A', 'B', 'C']
 
 sites = []
 for letter in site_letters:
@@ -52,17 +52,17 @@ area_count = 0
 meter_count = 0
 
 for site_letter, site in sites:
-    for b in range(1, 6):  # 5 buildings per site
+    for b in range(1, 3):  # 5 buildings per site
         building_name = f"Building {site_letter}{b}"  # e.g., Building A1
         building = Buildings.objects.create(name=building_name, site=site)
         building_count += 1
 
-        for a in range(1, 11):  # 10 areas per building
+        for a in range(1, 5):  # 10 areas per building
             area_name = f"Area {site_letter}{b}-{a}"  # e.g., Area A1-1
             area = Areas.objects.create(name=area_name, building=building)
             area_count += 1
 
-            for m in range(1, 6):  # 5 meters per area
+            for m in range(1, 4):  # 5 meters per area
                 meter_type = random.choice(list(meter_measurements.keys()))
                 meter_name = f"Meter {site_letter}{b}-{a}-{m}"  # e.g., Meter A1-1-1
                 ip = f"192.168.{random.randint(0,255)}.{random.randint(1,254)}"
