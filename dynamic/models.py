@@ -11,12 +11,15 @@ class Site(models.Model):
 class Buildings(models.Model):
     name = models.CharField(max_length=100)
     site = models.ForeignKey(Site, related_name='buildings', on_delete=models.CASCADE)
+    image = models.FileField(upload_to="media/buildingImages", null=True, blank=True)
     def __str__(self):
         return self.name + " - " + self.site.name
+
 
 class Areas(models.Model):
     name = models.CharField(max_length=100)
     building = models.ForeignKey(Buildings, related_name="areas", on_delete=models.CASCADE)
+    image = models.FileField(upload_to="media/areaImages", null=True, blank=True)
     def __str__(self):
         return self.name + " - " + self.building.name + " - " + self.building.site.name
 

@@ -19,11 +19,14 @@ class Gadgets(models.Model):
     name = models.CharField(max_length=100)
     gadget_type = models.CharField(max_length=100)
     dashboard = models.ForeignKey(Dashboard, related_name='gadgets', on_delete=models.CASCADE)
-    meters = models.ManyToManyField(Meters, related_name='gadgets')  
+    meters = models.ManyToManyField(Meters, related_name='gadgets', null=True, blank=True)  
     measurement = models.ManyToManyField(Measurements, related_name='gadgets')
+    building = models.ForeignKey(Buildings, on_delete=models.CASCADE, null=True, blank=True)
+    area = models.ForeignKey(Areas, on_delete=models.CASCADE, null=True, blank=True)
     access = models.JSONField()
     def __str__(self):
         return self.name
+    
     
 class Files(models.Model):
     name = models.CharField(max_length=100)

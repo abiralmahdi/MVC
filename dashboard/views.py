@@ -82,7 +82,7 @@ def indivDashboard(request, dashboardID):
     config = GlobalConfiguration.objects.first()
     dashboard_ = get_object_or_404(Dashboard, id=dashboardID)
     sites = Site.objects.prefetch_related(
-        'buildings__areas__meters'
+        'buildings__areas__meters', 'buildings'
     ).all()
     if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
         pass
@@ -94,7 +94,8 @@ def indivDashboard(request, dashboardID):
         site = dashboard_.site
         areas = Areas.objects.filter(building__site=site).prefetch_related('meters')
         meters = Meters.objects.filter(area__in=areas)
-        measurements = Measurements.objects.filter(meter__in=meters)
+        # measurements = Measurements.objects.filter(meter__in=meters)
+        measurements = Measurements.objects.all()
 
         alarms = Alarms.objects.filter(acknowledged=False, meter__in=meters)
         for alarm in alarms:
@@ -656,6 +657,86 @@ def heatmap_data(request, dashboard_id, meter_id, start_date, end_date, measurem
         })
     else:
         return redirect('/dashboard')
+    
+
+
+
+import io
+import base64
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required, user_passes_test
+from PIL import Image, ImageDraw, ImageFont
+from dashboard.models import Buildings, Areas, HierarchyDataAggregate
+from pprint import pprint
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def building_heatmap(request, dashboard_id, buildingID, measurement):
+    building = Buildings.objects.get(id=int(buildingID))
+    site = building.site
+    areas = building.areas.all().prefetch_related('meters')
+
+    # Calculate total measurement per area
+    area_values = {}
+    for area in areas:
+        total = 0
+        agg = HierarchyDataAggregate.objects.filter(
+            site=site,
+            period_type='monthly'  # choose dynamically if needed
+        ).order_by('-start_date').first()            
+
+        if agg:
+            building_data = agg.data.get('buildings', {}).get(building.name, {})
+            area_data = building_data.get('areas', {}).get(area.name, {})
+            area_total = area_data.get('area_total', {})
+            total += area_total.get(measurement, 0)
+        area_values[area.name] = total
+
+    if not area_values:
+        return JsonResponse({'error': 'No data for this building'}, status=404)
+
+    print(area_values)
+
+    # Image settings
+    width = 400
+    height_per_area = 50
+    height = height_per_area * len(area_values)
+    img = Image.new('RGB', (width, height), color='white')
+    draw = ImageDraw.Draw(img)
+
+    # Color mapping (green=low, red=high)
+    min_val = min(area_values.values())
+    max_val = max(area_values.values())
+    def get_color(val):
+        # Normalize 0..1
+        ratio = (val - min_val) / (max_val - min_val) if max_val > min_val else 0
+        r = int(255 * ratio)
+        g = int(255 * (1 - ratio))
+        b = 0
+        return (r, g, b)
+
+    # Optional: font
+    try:
+        font = ImageFont.truetype("arial.ttf", 16)
+    except:
+        font = ImageFont.load_default()
+
+    # Draw each area
+    for i, (area_name, val) in enumerate(area_values.items()):
+        y0 = i * height_per_area
+        y1 = y0 + height_per_area
+        color = get_color(val)
+        draw.rectangle([0, y0, width, y1], fill=color)
+        text = f"{area_name}: {val:.1f}"
+        draw.text((10, y0 + 10), text, fill='black', font=font)
+
+    # Save image to base64
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+    img_base64 = base64.b64encode(buffer.read()).decode()
+    buffer.close()
+
+    return JsonResponse({'image': f"data:image/png;base64,{img_base64}"})
 
 
 @login_required
@@ -681,6 +762,8 @@ def newGadget(request, dashboardID):
         meters_ids = request.POST.getlist('meters')
         meters = Meters.objects.filter(id__in=meters_ids)
 
+        building = request.POST['building']
+
         # Get measurements based on gadget type
         measurement_ids = request.POST.getlist('measurement')
         if not measurement_ids:
@@ -696,7 +779,8 @@ def newGadget(request, dashboardID):
             name=name,
             gadget_type=gadget_type,
             dashboard=dashboard_,
-            access=access
+            access=access,
+            building=Buildings.objects.get(id=int(building))
         )
         gadget.meters.set(meters)
         gadget.measurement.set(measurements)
@@ -727,10 +811,13 @@ def editGadget(request, dashboardID, gadgetID):
         measurements = request.POST.getlist('measurement')
         access = request.POST.getlist('access')
 
+        building = request.POST['building']
+
         # Update gadget fields
         gadget.name = name
         gadget.gadget_type = gadget_type
         gadget.access = access  # JSONField will store list as JSON
+        gadget.building = Buildings.objects.get(id=int(building))
 
         # Update M2M relationships
         gadget.meters.set(meters)

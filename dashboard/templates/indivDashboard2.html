@@ -190,8 +190,7 @@
     </form>
     </div>
   </div>
-
-  <!-- New Gadget Modal -->
+<!-- New Gadget Modal -->
 <div class="modal fade" id="addGadgetModal" tabindex="-1" aria-labelledby="addGadgetModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <form method="POST" action="/dashboard/{{dashboard.id}}/newGadget">
@@ -220,12 +219,14 @@
                             <option value="tool" id="tool-option">Tool</option>
                             <option value="sankey" id="sankey-option">Sankey</option>
                             <option value="heatmap" id="heat-map">Heat Map</option>
+                            <option value="picturemap" id="picture-map">Picture Map</option>
                         </select>
                     </div>
 
-                    <div class="mb-3">
+                    <!-- Meter Selection -->
+                    <div class="mb-3" id="meters-section">
                         <label for="meters" class="form-label">Meters</label>
-                        <select class="form-select" id="meters" name="meters" multiple required>
+                        <select class="form-select" id="meters" name="meters" multiple>
                             {% for area in areas %}
                             <optgroup label="{{ area.name }}">
                                 {% for meter in area.meters.all %}
@@ -235,6 +236,16 @@
                             {% endfor %}
                         </select>
                         <div class="form-text text-light">Hold Ctrl (Windows) or Cmd (Mac) to select multiple meters.</div>
+                    </div>
+
+                    <!-- Building Selection (only for Picture Map) -->
+                    <div class="mb-3 d-none" id="building-section">
+                        <label for="building" class="form-label">Building</label>
+                        <select class="form-select" id="building" name="building">
+                            {% for building in dashboard.site.buildings.all %}
+                            <option value="{{ building.id }}">{{ building.name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
 
                     <div class="mb-3">
@@ -270,12 +281,15 @@
         </form>
     </div>
 </div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const metersSelect = document.getElementById('meters');
         const gadgetTypeSelect = document.getElementById('gadget_type');
         const tableOption = document.getElementById('table-option');
         const measurementSelect = document.getElementById('measurement');
+        const metersSection = document.getElementById('meters-section');
+        const buildingSection = document.getElementById('building-section');
 
         // Handle meter selection changes
         metersSelect.addEventListener('change', function () {
@@ -285,7 +299,7 @@
             // Disable "Table" option if more than one meter is selected
             tableOption.disabled = moreThanOne;
 
-            // If "Table" is selected and it becomes disabled, reset the selection
+            // Reset if invalid selection for table
             if (moreThanOne && gadgetTypeSelect.value === 'table') {
                 gadgetTypeSelect.value = '';
                 measurementSelect.disabled = false;
@@ -297,32 +311,48 @@
             const type = this.value;
 
             if (type === 'table') {
-        measurementSelect.disabled = true;
-        metersSelect.multiple = true;      // likely keep meters multi-select
-        measurementSelect.multiple = false; // measurement single-select or disabled
-        measurementSelect.selectedIndex = -1;
-    } 
-    else if (type === 'line') {
-        measurementSelect.disabled = false;
-        metersSelect.multiple = true;      // multiple meters allowed
-        measurementSelect.multiple = true; // multiple measurements allowed
-        metersSelect.selectedIndex = -1;
-        measurementSelect.selectedIndex = -1;
-    } 
-    else if (type === 'tool') {
-        measurementSelect.disabled = false;
-        metersSelect.multiple = false;     // single meter only
-        measurementSelect.multiple = true; // multiple measurements allowed
-        metersSelect.selectedIndex = -1;
-        measurementSelect.selectedIndex = -1;
-    } 
-    else {
-        measurementSelect.disabled = false;
-        metersSelect.multiple = true;      // default meters multi-select
-        measurementSelect.multiple = false; // default measurement single-select
-        metersSelect.selectedIndex = -1;
-        measurementSelect.selectedIndex = -1;
-    }
+                measurementSelect.disabled = true;
+                metersSelect.multiple = true;
+                measurementSelect.multiple = false;
+                measurementSelect.selectedIndex = -1;
+                metersSection.classList.remove('d-none');
+                buildingSection.classList.add('d-none');
+            } 
+            else if (type === 'line') {
+                measurementSelect.disabled = false;
+                metersSelect.multiple = true;
+                measurementSelect.multiple = true;
+                metersSelect.selectedIndex = -1;
+                measurementSelect.selectedIndex = -1;
+                metersSection.classList.remove('d-none');
+                buildingSection.classList.add('d-none');
+            } 
+            else if (type === 'tool') {
+                measurementSelect.disabled = false;
+                metersSelect.multiple = false;
+                measurementSelect.multiple = true;
+                metersSelect.selectedIndex = -1;
+                measurementSelect.selectedIndex = -1;
+                metersSection.classList.remove('d-none');
+                buildingSection.classList.add('d-none');
+            } 
+            else if (type === 'picturemap') {
+                // Hide Meters, show Building
+                metersSection.classList.add('d-none');
+                buildingSection.classList.remove('d-none');
+                measurementSelect.disabled = false;
+                measurementSelect.multiple = false;
+                measurementSelect.selectedIndex = -1;
+            }
+            else {
+                measurementSelect.disabled = false;
+                metersSelect.multiple = true;
+                measurementSelect.multiple = false;
+                metersSelect.selectedIndex = -1;
+                measurementSelect.selectedIndex = -1;
+                metersSection.classList.remove('d-none');
+                buildingSection.classList.add('d-none');
+            }
         });
     });
 </script>
@@ -632,146 +662,177 @@
                                     <p class="" id="gadget-title{{gadget.id}}" style="font-size: smaller;">{{ gadget.name }}</p>
                                     
 
-
-
-
                                     <!-- Edit gadget Modal -->
                                     <div class="modal fade" id="editGadgetModal{{gadget.id}}" tabindex="-1" aria-labelledby="editGadgetModalLabel{{gadget.id}}" aria-hidden="true">
                                         <div class="modal-dialog">
-                                          <form method="POST" action="/dashboard/{{ dashboard.id }}/editGadget/{{ gadget.id }}/">
+                                        <form method="POST" action="/dashboard/{{ dashboard.id }}/editGadget/{{ gadget.id }}/">
                                             {% csrf_token %}
                                             <div class="modal-content bg-dark text-white">
-                                              <div class="modal-header border-dark">
+                                            <div class="modal-header border-dark">
                                                 <h5 class="modal-title" id="editGadgetModalLabel{{gadget.id}}">Edit Gadget</h5>
                                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                              </div>
-                                      
-                                              <div class="modal-body">
+                                            </div>
+                                    
+                                            <div class="modal-body">
                                                 <!-- Gadget Name -->
                                                 <div class="mb-3">
-                                                  <label for="name" class="form-label">Gadget Name</label>
-                                                  <input type="text" class="form-control" id="name" name="name" value="{{ gadget.name }}" required>
+                                                <label for="name" class="form-label">Gadget Name</label>
+                                                <input type="text" class="form-control" id="name" name="name" value="{{ gadget.name }}" required>
                                                 </div>
-                                      
-                                                <!-- Gadget Type -->
+                                    
+
                                                 <div class="mb-3">
-                                                  <label for="gadget_type" class="form-label">Gadget Type</label>
-                                                  <select class="form-select" id="gadget_type" name="gadget_type" required>
-                                                    {% for option in gadgetTypes %}
-                                                      <option value="{{ option }}" {% if option == gadget.gadget_type %}selected{% endif %}>{{ option|title }}</option>
-                                                    {% endfor %}
-                                                  </select>
+                                                    <label for="gadget_type" class="form-label">Gadget Type</label>
+                                                    <select class="form-select" id="gadget_type" name="gadget_type" required>
+                                                        <option value="">-- Select Type --</option>
+                                                        <option value="pie" {% if gadget.gadget_type == 'pie' %}selected{% endif %}>Pie Chart</option>
+                                                        <option value="bar" {% if gadget.gadget_type == 'bar' %}selected{% endif %}>Bar Chart</option>
+                                                        <option value="line" {% if gadget.gadget_type == 'line' %}selected{% endif %}>Trend Graph</option>
+                                                        <option value="table" {% if gadget.gadget_type == 'table' %}selected{% endif %} id="table-option">Table</option>
+                                                        <option value="tool" {% if gadget.gadget_type == 'tool' %}selected{% endif %} id="tool-option">Tool</option>
+                                                        <option value="sankey" {% if gadget.gadget_type == 'sankey' %}selected{% endif %} id="sankey-option">Sankey</option>
+                                                        <option value="heatmap"  {% if gadget.gadget_type == 'heatmap' %}selected{% endif %} id="heat-map">Heat Map</option>
+                                                        <option value="picturemap" {% if gadget.gadget_type == 'picturemap' %}selected{% endif %} id="picture-map">Picture Map</option>
+                                                    </select>
                                                 </div>
-                                      
+                                    
                                                 <!-- Meters -->
-                                                <div class="mb-3">
-                                                  <label for="meters" class="form-label">Meters</label>
-                                                  <select class="form-select" id="meters" name="meters" multiple required>
+                                                <div class="mb-3" id="meters-section-{{gadget.id}}">
+                                                <label for="meters" class="form-label">Meters</label>
+                                                <select class="form-select" id="meters" name="meters" multiple >
                                                     {% for area in areas %}
-                                                      <optgroup label="{{ area.name }}">
+                                                    <optgroup label="{{ area.name }}">
                                                         {% for meter in area.meters.all %}
-                                                          <option value="{{ meter.id }}"
-                                                            {% if meter in gadget.meters.all %}selected{% endif %}>
+                                                        <option value="{{ meter.id }}" {% if meter in gadget.meters.all %}selected{% endif %}>
                                                             {{ meter.name }}
-                                                          </option>
+                                                        </option>
                                                         {% endfor %}
-                                                      </optgroup>
+                                                    </optgroup>
                                                     {% endfor %}
-                                                  </select>
-                                                  <div class="form-text text-light">Hold Ctrl (Windows) or Cmd (Mac) to select multiple meters.</div>
+                                                </select>
+                                                <div class="form-text text-light">Hold Ctrl (Windows) or Cmd (Mac) to select multiple meters.</div>
                                                 </div>
-                                      
+                                    
+                                                <!-- Building (for Picture Map) -->
+                                                <div class="mb-3 {% if gadget.gadget_type != 'picturemap' %}d-none{% endif %}" id="building-section-{{gadget.id}}">
+                                                <label for="building" class="form-label">Building</label>
+                                                <select class="form-select" id="building" name="building">
+                                                    {% for building in dashboard.site.buildings.all %}
+                                                    <option value="{{ building.id }}" {% if gadget.building and gadget.building.id == building.id %}selected{% endif %}>
+                                                        {{ building.name }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                                </div>
+                                    
                                                 <!-- Measurements -->
                                                 <div class="mb-3">
-                                                  <label for="measurement" class="form-label">Measurements</label>
-                                                  <select class="form-select" id="measurement" name="measurement" {% if gadget.gadget_type == "tool" %}multiple{% endif %} required>
+                                                <label for="measurement" class="form-label">Measurements</label>
+                                                <select class="form-select" id="measurement" name="measurement" {% if gadget.gadget_type == "tool" %}multiple{% endif %} required>
                                                     {% for measurement in measurements %}
-                                                      <option value="{{ measurement.id }}"
-                                                        {% if measurement in gadget.measurement.all %}selected{% endif %}>
+                                                    <option value="{{ measurement.id }}" {% if measurement in gadget.measurement.all %}selected{% endif %}>
                                                         {{ measurement.name }}
-                                                      </option>
+                                                    </option>
                                                     {% endfor %}
-                                                  </select>
+                                                </select>
                                                 </div>
-                                      
+                                    
                                                 <!-- Access Control -->
                                                 <div class="mb-3">
-                                                  <label for="access" class="form-label">Access Control</label>
-                                                  <select class="form-select" id="access" name="access" multiple required>
+                                                <label for="access" class="form-label">Access Control</label>
+                                                <select class="form-select" id="access" name="access" multiple required>
                                                     {% for option in accessControl %}
-                                                      <option value="{{ option }}" {% if option in gadget.access %}selected{% endif %}>{{ option }}</option>
+                                                    <option value="{{ option }}" {% if option in gadget.access %}selected{% endif %}>{{ option }}</option>
                                                     {% endfor %}
-                                                  </select>
-                                                  <div class="form-text text-light">Hold Ctrl (Windows) or Cmd (Mac) to select multiple access levels.</div>
+                                                </select>
+                                                <div class="form-text text-light">Hold Ctrl (Windows) or Cmd (Mac) to select multiple access levels.</div>
                                                 </div>
-                                              </div>
-                                      
-                                              <div class="modal-footer border-dark">
+                                            </div>
+                                    
+                                            <div class="modal-footer border-dark">
                                                 <button type="submit" class="btn btn-info">Update Gadget</button>
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                              </div>
                                             </div>
-                                          </form>
+                                            </div>
+                                        </form>
                                         </div>
-                                      </div>
-                                      <script>
-                                        document.addEventListener('DOMContentLoaded', function () {
-                                          // Find all edit gadget modals on the page
-                                          document.querySelectorAll('[id^="editGadgetModal"]').forEach(function (modal) {
-                                            const gadgetId = modal.id.replace('editGadgetModal', '');
-                                            const metersSelect = modal.querySelector(`#meters`);
-                                            const gadgetTypeSelect = modal.querySelector(`#gadget_type`);
-                                            const measurementSelect = modal.querySelector(`#measurement`);
-                                            const tableOption = modal.querySelector(`#gadget_type option[value="table"]`);
-                                      
-                                            if (!metersSelect || !gadgetTypeSelect || !measurementSelect) return;
-                                      
-                                            // Meter selection changes
-                                            metersSelect.addEventListener('change', function () {
-                                              const selectedMeters = Array.from(this.selectedOptions);
-                                              const moreThanOne = selectedMeters.length > 1;
-                                      
-                                              // Disable "Table" if multiple meters
-                                              if (tableOption) tableOption.disabled = moreThanOne;
-                                      
-                                              if (moreThanOne && gadgetTypeSelect.value === 'table') {
-                                                gadgetTypeSelect.value = '';
-                                                measurementSelect.disabled = false;
-                                              }
-                                            });
-                                      
-                                           // Gadget type selection changes
-                                            gadgetTypeSelect.addEventListener('change', function () {
-                                                const type = this.value;
-
-                                                if (type === 'line') {
-                                                    metersSelect.multiple = true;
-                                                    measurementSelect.multiple = true;
-                                                    measurementSelect.disabled = false;
-                                                } else if (type === 'table') {
-                                                    metersSelect.multiple = true;
-                                                    measurementSelect.multiple = false;
-                                                    measurementSelect.disabled = true;
-                                                } else if (type === 'tool') {
-                                                    metersSelect.multiple = false;
-                                                    measurementSelect.multiple = true;
-                                                    measurementSelect.disabled = false;
-                                                } else {
-                                                    // default fallback
-                                                    metersSelect.multiple = true;
-                                                    measurementSelect.multiple = false;
-                                                    measurementSelect.disabled = false;
-                                                }
-
-                                                // Reset selections
-                                                metersSelect.selectedIndex = -1;
-                                                measurementSelect.selectedIndex = -1;
-                                            });
-
-                                          });
+                                    </div>
+                                    
+                                    <script>
+                                    document.addEventListener('DOMContentLoaded', function () {
+                                        // Find all edit gadget modals on the page
+                                        document.querySelectorAll('[id^="editGadgetModal"]').forEach(function (modal) {
+                                        const gadgetId = modal.id.replace('editGadgetModal', '');
+                                        const metersSelect = modal.querySelector(`#meters`);
+                                        const gadgetTypeSelect = modal.querySelector(`#gadget_type`);
+                                        const measurementSelect = modal.querySelector(`#measurement`);
+                                        const tableOption = modal.querySelector(`#gadget_type option[value="table"]`);
+                                        const metersSection = modal.querySelector(`#meters-section-${gadgetId}`);
+                                        const buildingSection = modal.querySelector(`#building-section-${gadgetId}`);
+                                    
+                                        if (!metersSelect || !gadgetTypeSelect || !measurementSelect) return;
+                                    
+                                        // Meter selection changes
+                                        metersSelect.addEventListener('change', function () {
+                                            const selectedMeters = Array.from(this.selectedOptions);
+                                            const moreThanOne = selectedMeters.length > 1;
+                                    
+                                            // Disable "Table" if multiple meters
+                                            if (tableOption) tableOption.disabled = moreThanOne;
+                                    
+                                            if (moreThanOne && gadgetTypeSelect.value === 'table') {
+                                            gadgetTypeSelect.value = '';
+                                            measurementSelect.disabled = false;
+                                            }
                                         });
-                                      </script>
-                                      
+                                    
+                                        // Gadget type selection changes
+                                        gadgetTypeSelect.addEventListener('change', function () {
+                                            const type = this.value;
+                                    
+                                            if (type === 'line') {
+                                            metersSelect.multiple = true;
+                                            measurementSelect.multiple = true;
+                                            measurementSelect.disabled = false;
+                                            metersSection.classList.remove('d-none');
+                                            buildingSection.classList.add('d-none');
+                                            } 
+                                            else if (type === 'table') {
+                                            metersSelect.multiple = true;
+                                            measurementSelect.multiple = false;
+                                            measurementSelect.disabled = true;
+                                            metersSection.classList.remove('d-none');
+                                            buildingSection.classList.add('d-none');
+                                            } 
+                                            else if (type === 'tool') {
+                                            metersSelect.multiple = false;
+                                            measurementSelect.multiple = true;
+                                            measurementSelect.disabled = false;
+                                            metersSection.classList.remove('d-none');
+                                            buildingSection.classList.add('d-none');
+                                            } 
+                                            else if (type === 'picturemap') {
+                                            metersSection.classList.add('d-none');
+                                            buildingSection.classList.remove('d-none');
+                                            measurementSelect.multiple = false;
+                                            measurementSelect.disabled = false;
+                                            } 
+                                            else {
+                                            metersSelect.multiple = true;
+                                            measurementSelect.multiple = false;
+                                            measurementSelect.disabled = false;
+                                            metersSection.classList.remove('d-none');
+                                            buildingSection.classList.add('d-none');
+                                            }
+                                    
+                                            // Reset selections
+                                            metersSelect.selectedIndex = -1;
+                                            measurementSelect.selectedIndex = -1;
+                                        });
+                                        });
+                                    });
+                                    </script>
+  
 
                                     {% if gadget.gadget_type == 'pie' %}
                                     <!-- Hidden Date Input -->
@@ -920,152 +981,6 @@
                                 {% if gadget.gadget_type == 'line' %}
 
                                 <canvas id="gadget-{{ gadget.id }}" width="300" height="200"></canvas>
-
-                                <!-- <script>
-                                    (function () {
-                                        const gadgetId = {{ gadget.id }};
-                                        const selectedMeasurement = "{{ gadget.measurement.all.0 }}";
-                                        const dashboardId = {{ dashboard.id }};
-                                    
-                                        // Main canvas
-                                        const ctx = document.getElementById(`gadget-${gadgetId}`).getContext('2d');
-                                    
-                                        // Maximized canvas
-                                        const ctxMax = document.getElementById(`gadget-${gadgetId}-max`)?.getContext('2d');
-                                    
-                                        let chartInstance = null;
-                                        let chartInstanceMax = null;
-                                    
-                                        function generateColor(index) {
-                                            return `hsl(${(index * 137) % 360}, 70%, 50%)`;
-                                        }
-                                    
-                                        const meterNames = {
-                                            {% for meter in gadget.meters.all %}
-                                                {{ meter.id }}: "{{ meter.name }}",
-                                            {% endfor %}
-                                        };
-                                    
-                                        function updateChart(readingData) {
-                                            const meterGroups = {};
-                                    
-                                            readingData.forEach(entry => {
-                                                const meterId = entry.meter_id;
-                                                const timestamp = entry.timestamp;
-                                                const value = entry.data[selectedMeasurement];
-                                    
-                                                if (!meterGroups[meterId]) {
-                                                    meterGroups[meterId] = [];
-                                                }
-                                    
-                                                meterGroups[meterId].push({ timestamp, value });
-                                    
-                                                if (meterGroups[meterId].length > 10) {
-                                                    meterGroups[meterId].shift();
-                                                }
-                                            });
-                                    
-                                            const datasets = Object.entries(meterGroups).map(([meterId, entries], index) => {
-                                                const meterName = meterNames[meterId] || `Meter ${meterId}`;
-                                                return {
-                                                    label: meterName,
-                                                    data: entries.map(e => e.value),
-                                                    borderColor: generateColor(index),
-                                                    borderWidth: 1.2,
-                                                    pointRadius: 2,
-                                                    tension: 0.3,
-                                                    fill: false,
-                                                };
-                                            });
-                                    
-                                            const labels = Object.values(meterGroups)[0]?.map(e => e.timestamp) || [];
-                                    
-                                            const allValues = datasets.flatMap(ds => ds.data);
-                                            const minValue = Math.min(...allValues);
-                                            const maxValue = Math.max(...allValues);
-                                            const padding = (maxValue - minValue) * 0.05 || 1;
-                                            const yMin = minValue - padding;
-                                            const yMax = maxValue + padding;
-                                    
-                                            // Destroy old chart(s)
-                                            if (chartInstance) chartInstance.destroy();
-                                            if (chartInstanceMax) chartInstanceMax.destroy();
-                                    
-                                            // Chart config
-                                            const config = {
-                                                type: 'line',
-                                                data: {
-                                                    labels: labels,
-                                                    datasets: datasets
-                                                },
-                                                options: {
-                                                    responsive: true,
-                                                    animation: false,
-                                                    plugins: {
-                                                        legend: {
-                                                            position: 'top',
-                                                            labels: {
-                                                                boxWidth: 10,
-                                                                boxHeight: 10,
-                                                                font: { size: 10 },
-                                                                padding: 8
-                                                            }
-                                                        },
-                                                        title: {
-                                                            display: true,
-                                                            text: selectedMeasurement
-                                                        }
-                                                    },
-                                                    scales: {
-                                                        x: {
-                                                            title: {
-                                                                display: true,
-                                                                text: 'Time'
-                                                            }
-                                                        },
-                                                        y: {
-                                                            title: {
-                                                                display: true,
-                                                                text: selectedMeasurement
-                                                            },
-                                                            min: yMin,
-                                                            max: yMax
-                                                        }
-                                                    }
-                                                }
-                                            };
-                                    
-                                            // Render on both canvases
-                                            chartInstance = new Chart(ctx, config);
-                                    
-                                            if (ctxMax) {
-                                                chartInstanceMax = new Chart(ctxMax, config);
-                                            }
-                                        }
-                                    
-                                        // Date picker event
-                                        document.getElementById("datepicker-{{ gadget.id }}").addEventListener("change", function () {
-                                            const selectedDatetime = this.value;
-                                            if (!selectedDatetime) return;
-                                    
-                                            const url = `/dashboard/${dashboardId}/fetchDateTimeWindow/${gadgetId}/${selectedDatetime}/`;                                    
-                                            axios.get(url)
-                                                .then(response => updateChart(response.data.readingData))
-                                                .catch(error => console.error("Error fetching windowed data:", error));
-                                        });
-                                    
-                                        function fetchDataAndUpdateChart() {
-                                            axios.get(`/dashboard/${dashboardId}/fetchLatestReadings/${gadgetId}`)
-                                                .then(response => updateChart(response.data.readingData))
-                                                .catch(error => console.error("Error fetching data:", error));
-                                        }
-                                    
-                                        fetchDataAndUpdateChart();
-                                        setInterval(fetchDataAndUpdateChart, 3000);
-                                    })();
-                                    </script> -->
-
-
                                     <script>
                                         (function () {
                                             const gadgetId = {{ gadget.id }};
@@ -2268,6 +2183,43 @@
                                         document.addEventListener("DOMContentLoaded", loadHeatmap)
 
                                         </script>
+
+
+
+
+
+
+
+
+
+
+                                        {% elif gadget.gadget_type == 'picturemap' %}
+                                        <div id="heatmap-container" style="width: 400px; margin: auto;">
+                                            <img id="heatmap-image" src="" alt="Building Heatmap" style="width: 100%; display: block;"/>
+                                        </div>
+
+                                        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+                                        <script>
+                                            function loadBuildingHeatmap(buildingID, measurement) {
+                                                const url = "/dashboard/" + {{ dashboard.id }} + "/building_heatmap/" + buildingID + "/" + measurement + "/";
+                                                console.log(url)
+                                                axios.get(url)
+                                                    .then(res => {
+                                                        if(res.data.image){
+                                                            document.getElementById('heatmap-image').src = res.data.image;
+                                                        }
+                                                    })
+                                                    .catch(err => console.error("Heatmap load failed:", err));
+                                            }
+                                            
+                                            // Example
+                                            loadBuildingHeatmap("{{ gadget.building.id }}", "{{ gadget.measurement.all.0 }}");
+                                            </script>
+                                            
+
+
+                                          
+                
                         
                                     {% endif %}
                                     
