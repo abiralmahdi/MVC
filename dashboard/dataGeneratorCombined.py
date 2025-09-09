@@ -149,8 +149,8 @@ def generate_other_meter_data(meter, meter_type, fields, start_time, num_entries
 # ===================
 if __name__ == "__main__":
     # Config
-    start_time = datetime.strptime("03-06-25 00:00", "%d-%m-%y %H:%M")
-    num_entries = 13000  # 1 day of 10-min interval
+    start_time = datetime.strptime("03-09-24 00:00", "%d-%m-%y %H:%M")
+    num_entries = 52560  # 1 day of 10-min interval
     interval = timedelta(minutes=10)
 
     # Loop through all Power Meters (limit to first 3 if you want)

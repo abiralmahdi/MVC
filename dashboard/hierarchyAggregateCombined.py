@@ -138,12 +138,12 @@ def create_hierarchy_aggregate(site, period_type, start_date, meters, meter_read
 # ============================
 
 # ✅ Option A: restrict meters to first 3 of each type
-meters = []
-for meter_type in METER_DEFINITIONS.keys():
-    meters += list(Meters.objects.filter(meterType=meter_type)[:3])
+# meters = []
+# for meter_type in METER_DEFINITIONS.keys():
+#     meters += list(Meters.objects.filter(meterType=meter_type)[:3])
 
 # ✅ Option B: all meters
-# meters = list(Meters.objects.all())
+meters = list(Meters.objects.all())
 
 sites = Site.objects.prefetch_related("buildings__areas__meters__loadType").all()
 period_types = ["weekly", "monthly", "yearly"]

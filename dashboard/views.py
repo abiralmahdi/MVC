@@ -415,8 +415,10 @@ def getData(request, dashboard_id, gadget_id, measurement, date, period):
 
 
 from collections import defaultdict
+
 @login_required
 def getMultiYearBarData(request, dashboard_id, gadget_id, measurement, date, period):
+    
     dashboard_ = get_object_or_404(Dashboard, id=dashboard_id)
     if request.user.is_superuser or request.user.userModel.first().site.id == dashboard_.site.id or request.user.userModel.first().role == 'Administrator':
         try:
@@ -657,16 +659,38 @@ def heatmap_data(request, dashboard_id, meter_id, start_date, end_date, measurem
         })
     else:
         return redirect('/dashboard')
-    
+
+
+# @login_required
+# @user_passes_test(lambda u: u.is_superuser)
+# def building_heatmap(request, dashboard_id, buildingID, measurement):
+#     building = Buildings.objects.get(id=int(buildingID))
+#     site = building.site
+#     areas = building.areas.all().prefetch_related('meters')
+
+#     area_values = {}
+#     agg = HierarchyDataAggregate.objects.filter(
+#         site=site,
+#         period_type='monthly'
+#     ).order_by('-start_date').first()
+
+#     if agg:
+#         building_data = agg.data.get('buildings', {}).get(building.name, {})
+#         for area in areas:
+#             area_data = building_data.get('areas', {}).get(area.name, {})
+#             total = area_data.get('area_total', {}).get(measurement, 0)
+#             area_values[area.name] = round(float(total), 2)
+
+#     if not area_values:
+#         return JsonResponse({'error': 'No data for this building'}, status=404)
+
+#     return JsonResponse({
+#         "building": building.name,
+#         "areas": [{"name": k, "value": v} for k, v in area_values.items()]
+#     })
 
 
 
-import io
-import base64
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required, user_passes_test
-from PIL import Image, ImageDraw, ImageFont
-from dashboard.models import Buildings, Areas, HierarchyDataAggregate
 from pprint import pprint
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
@@ -675,68 +699,45 @@ def building_heatmap(request, dashboard_id, buildingID, measurement):
     site = building.site
     areas = building.areas.all().prefetch_related('meters')
 
-    # Calculate total measurement per area
     area_values = {}
-    for area in areas:
-        total = 0
-        agg = HierarchyDataAggregate.objects.filter(
-            site=site,
-            period_type='monthly'  # choose dynamically if needed
-        ).order_by('-start_date').first()            
+    agg = HierarchyDataAggregate.objects.filter(
+        site=site,
+        period_type='monthly'
+    ).order_by('-start_date').first()
 
-        if agg:
-            building_data = agg.data.get('buildings', {}).get(building.name, {})
+    # pprint(agg.data)
+
+    if agg:
+        building_data = agg.data.get('buildings', {}).get(building.name, {})
+
+        for area in areas:
             area_data = building_data.get('areas', {}).get(area.name, {})
-            area_total = area_data.get('area_total', {})
-            total += area_total.get(measurement, 0)
-        area_values[area.name] = total
+            area_total = round(float(area_data.get('area_total', {}).get(measurement, 0)), 2)
+            pprint(area_data)
+            # Fetch meter values
+            meters_list = []
+            for meter in area.meters.all():
+                meter_value = round(float(area_data.get('meters', {}).get(str(meter.name), {}).get('data').get(measurement, 0)), 2)
+                meters_list.append({
+                    "name": meter.name,
+                    "value": meter_value
+                })
+
+            area_values[area.name] = {
+                "value": area_total,
+                "meters": meters_list
+            }
+    pprint(area_values)
 
     if not area_values:
         return JsonResponse({'error': 'No data for this building'}, status=404)
 
-    print(area_values)
-
-    # Image settings
-    width = 400
-    height_per_area = 50
-    height = height_per_area * len(area_values)
-    img = Image.new('RGB', (width, height), color='white')
-    draw = ImageDraw.Draw(img)
-
-    # Color mapping (green=low, red=high)
-    min_val = min(area_values.values())
-    max_val = max(area_values.values())
-    def get_color(val):
-        # Normalize 0..1
-        ratio = (val - min_val) / (max_val - min_val) if max_val > min_val else 0
-        r = int(255 * ratio)
-        g = int(255 * (1 - ratio))
-        b = 0
-        return (r, g, b)
-
-    # Optional: font
-    try:
-        font = ImageFont.truetype("arial.ttf", 16)
-    except:
-        font = ImageFont.load_default()
-
-    # Draw each area
-    for i, (area_name, val) in enumerate(area_values.items()):
-        y0 = i * height_per_area
-        y1 = y0 + height_per_area
-        color = get_color(val)
-        draw.rectangle([0, y0, width, y1], fill=color)
-        text = f"{area_name}: {val:.1f}"
-        draw.text((10, y0 + 10), text, fill='black', font=font)
-
-    # Save image to base64
-    buffer = io.BytesIO()
-    img.save(buffer, format="PNG")
-    buffer.seek(0)
-    img_base64 = base64.b64encode(buffer.read()).decode()
-    buffer.close()
-
-    return JsonResponse({'image': f"data:image/png;base64,{img_base64}"})
+    return JsonResponse({
+        "building": building.name,
+        "areas": [
+            {"name": k, "value": v["value"], "meters": v["meters"]} for k, v in area_values.items()
+        ]
+    })
 
 
 @login_required
