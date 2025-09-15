@@ -269,6 +269,22 @@
                 </span>
                 {% endif %}
               </li>
+
+              <li class="nav-item">
+                {% if config.dashboard %}
+                <a class="nav-link {% if 'scada' in request.path %} text-info fw-bold {% endif %}" aria-current="page" href="/scada">SCADA</a>
+                {% else %}
+                <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="This service is disabled. Please contact MARKS Automation for further enquiries.">
+                  <button 
+                    type="button"
+                    class="nav-link" 
+                    disabled>
+                    SCADA
+                  </button>
+                </span>
+                {% endif %}
+              </li>
+
               {% if request.user.is_superuser or request.user.userModel.first.role == 'Administrator' %}
               <li class="nav-item">
                 {% if config.siteLocations %}

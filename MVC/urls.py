@@ -15,6 +15,7 @@ urlpatterns = [
     path('reports/', include('report.urls')),
     path('location/', include('location.urls')),
     path('api/', include('api.urls')),
+    path('scada/', include('scada.urls')),
 ]
 
 

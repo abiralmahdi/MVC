@@ -40,6 +40,12 @@ class Meters(models.Model):
         return self.name + ' - ' + self.meterType
 
 
+class Masters(models.Model):
+    masterType = models.CharField(max_length=100)
+    ip = models.CharField(max_length=100, null=True, blank=True)
+    port = models.IntegerField(null=True, blank=True)
+
+
 
 class Measurements(models.Model):
     name = models.CharField(max_length=100)

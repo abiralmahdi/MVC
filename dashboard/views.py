@@ -661,39 +661,9 @@ def heatmap_data(request, dashboard_id, meter_id, start_date, end_date, measurem
         return redirect('/dashboard')
 
 
-# @login_required
-# @user_passes_test(lambda u: u.is_superuser)
-# def building_heatmap(request, dashboard_id, buildingID, measurement):
-#     building = Buildings.objects.get(id=int(buildingID))
-#     site = building.site
-#     areas = building.areas.all().prefetch_related('meters')
-
-#     area_values = {}
-#     agg = HierarchyDataAggregate.objects.filter(
-#         site=site,
-#         period_type='monthly'
-#     ).order_by('-start_date').first()
-
-#     if agg:
-#         building_data = agg.data.get('buildings', {}).get(building.name, {})
-#         for area in areas:
-#             area_data = building_data.get('areas', {}).get(area.name, {})
-#             total = area_data.get('area_total', {}).get(measurement, 0)
-#             area_values[area.name] = round(float(total), 2)
-
-#     if not area_values:
-#         return JsonResponse({'error': 'No data for this building'}, status=404)
-
-#     return JsonResponse({
-#         "building": building.name,
-#         "areas": [{"name": k, "value": v} for k, v in area_values.items()]
-#     })
-
-
 
 from pprint import pprint
 @login_required
-@user_passes_test(lambda u: u.is_superuser)
 def building_heatmap(request, dashboard_id, buildingID, measurement):
     building = Buildings.objects.get(id=int(buildingID))
     site = building.site
@@ -738,6 +708,7 @@ def building_heatmap(request, dashboard_id, buildingID, measurement):
             {"name": k, "value": v["value"], "meters": v["meters"]} for k, v in area_values.items()
         ]
     })
+
 
 
 @login_required

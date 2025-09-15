@@ -6,6 +6,7 @@ class GlobalConfiguration(models.Model):
     dashboard = models.BooleanField(default=True)
     alarm = models.BooleanField(default=True)
     siteLocations = models.BooleanField(default=True)
+    scada = models.BooleanField(default=False)
     subscribed = models.BooleanField(default=True)
 
 

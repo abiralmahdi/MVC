@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'accounts',
     'dynamic',
     'dashboard',
+    'scada',
     'django.contrib.admin',
     'django.contrib.humanize',
     'django.contrib.auth',

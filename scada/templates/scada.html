@@ -1,0 +1,526 @@
+{% extends 'layout.html' %}
+{% block body %}
+
+<style>
+    .accordion-button::after {
+    display: none !important;
+}
+
+    .dark-shadow {
+      box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.9) !important; /* darker shadow */
+    }
+  </style>
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
+    style="overflow-y: auto;">
+    <div class="d-flex m-3">
+        <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
+        <h3 class="h6">Vision Center</h3>
+    </div>
+
+    <form class="form m-3">
+        <div class="form-group">
+            <input type="text" class="form-control" placeholder="Search...">
+        </div>
+    </form>
+
+    <div class="accordion accordion-flush" id="sidebarAccordion">
+        {% for site in sites %}
+        <!-- Site Accordion -->
+        <div class="accordion-item bg-dark border-0">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
+              data-bs-target="#siteCollapse{{ forloop.counter }}">
+              <i class="fa-solid fa-folder"></i>
+              <span class="mx-2">{{ site.name }}</span>
+            </button>
+          </h2>
+          <div id="siteCollapse{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+            <div class="accordion-body pl-3">
+              <ul class="list-unstyled">
+                {% for building in site.buildings.all %}
+                <li class="mb-1">
+                  <a href="/scada/building/{{ building.id }}" class="text-white text-decoration-none">
+                    <i class="fa-solid fa-building me-2"></i> {{ building.name }}
+                  </a>
+                </li>
+                {% empty %}
+                <li class="text-muted">No buildings</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      
+      
+</div>
+
+
+<!-- Add/Edit Motor Modal -->
+<div class="modal fade" id="motorModal" tabindex="-1" aria-labelledby="motorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content bg-dark text-white">
+        <div class="modal-header">
+          <h5 class="modal-title" id="motorModalLabel">Add/Edit Motor</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+  
+        <div class="modal-body">
+          <!-- Motor Form -->
+          <form id="motorForm" method="POST" action="/scada/saveMotor" class="flex-fill me-3">
+            {% csrf_token %}
+            <div class="d-flex">
+        
+              <!-- Motor Fields -->
+              <div>
+              <div class="mb-3">
+                <label class="form-label">Motor Name</label>
+                <input type="text" class="form-control" name="motorName" required>
+              </div>
+        
+              <div class="mb-3">
+                <label class="form-label">Building</label>
+                <select name="building" class="form-select" required>
+                  {% for site in sites %}
+                    {% for building in site.buildings.all %}
+                      <option value="{{ building.id }}">{{ building.name }}</option>
+                    {% endfor %}
+                  {% endfor %}
+                </select>
+              </div>
+        
+              <div class="mb-3">
+                <label class="form-label">IP</label>
+                <input type="text" class="form-control" name="ip" placeholder="192.168.0.10" required>
+              </div>
+        
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">DB Number</label>
+                  <input type="number" class="form-control" name="dbNo" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Rack</label>
+                  <input type="number" class="form-control" name="rack" value="0" required>
+                </div>
+              </div>
+        
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Slot</label>
+                  <input type="number" class="form-control" name="slot" value="1" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Start Byte</label>
+                  <input type="number" class="form-control" name="startByte" value="0" required>
+                </div>
+              </div>
+        
+              <div class="mb-3">
+                <label class="form-label">Data Size</label>
+                <input type="number" class="form-control" name="dataSize" value="6" required>
+              </div>
+        
+              <!-- Motor ON Offset -->
+              <hr class="border-secondary">
+              <h6>Motor ON Offset</h6>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Byte</label>
+                  <input type="number" class="form-control" name="motorOnByte" value="0" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Bit</label>
+                  <input type="number" class="form-control" name="motorOnBit" value="0" required>
+                </div>
+              </div>
+        
+              <!-- Motor OFF Offset -->
+              <h6>Motor OFF Offset</h6>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Byte</label>
+                  <input type="number" class="form-control" name="motorOffByte" value="0" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Bit</label>
+                  <input type="number" class="form-control" name="motorOffBit" value="1" required>
+                </div>
+              </div>
+        
+              <!-- Custom Fields -->
+              <hr class="border-secondary">
+              <h6>Custom Fields</h6>
+              <div id="customFieldsContainer"></div>
+              <button type="button" class="btn btn-outline-info btn-sm mt-2" id="addFieldBtn">
+                <i class="fa-solid fa-plus"></i> Add Field
+              </button>
+        
+              <hr class="border-secondary">
+              <!-- Add Tank Button -->
+              <button type="button" class="btn btn-outline-primary mt-2" id="addTankBtn">
+                <i class="fa-solid fa-water"></i> Add Tank
+              </button>
+              </div>
+        
+
+        
+          <!-- Tank Form (hidden initially) -->
+          <div id="tankForm" class="border-dark bg-dark p-3 d-none">
+            <h6>Add Tank</h6>
+          
+            <!-- High Byte + High Bit -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">High Byte</label>
+                <input type="number" class="form-control" name="highByte">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">High Bit</label>
+                <input type="number" class="form-control" name="highBit">
+              </div>
+            </div>
+          
+            <!-- Low Byte + Low Bit -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Low Byte</label>
+                <input type="number" class="form-control" name="lowByte">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Low Bit</label>
+                <input type="number" class="form-control" name="lowBit">
+              </div>
+            </div>
+          
+            <!-- Value Byte + Value Bit -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Value Byte</label>
+                <input type="number" class="form-control" name="valueByte">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Value Bit</label>
+                <input type="number" class="form-control" name="valueBit">
+              </div>
+            </div>
+            </div>
+          </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-success">Save</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </form>
+          
+        </div>
+        
+        <script>
+          document.getElementById("addTankBtn").addEventListener("click", function () {
+            document.getElementById("tankForm").classList.remove("d-none");
+          });
+        </script>
+        
+          
+          
+      </div>
+    </div>
+  </div>
+  
+
+<!-- Overlay -->
+<div id="overlay" class="overlay"></div>
+<div class="d-flex">
+    <button type="button" class="btn btn-info fw-bold ms-auto me-5 mt-5" data-bs-toggle="modal" data-bs-target="#motorModal">
+        <i class="fa-solid fa-plus me-1"></i> Add Motor
+    </button>    
+</div>
+      
+<div id="scada-dashboard" class="d-flex flex-wrap justify-content-center mt-2">
+
+  {% for motor in motors %}
+<div class="d-flex align-items-stretch m-3">
+
+  <!-- Combined Motor + Tank + Scale Card -->
+  <div class="card text-white bg-dark dark-shadow border-0 flex-fill"
+       style="width: {% if motor.tank.all %}40rem{% else %}22rem{% endif %};">
+
+    <!-- Card Header -->
+    <div class="card-header d-flex align-items-center bg-black">
+      <h5 class="mb-0">
+        <i class="fa-solid fa-microchip me-2"></i> {{ motor.motorName }}
+      </h5>
+      <div id="motorTitle{{motor.id}}" class="ms-2">
+        {% if motor.isOn %}
+          <span class='badge bg-success'>On</span>
+        {% else %}
+          <span class='badge bg-danger'>Off</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Card Body -->
+    <div class="card-body d-flex">
+
+      <!-- Left: Motor Section -->
+      <div class="flex-fill pe-3 {% if motor.tank.all %}border-end border-secondary{% endif %}">
+        <!-- Dynamic fields -->
+        <div id="motor-fields-{{ motor.id }}">
+          <p class="text-muted">Loading...</p>
+        </div>
+
+        <hr class="border-secondary">
+
+        <!-- Control buttons -->
+        <div class="d-flex flex-wrap gap-2 justify-content-between">
+          <button class="btn btn-success btn-sm control-button flex-fill" data-motor-id="{{ motor.id }}" data-action="start" id="startBtn">
+            <i class="fa-solid fa-play me-1"></i> Start
+          </button>
+          <button class="btn btn-danger btn-sm control-button flex-fill" data-motor-id="{{ motor.id }}" data-action="stop" id="stopBtn">
+            <i class="fa-solid fa-stop me-1"></i> Stop
+          </button>
+          <button class="btn btn-warning btn-sm control-button flex-fill" data-motor-id="{{ motor.id }}" data-action="trip">
+            <i class="fa-solid fa-triangle-exclamation me-1"></i> Trip
+          </button>
+        </div>
+      </div>
+
+      {% if motor.tank.all %}
+      <!-- Middle: Tank Section -->
+      <div class="flex-fill px-3 border-end border-secondary text-center" id="tank-card-{{motor.id}}">
+        <p class="my-2">
+          <i class="fa-solid fa-arrow-up text-danger me-1"></i> <span id="highText{{motor.id}}" class="">High</span>
+        </p>
+        
+        <!-- Centered input with reduced width -->
+        <div class="d-flex justify-content-center my-5">
+          <input type="text" 
+                 class="form-control form-control-sm text-center" 
+                 style="width: 80px;" 
+                 id="tank-value-{{ motor.id }}" 
+                 readonly>
+        </div>
+        
+        <p class="mb-0">
+          <i class="fa-solid fa-arrow-down text-success me-1"></i> <span id="lowText{{motor.id}}" class="">Low</span>
+        </p>
+      </div>
+      
+
+      <!-- Right: Value Scale Section -->
+      <div class="d-flex flex-column justify-content-end ps-3 text-center" style="width: 60px;">
+        <div class="scale-container border border-secondary rounded bg-dark position-relative"
+             style="height: 200px; width: 30px; margin: auto; overflow: hidden;">
+          <!-- Animated fill -->
+          <div id="scale-fill-{{ motor.id }}" class="bg-primary position-absolute bottom-0 start-0 w-100"
+               style="height: 0%; transition: height 0.5s ease;"></div>
+        </div>
+        <small class="mt-2">Value</small>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
+{% endfor %}
+    
+
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    
+    function fetchMotorAndTank(motorId) {
+      fetch(`/scada/fetchMotorAndTankData/${motorId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            document.getElementById(`motor-fields-${motorId}`).innerHTML =
+              `<p class="text-danger">Error: ${data.error}</p>`;
+            return;
+          }
+  
+          // --- Motor fields ---
+          let container = document.getElementById(`motor-fields-${motorId}`);
+          container.innerHTML = "";
+          for (let [key, value] of Object.entries(data.motor)) {
+            container.innerHTML += `
+              <p class="card-text mb-1">
+                <i class="fa-solid fa-circle me-2 text-info"></i>
+                <strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${value}
+              </p>`;
+          }
+  
+          // --- Tank section (if exists) ---
+          if (data.tank && Object.keys(data.tank).length > 0) {
+            document.getElementById(`tank-value-${motorId}`).value = data.tank.value;
+            
+            // Icons
+            let tankCard = document.getElementById(`tank-card-${motorId}`);
+            console.log(data.tank.high)
+            if (tankCard) {
+
+              if (data.tank.high === true || data.tank.high === 1) {
+                document.getElementById('highText' + motorId).classList.add("fw-bold", "text-danger", "border", "border-danger", "p-2");
+                document.getElementById('lowText' + motorId).classList.remove("fw-bold", "text-success", "border", "border-danger", "p-2");
+              } else {
+                document.getElementById('highText' + motorId).classList.remove("fw-bold", "text-danger", "border", "border-danger", "p-2");
+                document.getElementById('lowText' + motorId).classList.add("fw-bold", "text-success", "border", "border-danger", "p-2");
+              }
+
+              if (data.tank.low === true || data.tank.low === 1) {
+                document.getElementById('highText' + motorId).classList.remove("fw-bold", "text-danger", "border", "border-danger", "p-2");
+                document.getElementById('lowText' + motorId).classList.add("fw-bold", "text-success", "border", "border-danger", "p-2");
+              } else {
+                document.getElementById('highText' + motorId).classList.add("fw-bold", "text-danger", "border", "border-danger", "p-2");
+                document.getElementById('lowText' + motorId).classList.remove("fw-bold", "text-success", "border", "border-danger", "p-2");
+              }
+            }
+  
+            // Scale update
+            updateMotorScale(motorId, data.tank.value);
+          }
+        })
+        .catch(() => {
+          document.getElementById(`motor-fields-${motorId}`).innerHTML =
+            `<p class="text-danger">Error fetching data</p>`;
+        });
+    }
+  
+    // Refresh every 3 seconds
+    {% for motor in motors %}
+      setInterval(() => fetchMotorAndTank({{ motor.id }}), 3000);
+      fetchMotorAndTank({{ motor.id }});
+    {% endfor %}
+  });
+  
+  function updateMotorScale(motorId, value) {
+    const scaleFill = document.getElementById(`scale-fill-${motorId}`);
+    if (scaleFill) {
+      const percent = Math.max(0, Math.min(100, value));
+      scaleFill.style.height = percent + "%";
+    }
+  }
+  </script>
+  
+  
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const addFieldBtn = document.getElementById("addFieldBtn");
+      const container = document.getElementById("customFieldsContainer");
+    
+      addFieldBtn.addEventListener("click", function() {
+        const row = document.createElement("div");
+        row.classList.add("row", "mb-2");
+    
+        row.innerHTML = `
+          <div class="col-md-4">
+            <select name="datatype[]" class="form-select">
+              <option value="INT">INT</option>
+              <option value="FLOAT">FLOAT</option>
+              <option value="BOOL">BOOL</option>
+              <option value="STRING">STRING</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <input type="text" name="fieldName[]" class="form-control" placeholder="Field Name" required>
+          </div>
+          <div class="col-md-4">
+            <div class="d-flex gap-2">
+              <input type="number" name="offset1[]" class="form-control" placeholder="Offset Byte" required>
+              <input type="number" name="offset2[]" class="form-control" placeholder="Offset Bit">
+            </div>
+          </div>
+        `;
+    
+        container.appendChild(row);
+      });
+    
+      // Convert dynamic inputs into JSON before submit
+      const motorForm = document.getElementById("motorForm");
+      motorForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+    
+        const datatypes = document.getElementsByName("datatype[]");
+        const fieldNames = document.getElementsByName("fieldName[]");
+        const offsets1 = document.getElementsByName("offset1[]");
+        const offsets2 = document.getElementsByName("offset2[]");
+    
+        let fieldsJSON = {};
+        for (let i = 0; i < fieldNames.length; i++) {
+          let fname = fieldNames[i].value;
+          let dtype = datatypes[i].value;
+          let off1 = offsets1[i].value;
+          let off2 = offsets2[i].value;
+          if(fname) {
+            fieldsJSON[fname] = [dtype, parseInt(off1), parseInt(off2)];
+          }
+        }
+    
+        // Create hidden input to submit JSON
+        let hiddenInput = document.createElement("input");
+        hiddenInput.type = "hidden";
+        hiddenInput.name = "fields";
+        hiddenInput.value = JSON.stringify(fieldsJSON);
+    
+        motorForm.appendChild(hiddenInput);
+        motorForm.submit();
+      });
+    });
+    </script>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          const startBtn = document.getElementById("startBtn");
+          const stopBtn = document.getElementById("stopBtn");
+        
+          function controlMotor(motorId, action) {
+            fetch("/scada/controlMotor/", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": "{{ csrf_token }}"
+              },
+              body: new URLSearchParams({
+                motor_id: motorId,
+                action: action
+              })
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                const fieldsDiv = document.getElementById(`motorTitle${motorId}`);
+                if (data.isOn) {
+                  fieldsDiv.innerHTML = `<span class='badge bg-success'>On</span>`;
+                } else {
+                  fieldsDiv.innerHTML = `<span class='badge bg-danger'>Off</span>`;
+                }
+              } else {
+                alert("Error: " + data.error);
+              }
+            });
+          }
+        
+          if (startBtn) {
+            startBtn.addEventListener("click", function () {
+              const motorId = this.dataset.motorId;
+              controlMotor(motorId, "start");
+            });
+          }
+        
+          if (stopBtn) {
+            stopBtn.addEventListener("click", function () {
+              const motorId = this.dataset.motorId;
+              controlMotor(motorId, "stop");
+            });
+          }
+        });
+        </script>
+        
+        
+
+{% endblock %}
