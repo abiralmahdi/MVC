@@ -97,7 +97,11 @@ def fetchMotorAndTankData(request, motorID):
             except Exception as e:
                 val = f"Error: {str(e)}"
 
+            trip = get_bool(data, int(motor.tripOffset["byte"]), int(motor.tripOffset["bit"]))
+
             response["motor"][field_name] = val
+            response["trip"] = bool(trip)
+            response["isOn"] = motor.isOn
 
         # --- Tank data ---
         if tank:
@@ -113,7 +117,7 @@ def fetchMotorAndTankData(request, motorID):
             except Exception as e:
                 high, low, value = False, False, 0
 
-            response["tank"] = {"high": high, "low": low, "value": value}
+            response["tank"] = {"high": high, "low": low, "value": value, "tankVolume":tank.tankVolume}
 
 
         pprint(response)
@@ -146,6 +150,16 @@ def save_motor(request):
         "bit": int(request.POST.get("motorOffBit", 1))
     }
 
+    runFeedbackOffset = {
+        "byte": int(request.POST.get("runFeedbackByte", 0)),
+        "bit": int(request.POST.get("runFeedbackBit", 1))
+    }
+
+    tripOffset = {
+        "byte": int(request.POST.get("tripByte", 0)),
+        "bit": int(request.POST.get("tripBit", 1))
+    }
+
     fields_raw = request.POST.get("fields", "{}")
     try:
         fields_data = json.loads(fields_raw)
@@ -166,7 +180,9 @@ def save_motor(request):
         dataSize=int(dataSize) if dataSize else 0,
         motorOnOffset=motorOnOffset,
         motorOffOffset=motorOffOffset,
-        fields=fields_data
+        runFeedbackOffset=runFeedbackOffset,
+        fields=fields_data,
+        tripOffset=tripOffset
     )
 
     # --- If Tank form fields were submitted, create Tank ---
@@ -179,6 +195,7 @@ def save_motor(request):
             lowBit=request.POST.get("lowBit", 0),
             valueByte=request.POST.get("valueByte", 0),
             valueBit=request.POST.get("valueBit", 0),
+
         )
     else:
         Tank.objects.create(
@@ -187,6 +204,7 @@ def save_motor(request):
             lowByte=request.POST.get("lowByte", 0),
             highBit=request.POST.get("highBit", 0),
             lowBit=request.POST.get("lowBit", 0),
+            tankVolume=request.POST.get("tankVolume", 0)
         )
 
     return redirect("/scada")
@@ -228,13 +246,15 @@ def control_motor(request):
         data = PLC_CLIENT.read_area(Areas.DB, motor.dbNo, motor.startByte, motor.dataSize)
         i_motor_on = int(get_bool(data, motor.motorOnOffset["byte"], motor.motorOnOffset["bit"]))
         i_motor_off = int(get_bool(data, motor.motorOffOffset["byte"], motor.motorOffOffset["bit"]))
+        run_feedback = get_bool(data, motor.runFeedbackOffset["byte"], motor.runFeedbackOffset["bit"])
         
         print(i_motor_off)
         print(i_motor_on)
         motor.isOn = bool(i_motor_on and not i_motor_off)
+        # motor.isOn = run_feedback
         motor.save()
 
-        return JsonResponse({"success": True, "isOn": i_motor_on and not i_motor_off})
+        return JsonResponse({"success": True, "isOn": bool(i_motor_on and not i_motor_off)})
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
     finally:

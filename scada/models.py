@@ -23,6 +23,8 @@ class Motor(models.Model):
     dataSize = models.IntegerField(default=0)
     motorOnOffset = models.JSONField()
     motorOffOffset = models.JSONField()
+    runFeedbackOffset = models.JSONField()
+    tripOffset = models.JSONField()
 
 class Tank(models.Model):
     motor = models.ForeignKey(Motor, on_delete=models.CASCADE, related_name='tank', null=True, blank=True)
@@ -32,3 +34,4 @@ class Tank(models.Model):
     lowBit = models.IntegerField(null=True, blank=True)
     valueByte = models.IntegerField(null=True, blank=True)
     valueBit = models.IntegerField(null=True, blank=True)
+    tankVolume = models.IntegerField(null=True, blank=True, default=100)

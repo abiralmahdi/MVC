@@ -150,6 +150,32 @@
                   <input type="number" class="form-control" name="motorOffBit" value="1" required>
                 </div>
               </div>
+
+              <!-- Run Feedback Offset -->
+              <h6>Run Feedback Offset</h6>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Byte</label>
+                  <input type="number" class="form-control" name="runFeedbackByte" value="0" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Bit</label>
+                  <input type="number" class="form-control" name="runFeedbackBit" value="1" required>
+                </div>
+              </div>
+
+              <!-- Trip Offset -->
+              <h6>Trip Offset</h6>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Byte</label>
+                  <input type="number" class="form-control" name="tripByte" value="0" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Bit</label>
+                  <input type="number" class="form-control" name="tripBit" value="1" required>
+                </div>
+              </div>
         
               <!-- Custom Fields -->
               <hr class="border-secondary">
@@ -207,6 +233,12 @@
                 <input type="number" class="form-control" name="valueBit">
               </div>
             </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Volume</label>
+                <input type="number" class="form-control" name="tankVolume">
+              </div>
+            </div>
             </div>
           </div>
             <div class="modal-footer">
@@ -254,10 +286,13 @@
       </h5>
       <div id="motorTitle{{motor.id}}" class="ms-2">
         {% if motor.isOn %}
-          <span class='badge bg-success'>On</span>
+          <span class='badge bg-success'>Running</span>
         {% else %}
-          <span class='badge bg-danger'>Off</span>
+          <span class='badge bg-warning text-dark'>Off</span>
         {% endif %}
+      </div>
+      <div id="motorTrip{{motor.id}}">
+
       </div>
     </div>
 
@@ -275,14 +310,11 @@
 
         <!-- Control buttons -->
         <div class="d-flex flex-wrap gap-2 justify-content-between">
-          <button class="btn btn-success btn-sm control-button flex-fill" data-motor-id="{{ motor.id }}" data-action="start" id="startBtn">
+          <button class="btn btn-success btn-sm control-button flex-fill" data-motor-id="{{ motor.id }}" data-action="start" id="startBtn{{motor.id}}">
             <i class="fa-solid fa-play me-1"></i> Start
           </button>
-          <button class="btn btn-danger btn-sm control-button flex-fill" data-motor-id="{{ motor.id }}" data-action="stop" id="stopBtn">
+          <button class="btn btn-danger btn-sm control-button flex-fill" data-motor-id="{{ motor.id }}" data-action="stop" id="stopBtn{{motor.id}}">
             <i class="fa-solid fa-stop me-1"></i> Stop
-          </button>
-          <button class="btn btn-warning btn-sm control-button flex-fill" data-motor-id="{{ motor.id }}" data-action="trip">
-            <i class="fa-solid fa-triangle-exclamation me-1"></i> Trip
           </button>
         </div>
       </div>
@@ -291,7 +323,7 @@
       <!-- Middle: Tank Section -->
       <div class="flex-fill px-3 border-end border-secondary text-center" id="tank-card-{{motor.id}}">
         <p class="my-2">
-          <i class="fa-solid fa-arrow-up text-danger me-1"></i> <span id="highText{{motor.id}}" class="">High</span>
+          <i class="fa-solid fa-arrow-up text-danger me-1"></i> <span id="highText{{motor.id}}" class="fw-bold text-danger border border-danger p-2">High</span>
         </p>
         
         <!-- Centered input with reduced width -->
@@ -304,7 +336,7 @@
         </div>
         
         <p class="mb-0">
-          <i class="fa-solid fa-arrow-down text-success me-1"></i> <span id="lowText{{motor.id}}" class="">Low</span>
+          <i class="fa-solid fa-arrow-down text-success me-1"></i> <span id="lowText{{motor.id}}" class="fw-bold text-success border border-success p-2">Low</span>
         </p>
       </div>
       
@@ -321,6 +353,61 @@
       </div>
       {% endif %}
 
+      <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          const startBtn{{motor.id}} = document.getElementById("startBtn{{motor.id}}");
+          const stopBtn{{motor.id}} = document.getElementById("stopBtn{{motor.id}}");
+        
+          function controlMotor(motorId, action) {
+            fetch("/scada/controlMotor/", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": "{{ csrf_token }}"
+              },
+              body: new URLSearchParams({
+                motor_id: motorId,
+                action: action
+              })
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                const fieldsDiv = document.getElementById(`motorTitle${motorId}`);
+                const tripDiv = document.getElementById(`motorTrip${motorId}`);
+                if (data.isOn) {
+                  fieldsDiv.innerHTML = `<span class='badge bg-success'>Running</span>`;
+                } else {
+                  fieldsDiv.innerHTML = `<span class='badge bg-warning text-dark'>Off</span>`;
+                }
+                if (data.trip){
+                  tripDiv.innerHTML = `<span class='badge bg-danger ms-2'>Trip</span>`;
+                } else {
+                  tripDiv.innerHTML = ``;
+                }
+              } else {
+                alert("Error: " + data.error);
+              }
+            });
+          }
+        
+          if (startBtn{{motor.id}}) {
+            startBtn{{motor.id}}.addEventListener("click", function () {
+              const motorId = this.dataset.motorId;
+              controlMotor(motorId, "start");
+            });
+          }
+        
+          if (stopBtn{{motor.id}}) {
+            stopBtn{{motor.id}}.addEventListener("click", function () {
+              const motorId = this.dataset.motorId;
+              controlMotor(motorId, "stop");
+            });
+          }
+        });
+
+
+        </script>
     </div>
   </div>
 
@@ -353,6 +440,20 @@
                 <strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${value}
               </p>`;
           }
+
+          const fieldsDiv = document.getElementById(`motorTitle${motorId}`);
+          const tripDiv = document.getElementById(`motorTrip${motorId}`);
+          if (data.isOn) {
+            fieldsDiv.innerHTML = `<span class='badge bg-success'>Running</span>`;
+          } else {
+            fieldsDiv.innerHTML = `<span class='badge bg-warning text-dark'>Off</span>`;
+          }
+
+          if (data.trip){
+            tripDiv.innerHTML = `<span class='badge bg-danger ms-2'>Trip</span>`;
+          } else {
+            tripDiv.innerHTML = ``;
+          }
   
           // --- Tank section (if exists) ---
           if (data.tank && Object.keys(data.tank).length > 0) {
@@ -364,24 +465,32 @@
             if (tankCard) {
 
               if (data.tank.high === true || data.tank.high === 1) {
-                document.getElementById('highText' + motorId).classList.add("fw-bold", "text-danger", "border", "border-danger", "p-2");
-                document.getElementById('lowText' + motorId).classList.remove("fw-bold", "text-success", "border", "border-danger", "p-2");
+                document.getElementById('highText' + motorId).classList.add("text-light", "bg-danger");
+                document.getElementById('highText' + motorId).classList.remove("text-danger");
+                document.getElementById('lowText' + motorId).classList.remove("text-light", "bg-success");
+                document.getElementById('lowText' + motorId).classList.add("text-success");
               } else {
-                document.getElementById('highText' + motorId).classList.remove("fw-bold", "text-danger", "border", "border-danger", "p-2");
-                document.getElementById('lowText' + motorId).classList.add("fw-bold", "text-success", "border", "border-danger", "p-2");
+                document.getElementById('highText' + motorId).classList.remove("text-light", "bg-danger");
+                document.getElementById('highText' + motorId).classList.add("text-danger");
+                document.getElementById('lowText' + motorId).classList.add("text-light", "bg-success");
+                document.getElementById('lowText' + motorId).classList.remove("text-success");
               }
 
               if (data.tank.low === true || data.tank.low === 1) {
-                document.getElementById('highText' + motorId).classList.remove("fw-bold", "text-danger", "border", "border-danger", "p-2");
-                document.getElementById('lowText' + motorId).classList.add("fw-bold", "text-success", "border", "border-danger", "p-2");
+                document.getElementById('highText' + motorId).classList.remove("text-light", "bg-danger");
+                document.getElementById('highText' + motorId).classList.add("text-danger");
+                document.getElementById('lowText' + motorId).classList.add("text-light", "bg-success");
+                document.getElementById('lowText' + motorId).classList.remove("text-success");
               } else {
-                document.getElementById('highText' + motorId).classList.add("fw-bold", "text-danger", "border", "border-danger", "p-2");
-                document.getElementById('lowText' + motorId).classList.remove("fw-bold", "text-success", "border", "border-danger", "p-2");
+                document.getElementById('highText' + motorId).classList.add("text-light", "bg-danger");
+                document.getElementById('highText' + motorId).classList.remove("text-danger");
+                document.getElementById('lowText' + motorId).classList.remove("text-light", "bg-success");
+                document.getElementById('lowText' + motorId).classList.add("text-success");
               }
             }
   
             // Scale update
-            updateMotorScale(motorId, data.tank.value);
+            updateMotorScale(motorId, data.tank.value, data.tank.tankVolume);
           }
         })
         .catch(() => {
@@ -397,13 +506,18 @@
     {% endfor %}
   });
   
-  function updateMotorScale(motorId, value) {
-    const scaleFill = document.getElementById(`scale-fill-${motorId}`);
-    if (scaleFill) {
-      const percent = Math.max(0, Math.min(100, value));
-      scaleFill.style.height = percent + "%";
-    }
+  function updateMotorScale(motorId, value, tankVolume) {
+  const scaleFill = document.getElementById(`scale-fill-${motorId}`);
+  if (scaleFill && tankVolume > 0) {
+    // Normalize value with respect to tankVolume
+    let percent = (value / tankVolume) * 100;
+
+    // Clamp between 0–100
+    percent = Math.max(0, Math.min(100, percent));
+
+    scaleFill.style.height = percent + "%";
   }
+}
   </script>
   
   
@@ -494,11 +608,17 @@
             .then(data => {
               if (data.success) {
                 const fieldsDiv = document.getElementById(`motorTitle${motorId}`);
+                const tripDiv = document.getElementById(`motorTrip${motorId}`);
                 if (data.isOn) {
-                  fieldsDiv.innerHTML = `<span class='badge bg-success'>On</span>`;
+                  fieldsDiv.innerHTML = `<span class='badge bg-success'>Running</span>`;
                 } else {
-                  fieldsDiv.innerHTML = `<span class='badge bg-danger'>Off</span>`;
+                  fieldsDiv.innerHTML = `<span class='badge bg-warning text-dark'>Off</span>`;
                 }
+                if (data.trip){
+                  tripDiv.innerHTML = `<span class='badge bg-danger ms-2'>Trip</span>`;
+                } else {
+                  tripDiv.innerHTML = ``;
+                } 
               } else {
                 alert("Error: " + data.error);
               }
