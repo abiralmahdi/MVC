@@ -12,6 +12,8 @@ CUMULATIVE_FIELDS = {
     "Total Gas Volume",
     "Total Steam",
     "Total Volume",
+    "Total Apparent Power", 
+    "Energy"
 }
 
 # 📌 Meter type definitions (restrict to first 3 per type if needed)
@@ -25,7 +27,7 @@ METER_DEFINITIONS = {
     "Water Meter": ["Flow Rate", "Total Volume"],
     "Air Quality": ["CO2 Level", "PM2.5", "PM10"],
     "Electricity Meter": [
-        "Voltage L1-N", "Voltage L2-N", "Voltage L3-N",
+        "Voltage L1N", "Voltage L2N", "Voltage L3N",
         "Voltage L1-L2", "Voltage L2-L3", "Voltage L3-L1",
         "Current L1", "Current L2", "Current L3",
         "Apparent Power L1", "Apparent Power L2", "Apparent Power L3",
@@ -35,7 +37,7 @@ METER_DEFINITIONS = {
         "THD Voltage L1-L2", "THD Voltage L2-L3", "THD Voltage L3-L1",
         "Line Frequency", "3-Phase Average Voltage L-N", "3-Phase Average Voltage L-L",
         "3-Phase Average Current L-L", "Total Active Power",
-        "Total Reactive Power", "Total Power Factor",
+        "Total Reactive Power", "Power Factor", "Total Apparent Power", "Energy"
     ],
 }
 

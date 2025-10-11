@@ -39,7 +39,7 @@
                   <ul class="list-unstyled">
                       {% for billing in billings %}
                       <li>
-                          <a href="/reports/billing/{{ billing.id }}"
+                          <a href="/billing/{{ billing.id }}"
                               class="text-white text-decoration-none">
                               <i class="fa-solid fa-file"></i> 
                               {{ billing.meter.name }}, {{ billing.meter.area.name }}, {{ billing.meter.area.building.name }} - ({{billing.date_range_start}}-{{billing.date_range_end}})
@@ -63,7 +63,7 @@
     
         
     <div class="w-100">
-        <form method="post" action="/reports/create_billing" id="billing-form">
+        <form method="post" action="/billing/create_billing" id="billing-form">
           {% csrf_token %}
       
           <div class="card shadow bg-dark text-light border-0 rounded-3">
@@ -84,13 +84,29 @@
                 <!-- Meter -->
                 <div class="col-md-12 mb-3">
                   <label class="form-label fw-bold">Meter</label>
-                  <select name="meter" class="form-select">
+                  <select name="meter" class="form-select" id="meter">
                     {% for meter in meters %}
                       <option value="{{ meter.id }}">{{ meter.name }}, {{ meter.area.name }}, {{ meter.area.building.name }}</option>
                     {% endfor %}
                   </select>
                 </div>
               </div>
+              <input type="hidden" name="meter" id="meter_hidden" disabled>
+              <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                  const urlParams = new URLSearchParams(window.location.search);
+                  const meterId = urlParams.get("meter");
+
+                  if (meterId) {
+                    const meterSelect = document.getElementById("meter");
+                    meterSelect.value = meterId;
+                    document.getElementById("meter_hidden").disabled = false;
+                    meterSelect.disabled = true
+                    document.getElementById("meter_hidden").value = meterId; // ensures POST
+                  }
+                });
+
+              </script>
       
               <div class="row">
                 <!-- Rate -->

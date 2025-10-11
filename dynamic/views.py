@@ -45,13 +45,15 @@ def hierarchy(request):
 
     load_types = LoadType.objects.all().prefetch_related('meters','meters__area__building__site')
     meters = Meters.objects.all().prefetch_related('gadgets', 'area__building__site', 'loadType')
+    measurements = Measurements.objects.all()
     context = {
         'sites': site,
         'buildings': buildings,
         'areas': areas,
         'loadTypes': load_types,
         'meters': meters,
-        'config':config
+        'config':config,
+        'measurements':measurements
     }
     return render(request, 'hierarchy.html', context)
 
@@ -87,6 +89,7 @@ def addArea(request):
         return redirect("/settings/hierarchy")
     
 
+import json
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
 def addMeter(request):
@@ -99,8 +102,22 @@ def addMeter(request):
         meterType = request.POST['meterType']
         meterIP = request.POST['meter_ip']
         ecological = request.POST.get('ecological') == 'on'
+        unit_id = request.POST.get('unit_id')
         
-        Meters.objects.create(name=name, area=area, loadType=load, meterType=meterType, ip=meterIP, ecological=ecological)
+        # Get the register mappings from hidden field
+        register_mapping_str = request.POST.get('register_mapping', '{}')
+        register_mapping = json.loads(register_mapping_str)
+
+        Meters.objects.create(
+            name=name,
+            area=area,
+            loadType=load,
+            meterType=meterType,
+            ip=meterIP,
+            ecological=ecological,
+            registerMapping=register_mapping,
+            unit_id=unit_id
+        )
         return redirect("/settings/hierarchy")
 
 

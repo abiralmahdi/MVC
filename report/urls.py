@@ -16,9 +16,6 @@ urlpatterns = [
     path('viewSavedReports', views.savedReportsPage, name='savedReportsPage'),      
     path('viewSavedReports/<str:reportID>', views.viewSavedReports, name='viewSavedReports'),  
     path('viewSavedReport/<int:reportID>/', views.viewSavedReport, name='viewSavedReport'),
-    path('billing', views.billing, name='billing'),
-    path('create_billing', views.create_billing, name='create_billing'),
-    path('billing/<str:billID>', views.viewBills, name='viewBills'),
 
 ]
 

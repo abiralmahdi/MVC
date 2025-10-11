@@ -12,9 +12,9 @@ class Command(BaseCommand):
             start_time = time.time()
             meters = Meters.objects.all()
 
-            with ThreadPoolExecutor(max_workers=50) as executor:  # Adjust threads based on CPU
+            with ThreadPoolExecutor(max_workers=50) as executor:
                 futures = {
-                    executor.submit(datastorage.main, meter.ip): meter.ip
+                    executor.submit(datastorage.read_meter_data, meter): meter.ip
                     for meter in meters
                 }
 
@@ -26,6 +26,6 @@ class Command(BaseCommand):
                         print(f"❌ Error reading meter {ip}: {e}")
 
             elapsed = time.time() - start_time
-            sleep_time = max(0, 60 - elapsed)  # Sleep only if less than 60s passed
+            sleep_time = max(0, 15 - elapsed)
             print(f"✅ Polling cycle completed in {elapsed:.2f} seconds. Sleeping {sleep_time:.2f} seconds.")
             time.sleep(sleep_time)

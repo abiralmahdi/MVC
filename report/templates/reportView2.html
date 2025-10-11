@@ -16,16 +16,6 @@
   
 
 
-  
-    /* ✅ Sticky table headers */
-    .sticky-header th {
-      position: sticky;
-      top: 0;
-      background-color: #212529;
-      z-index: 2;
-    }
-  
-  
     @media print {
     .navbar{
         display: none;
@@ -53,21 +43,65 @@ canvas {
   height: 100% !important;
 }
 
-    .diagram-container.light-mode {
-  background: #fff !important;
-  color: #000 !important;
+
+.diagram-container {
+  position: relative;
+  border: 1px solid #444;
+  border-radius: 6px;
+  overflow: hidden; /* hides scrollbar gap */
 }
 
-.diagram-container.light-mode canvas {
-  background: #fff !important;
+/* Scroll wrapper */
+.table-wrapper {
+  max-height: 500px;
+  overflow-y: auto;
+  display: block;
 }
 
-.diagram-container.light-mode * {
+/* Ensure proper layout */
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 0;
+}
+
+/* 🔥 Sticky header fix */
+.table thead th {
+  position: sticky;
+  top: 0;
+  background-color: #1e1e1e !important;
+  color: #fff !important;
+  z-index: 50;
+  text-align: center;
+  vertical-align: middle;
+  padding: 10px;
+  border-bottom: 2px solid #555;
+}
+
+/* Table body styling */
+.table tbody td {
+  background-color: #2a2a2a;
+  color: #ddd;
+  padding: 6px 8px;
+  border-color: #444;
+}
+
+/* ✅ Ensure space between header & first row in screenshots */
+.table tbody tr:first-child td {
+  padding-top: 12px;
+}
+
+/* ✅ Fix during light-mode or export */
+.diagram-container.light-mode .table thead th,
+.diagram-container.light-mode .table tbody td {
   background: #fff !important;
   color: #000 !important;
+  border-color: #ccc !important;
 }
-  </style>
-  
+</style>
+
+
 
 <!-- Sidebar -->
 <div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
@@ -393,17 +427,29 @@ canvas {
   });
       </script>
   
-      {% elif diagram.diagram_type == 'table' %}
-      <div class="diagram-container" data-diagram-id="{{ diagram.id }}" style="max-height: 200px; overflow-y: auto;">
-        <table id="diagram-{{ diagram.id }}" class="table table-sm table-dark text-light">
-          <thead class="sticky-header">
-            <tr id="table-head-{{ diagram.id }}"></tr>
-          </thead>
-          <tbody id="table-body-{{ diagram.id }}"></tbody>
-        </table>
-      </div>
-      <script>
-        document.addEventListener('DOMContentLoaded', function () {
+  
+  {% elif diagram.diagram_type == 'table' %}
+  <div class="diagram-container" data-diagram-id="{{ diagram.id }}">
+    <div class="table-wrapper">
+      <table id="diagram-{{ diagram.id }}" class="table table-sm table-dark text-light mb-0 text-center">
+        <thead>
+          <tr id="table-head-{{ diagram.id }}"></tr>
+        </thead>
+        <tbody id="table-body-{{ diagram.id }}"></tbody>
+      </table>
+    </div>
+  </div>
+  
+  <style>
+    /* ✅ Center align all text in table headers and cells */
+    #diagram-{{ diagram.id }} th,
+    #diagram-{{ diagram.id }} td {
+      text-align: center;
+      vertical-align: middle; /* optional: vertically center too */
+    }
+  </style>
+ <script>
+  document.addEventListener('DOMContentLoaded', function () {
     const diagramId = {{ diagram.id }};
     const head = document.getElementById('table-head-{{ diagram.id }}');
     const body = document.getElementById('table-body-{{ diagram.id }}');
@@ -414,7 +460,18 @@ canvas {
       const fields = Object.keys(rows[0]);
       head.innerHTML = fields.map(f => `<th>${f}</th>`).join('');
       body.innerHTML = rows.map(row =>
-        `<tr>${fields.map(f => `<td>${row[f] !== undefined ? row[f] : ''}</td>`).join('')}</tr>`
+        `<tr>${fields.map(f => {
+          let value = row[f];
+          // ✅ Round numeric values to 2 decimal places
+          if (typeof value === 'number') {
+            value = value.toFixed(2);
+          }
+          // ✅ Handle null/undefined
+          if (value === null || value === undefined) {
+            value = '';
+          }
+          return `<td>${value}</td>`;
+        }).join('')}</tr>`
       ).join('');
     }
 
@@ -426,7 +483,10 @@ canvas {
 
     fetchTable();
   });
-      </script>
+</script>
+
+
+
   
       {% elif diagram.diagram_type == 'sankey' %}
       <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>

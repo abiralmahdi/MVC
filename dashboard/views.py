@@ -74,70 +74,125 @@ def format_custom_date(date_obj):
     formatted = date_obj.strftime(f"%A - {day}{suffix} %B, %Y")
     return formatted
 
-
 @login_required
 @subscription_required
 def indivDashboard(request, dashboardID):
     dateNow = format_custom_date(datetime.now())
     config = GlobalConfiguration.objects.first()
     dashboard_ = get_object_or_404(Dashboard, id=dashboardID)
+
+    # Load sites depending on role
     sites = Site.objects.prefetch_related(
         'buildings__areas__meters', 'buildings'
     ).all()
-    if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
-        pass
-    else:
+    if not (request.user.is_superuser or request.user.userModel.first().role == 'Administrator'):
         sites = [request.user.userModel.first().site]
-    if request.user.is_superuser or request.user.userModel.first().site.id == dashboard_.site.id or request.user.userModel.first().role == 'Administrator':
-        gadgets = Gadgets.objects.filter(dashboard=dashboard_).prefetch_related('meters', 'measurement')
 
-        site = dashboard_.site
-        areas = Areas.objects.filter(building__site=site).prefetch_related('meters')
-        meters = Meters.objects.filter(area__in=areas)
-        # measurements = Measurements.objects.filter(meter__in=meters)
-        measurements = Measurements.objects.all()
-
-        alarms = Alarms.objects.filter(acknowledged=False, meter__in=meters)
-        for alarm in alarms:
-            if alarm.acknowledged:
-                alarm.color = "green"
-            elif "high" in alarm.alarmType.lower():
-                alarm.color = "red"
-            elif "low" in alarm.alarmType.lower():
-                alarm.color = "rgb(179, 179, 21)"
-            else:
-                alarm.color = "white"
-
-        # Preload readings once for all meters
-        meter_readings = LatestMeterReading.objects.filter(meter__in=meters)
-
-        readingArray = []
-        for reading in meter_readings:
-            readingArray.append({
-                'meter_id': reading.meter.id,
-                'timestamp': reading.timestamp.strftime('%H:%M'),
-                'data': reading.data
-            })
-
-        context = {
-            'dashboard': dashboard_,
-            'sites': sites,
-            'gadgets': gadgets,
-            'areas': areas,
-            'meters': meters,
-            'measurements': measurements,
-            'readingData':readingArray,
-            'gadgetTypes':GADGET_TYPES,
-            'accessControl':ACCESS_CONSTROL,
-            'alarms':alarms,
-            'config':config,
-            'dateNow':dateNow,
-            
-        }
-
-        return render(request, 'indivDashboard2.html', context)
-    else:
+    # Only allow access to site admins/superusers
+    if not (
+        request.user.is_superuser
+        or request.user.userModel.first().site.id == dashboard_.site.id
+        or request.user.userModel.first().role == 'Administrator'
+    ):
         return redirect('/dashboard')
+
+    # --- Master measurement order ---
+    ORDERED_MEASUREMENTS = [
+                # 🔌 Electricity Meter
+                "Voltage L1N", "Voltage L2N", "Voltage L3N",
+                "Voltage L1-L2", "Voltage L2-L3", "Voltage L3-L1",
+                "3-Phase Average Voltage L-N", "3-Phase Average Voltage L-L",
+
+                "Current L1", "Current L2", "Current L3",
+                "3-Phase Average Current L-L",
+                
+                "Line Frequency",
+                
+                "Power Factor L1", "Power Factor L2", "Power Factor L3",
+                "Power Factor",
+
+                "Active Power L1", "Active Power L2", "Active Power L3",
+                "Total Active Power",
+                
+                "Reactive Power L1", "Reactive Power L2", "Reactive Power L3",
+                "Total Reactive Power",
+                
+                "Apparent Power L1", "Apparent Power L2", "Apparent Power L3",
+                "Total Apparent Power",
+
+                "THD Voltage L1-L2", "THD Voltage L2-L3", "THD Voltage L3-L1",
+                
+                "Energy",
+
+                # 💧 Water Meter
+                "Flow Rate", "Total Volume",
+
+                # 🔥 Gas Meter
+                "Gas Flow Rate", "Gas Pressure", "Total Gas Volume",
+
+                # 🌡️ Steam Meter
+                "Steam Flow Rate", "Steam Pressure", "Total Steam",
+
+                # ⛽ Fuel Meter
+                "Fuel Consumption Rate", "Total Fuel Used",
+
+                # 🌡️ Temperature & Humidity
+                "Temperature", "Humidity", "Pressure",
+
+                # 🌬️ Air Quality
+                "CO2 Level", "PM2.5", "PM10",
+            ]
+    # Gadgets
+    gadgets = Gadgets.objects.filter(dashboard=dashboard_).prefetch_related('meters', 'measurement')
+    for g in gadgets:
+        measurement_names = [m.name for m in g.measurement.all()]
+        g.ordered_measurements = [m for m in ORDERED_MEASUREMENTS if m in measurement_names]
+
+    site = dashboard_.site
+    areas = Areas.objects.filter(building__site=site).prefetch_related('meters')
+    meters = Meters.objects.filter(area__in=areas)
+    measurements = Measurements.objects.all()
+
+    # Alarms
+    alarms = Alarms.objects.filter(acknowledged=False, meter__in=meters)
+    for alarm in alarms:
+        if alarm.acknowledged:
+            alarm.color = "green"
+        elif "high" in alarm.alarmType.lower():
+            alarm.color = "red"
+        elif "low" in alarm.alarmType.lower():
+            alarm.color = "rgb(179, 179, 21)"
+        else:
+            alarm.color = "white"
+
+    # Preload readings for all meters
+    meter_readings = LatestMeterReading.objects.filter(meter__in=meters)
+
+    readingArray = []
+    for reading in meter_readings:
+        readingArray.append({
+            'meter_id': reading.meter.id,
+            'timestamp': reading.timestamp.strftime('%H:%M'),
+            'data': reading.data
+        })
+
+    context = {
+        'dashboard': dashboard_,
+        'sites': sites,
+        'gadgets': gadgets,
+        'areas': areas,
+        'meters': meters,
+        'measurements': measurements,
+        'readingData': readingArray,
+        'gadgetTypes': GADGET_TYPES,
+        'accessControl': ACCESS_CONSTROL,
+        'alarms': alarms,
+        'config': config,
+        'dateNow': dateNow,
+    }
+
+    return render(request, 'indivDashboard2.html', context)
+
     
 
 from django.shortcuts import render
@@ -580,6 +635,151 @@ def fetchLatestToolData(request, dashboard_id, gadget_id):
     else:
         return redirect('/dashboard')
 
+
+@login_required
+def fetchLatestMultipleMeterTableData(request, dashboard_id, gadget_id):
+    dashboard_ = get_object_or_404(Dashboard, id=dashboard_id)
+
+    if (
+        request.user.is_superuser
+        or request.user.userModel.first().site.id == dashboard_.site.id
+        or request.user.userModel.first().role == "Administrator"
+    ):
+        try:
+            gadget = Gadgets.objects.prefetch_related("meters", "measurement").get(id=gadget_id)
+            meters = gadget.meters.all()
+            measurements = gadget.measurement.all()
+
+            # ✅ Define the master measurement order
+            ordered_measurements = [
+                # 🔌 Electricity Meter
+                "Voltage L1N", "Voltage L2N", "Voltage L3N",
+                "Voltage L1-L2", "Voltage L2-L3", "Voltage L3-L1",
+                "3-Phase Average Voltage L-N", "3-Phase Average Voltage L-L",
+
+                "Current L1", "Current L2", "Current L3",
+                "3-Phase Average Current L-L",
+                
+                "Line Frequency",
+                
+                "Power Factor L1", "Power Factor L2", "Power Factor L3",
+                "Power Factor",
+
+                "Active Power L1", "Active Power L2", "Active Power L3",
+                "Total Active Power",
+                
+                "Reactive Power L1", "Reactive Power L2", "Reactive Power L3",
+                "Total Reactive Power",
+                
+                "Apparent Power L1", "Apparent Power L2", "Apparent Power L3",
+                "Total Apparent Power",
+
+                "THD Voltage L1-L2", "THD Voltage L2-L3", "THD Voltage L3-L1",
+                
+                "Energy",
+
+                # 💧 Water Meter
+                "Flow Rate", "Total Volume",
+
+                # 🔥 Gas Meter
+                "Gas Flow Rate", "Gas Pressure", "Total Gas Volume",
+
+                # 🌡️ Steam Meter
+                "Steam Flow Rate", "Steam Pressure", "Total Steam",
+
+                # ⛽ Fuel Meter
+                "Fuel Consumption Rate", "Total Fuel Used",
+
+                # 🌡️ Temperature & Humidity
+                "Temperature", "Humidity", "Pressure",
+
+                # 🌬️ Air Quality
+                "CO2 Level", "PM2.5", "PM10",
+            ]
+
+            # ✅ Keep only the gadget’s measurements but ordered
+            measurement_names = [m.name for m in measurements]
+            sorted_measurements = [m for m in ordered_measurements if m in measurement_names]
+
+            readings = []
+            for meter in meters:
+                if not LatestMeterReading.objects.filter(meter=meter):
+                    continue
+                latest_reading = (
+                    LatestMeterReading.objects.filter(meter=meter)
+                    .order_by("-timestamp")
+                    .first()
+                )
+                if latest_reading:
+                    readings.append(
+                        {
+                            "meter_id": meter.id,
+                            "meter_name": meter.name,
+                            "timestamp": latest_reading.timestamp.strftime("%H:%M"),
+                            "data": latest_reading.data,
+                        }
+                    )
+            pprint(LatestMeterReading.objects.filter(meter=meter).order_by("-timestamp").first().data)
+            if not readings:
+                return JsonResponse({"error": "No readings found"}, status=404)
+
+            return JsonResponse(
+                {
+                    "readings": readings,
+                    "measurements": sorted_measurements,  # ✅ Always ordered
+                }
+            )
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+    else:
+        return redirect("/dashboard")
+
+
+
+
+def fetchValueCardData(request, dashboard_id, site_id, measurement_id):
+    """
+    Returns the latest total value (site_total) of a given measurement for the specified site.
+    Example: latest total Voltage L1N for site_id=1
+    """
+    # Authorization check
+    if not (request.user.is_superuser or request.user.userModel.first().role == 'Administrator'):
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    # Get site object
+    site = get_object_or_404(Site, id=site_id)
+
+    # Fetch the most recent aggregate record for this site (any period type)
+    latest_agg = (
+        HierarchyDataAggregate.objects.filter(site=site)
+        .order_by("-start_date")
+        .first()
+    )
+    measurement = Measurements.objects.get(id=measurement_id).name
+
+    if not latest_agg:
+        return JsonResponse({
+            "site": site.name,
+            "measurement": measurement,
+            "value": None,
+            "message": "No data available"
+        })
+
+    # Access the measurement value safely
+    site_total = latest_agg.data.get("site_total", {})
+    latest_value = site_total.get(measurement, 0)
+
+    # Return JSON response
+    return JsonResponse({
+        "site": site.name,
+        "measurement": measurement,
+        "latest_date": str(latest_agg.start_date),
+        "value": latest_value
+    })
+
+
+
+
 @login_required
 def fetchTableData(request, dashboard_id, gadget_id):
     dashboard_ = get_object_or_404(Dashboard, id=dashboard_id)
@@ -663,41 +863,61 @@ def heatmap_data(request, dashboard_id, meter_id, start_date, end_date, measurem
 
 
 from pprint import pprint
+from django.db.models import Prefetch
 @login_required
 def building_heatmap(request, dashboard_id, buildingID, measurement):
-    building = Buildings.objects.get(id=int(buildingID))
+    building = get_object_or_404(Buildings.objects.select_related('site'), id=buildingID)
     site = building.site
-    areas = building.areas.all().prefetch_related('meters')
 
+    # Prefetch only necessary related objects (areas + meters)
+    areas = (
+        building.areas.prefetch_related(
+            Prefetch('meters', to_attr='prefetched_meters')
+        )
+    )
+
+    # Fetch the latest aggregate record in a single query
+    agg = (
+        HierarchyDataAggregate.objects
+        .filter(site=site, period_type='monthly')
+        .only('data')  # fetch only JSON field
+        .order_by('-start_date')
+        .first()
+    )
+
+    if not agg:
+        return JsonResponse({'error': 'No aggregate data found'}, status=404)
+
+    data = agg.data.get('buildings', {}).get(building.name, {}).get('areas', {})
     area_values = {}
-    agg = HierarchyDataAggregate.objects.filter(
-        site=site,
-        period_type='monthly'
-    ).order_by('-start_date').first()
 
-    # pprint(agg.data)
+    # Loop through all areas once
+    for area in areas:
+        area_data = data.get(area.name, {})
+        area_total = float(
+            area_data.get('area_total', {}).get(measurement, 0) or 0
+        )
+        meters_data = area_data.get('meters', {})
 
-    if agg:
-        building_data = agg.data.get('buildings', {}).get(building.name, {})
-
-        for area in areas:
-            area_data = building_data.get('areas', {}).get(area.name, {})
-            area_total = round(float(area_data.get('area_total', {}).get(measurement, 0)), 2)
-            pprint(area_data)
-            # Fetch meter values
-            meters_list = []
-            for meter in area.meters.all():
-                meter_value = round(float(area_data.get('meters', {}).get(str(meter.name), {}).get('data').get(measurement, 0)), 2)
-                meters_list.append({
-                    "name": meter.name,
-                    "value": meter_value
-                })
-
-            area_values[area.name] = {
-                "value": area_total,
-                "meters": meters_list
+        # Precompute all meter values quickly using list comprehension
+        meters_list = [
+            {
+                "name": meter.name,
+                "value": round(
+                    float(meters_data.get(meter.name, {})
+                          .get('data', {})
+                          .get(measurement, 0) or 0),
+                    2
+                )
             }
-    pprint(area_values)
+            for meter in area.prefetched_meters
+            if meter.name in meters_data  # Skip non-existent meters
+        ]
+
+        area_values[area.name] = {
+            "value": round(area_total, 2),
+            "meters": meters_list
+        }
 
     if not area_values:
         return JsonResponse({'error': 'No data for this building'}, status=404)
@@ -705,7 +925,8 @@ def building_heatmap(request, dashboard_id, buildingID, measurement):
     return JsonResponse({
         "building": building.name,
         "areas": [
-            {"name": k, "value": v["value"], "meters": v["meters"]} for k, v in area_values.items()
+            {"name": k, "value": v["value"], "meters": v["meters"]}
+            for k, v in area_values.items()
         ]
     })
 

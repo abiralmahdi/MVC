@@ -36,8 +36,16 @@ class Meters(models.Model):
     loadType = models.ForeignKey(LoadType, related_name='meters', on_delete=models.CASCADE,)
     meterType = models.CharField(max_length=100,)
     ecological = models.BooleanField(default=False)
+    registerMapping = models.JSONField(default={}, null = True, blank = True)
+    unit_id = models.IntegerField(default=1)
+    
     def __str__(self):
         return self.name + ' - ' + self.meterType
+    
+    def delete(self, *args, **kwargs):
+        # Clear ManyToMany relations before deletion
+        self.gadgets.clear()
+        super().delete(*args, **kwargs)
 
 
 class Masters(models.Model):
@@ -57,6 +65,14 @@ class Measurements(models.Model):
         if self.meter:
             self.meterType = self.meter.meterType
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
+class Units(models.Model):
+    name = models.CharField(max_length=100, null=True, blank=True)
+    measurement = models.ForeignKey(Measurements, on_delete=models.CASCADE, null=True, blank=True, related_name='units')
 
     def __str__(self):
         return self.name

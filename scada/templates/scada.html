@@ -3,11 +3,23 @@
 
 <style>
     .accordion-button::after {
-    display: none !important;
-}
+      display: none !important;
+    }
+    .scale-annotations span {
+      line-height: 1;
+    }
 
     .dark-shadow {
       box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.9) !important; /* darker shadow */
+    }
+    .blink {
+      animation: blinker 1s step-start infinite;
+    }
+
+    @keyframes blinker {
+      50% {
+        opacity: 0;
+      }
     }
   </style>
 
@@ -197,7 +209,12 @@
           <!-- Tank Form (hidden initially) -->
           <div id="tankForm" class="border-dark bg-dark p-3 d-none">
             <h6>Add Tank</h6>
-          
+            <div class="row">
+              <div class="col-md-12 mb-3">
+                <label class="form-label">Tank Name</label>
+                <input type="text" class="form-control" name="tankName">
+              </div>
+            </div>
             <!-- High Byte + High Bit -->
             <div class="row">
               <div class="col-md-6 mb-3">
@@ -239,7 +256,7 @@
                 <input type="number" class="form-control" name="tankVolume">
               </div>
             </div>
-            </div>
+          </div>
           </div>
             <div class="modal-footer">
               <button type="submit" class="btn btn-success">Save</button>
@@ -265,157 +282,152 @@
 <!-- Overlay -->
 <div id="overlay" class="overlay"></div>
 <div class="d-flex">
-    <button type="button" class="btn btn-info fw-bold ms-auto me-5 mt-5" data-bs-toggle="modal" data-bs-target="#motorModal">
-        <i class="fa-solid fa-plus me-1"></i> Add Motor
-    </button>    
+
+
+
+
+    {% if request.user.is_superuser %}
+    <button type="button" class="btn btn-info fw-bold ms-auto me-5 mt-3" data-bs-toggle="modal" data-bs-target="#motorModal">
+      <i class="fa-solid fa-plus me-1"></i> Add Motor
+  </button>    
+    {% else %}
+  <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="You are not authorized to create a dashboard">
+    <button class="btn btn-block btn-info ms-3 fw-bold" disabled><i class="fa-solid me-2 fa-plus"></i>Add Motor</button>
+  </span>
+  {% endif %}
+
+
 </div>
-      
-<div id="scada-dashboard" class="d-flex flex-wrap justify-content-center mt-2">
-
+{% if motors or tanks %}
+ <!-- ========== MOTORS SECTION ========== -->
+<div id="motor-section" class="d-flex flex-wrap justify-content-center mt-2">
   {% for motor in motors %}
-<div class="d-flex align-items-stretch m-3">
-
-  <!-- Combined Motor + Tank + Scale Card -->
-  <div class="card text-white bg-dark dark-shadow border-0 flex-fill"
-       style="width: {% if motor.tank.all %}40rem{% else %}22rem{% endif %};">
-
-    <!-- Card Header -->
-    <div class="card-header d-flex align-items-center bg-black">
-      <h5 class="mb-0">
-        <i class="fa-solid fa-microchip me-2"></i> {{ motor.motorName }}
-      </h5>
-      <div id="motorTitle{{motor.id}}" class="ms-2">
-        {% if motor.isOn %}
-          <span class='badge bg-success'>Running</span>
-        {% else %}
-          <span class='badge bg-warning text-dark'>Off</span>
-        {% endif %}
+  <div class="d-flex align-items-stretch m-3">
+    <div class="card text-white bg-dark dark-shadow border-0 flex-fill" style="width: 22rem;">
+      
+      <!-- Header -->
+      <div class="card-header d-flex align-items-center bg-black">
+        <h6 class="mb-0">
+          <i class="fa-solid fa-microchip me-2"></i> {{ motor.motorName }}
+        </h6>
+        <div id="motorTitle{{motor.id}}" class="ms-2">
+          {% if motor.isOn %}
+            <span class='badge bg-success'>Running</span>
+          {% else %}
+            <span class='badge bg-warning text-dark'>Off</span>
+          {% endif %}
+        </div>
+        <div id="motorTrip{{motor.id}}"></div>
       </div>
-      <div id="motorTrip{{motor.id}}">
 
-      </div>
-    </div>
-
-    <!-- Card Body -->
-    <div class="card-body d-flex">
-
-      <!-- Left: Motor Section -->
-      <div class="flex-fill pe-3 {% if motor.tank.all %}border-end border-secondary{% endif %}">
-        <!-- Dynamic fields -->
+      <!-- Body -->
+      <div class="card-body">
         <div id="motor-fields-{{ motor.id }}">
           <p class="text-muted">Loading...</p>
         </div>
-
         <hr class="border-secondary">
 
         <!-- Control buttons -->
         <div class="d-flex flex-wrap gap-2 justify-content-between">
-          <button class="btn btn-success btn-sm control-button flex-fill" data-motor-id="{{ motor.id }}" data-action="start" id="startBtn{{motor.id}}">
+          <button class="btn btn-success btn-sm flex-fill control-button"
+                  data-motor-id="{{ motor.id }}" data-action="start" id="startBtn{{motor.id}}">
             <i class="fa-solid fa-play me-1"></i> Start
           </button>
-          <button class="btn btn-danger btn-sm control-button flex-fill" data-motor-id="{{ motor.id }}" data-action="stop" id="stopBtn{{motor.id}}">
+          <button class="btn btn-danger btn-sm flex-fill control-button"
+                  data-motor-id="{{ motor.id }}" data-action="stop" id="stopBtn{{motor.id}}">
             <i class="fa-solid fa-stop me-1"></i> Stop
           </button>
         </div>
       </div>
-
-      {% if motor.tank.all %}
-      <!-- Middle: Tank Section -->
-      <div class="flex-fill px-3 border-end border-secondary text-center" id="tank-card-{{motor.id}}">
-        <p class="my-2">
-          <i class="fa-solid fa-arrow-up text-danger me-1"></i> <span id="highText{{motor.id}}" class="fw-bold text-danger border border-danger p-2">High</span>
-        </p>
-        
-        <!-- Centered input with reduced width -->
-        <div class="d-flex justify-content-center my-5">
-          <input type="text" 
-                 class="form-control form-control-sm text-center" 
-                 style="width: 80px;" 
-                 id="tank-value-{{ motor.id }}" 
-                 readonly>
-        </div>
-        
-        <p class="mb-0">
-          <i class="fa-solid fa-arrow-down text-success me-1"></i> <span id="lowText{{motor.id}}" class="fw-bold text-success border border-success p-2">Low</span>
-        </p>
-      </div>
-      
-
-      <!-- Right: Value Scale Section -->
-      <div class="d-flex flex-column justify-content-end ps-3 text-center" style="width: 60px;">
-        <div class="scale-container border border-secondary rounded bg-dark position-relative"
-             style="height: 200px; width: 30px; margin: auto; overflow: hidden;">
-          <!-- Animated fill -->
-          <div id="scale-fill-{{ motor.id }}" class="bg-primary position-absolute bottom-0 start-0 w-100"
-               style="height: 0%; transition: height 0.5s ease;"></div>
-        </div>
-        <small class="mt-2">Value</small>
-      </div>
-      {% endif %}
-
-      <script>
-        document.addEventListener("DOMContentLoaded", function () {
-          const startBtn{{motor.id}} = document.getElementById("startBtn{{motor.id}}");
-          const stopBtn{{motor.id}} = document.getElementById("stopBtn{{motor.id}}");
-        
-          function controlMotor(motorId, action) {
-            fetch("/scada/controlMotor/", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-CSRFToken": "{{ csrf_token }}"
-              },
-              body: new URLSearchParams({
-                motor_id: motorId,
-                action: action
-              })
-            })
-            .then(res => res.json())
-            .then(data => {
-              if (data.success) {
-                const fieldsDiv = document.getElementById(`motorTitle${motorId}`);
-                const tripDiv = document.getElementById(`motorTrip${motorId}`);
-                if (data.isOn) {
-                  fieldsDiv.innerHTML = `<span class='badge bg-success'>Running</span>`;
-                } else {
-                  fieldsDiv.innerHTML = `<span class='badge bg-warning text-dark'>Off</span>`;
-                }
-                if (data.trip){
-                  tripDiv.innerHTML = `<span class='badge bg-danger ms-2'>Trip</span>`;
-                } else {
-                  tripDiv.innerHTML = ``;
-                }
-              } else {
-                alert("Error: " + data.error);
-              }
-            });
-          }
-        
-          if (startBtn{{motor.id}}) {
-            startBtn{{motor.id}}.addEventListener("click", function () {
-              const motorId = this.dataset.motorId;
-              controlMotor(motorId, "start");
-            });
-          }
-        
-          if (stopBtn{{motor.id}}) {
-            stopBtn{{motor.id}}.addEventListener("click", function () {
-              const motorId = this.dataset.motorId;
-              controlMotor(motorId, "stop");
-            });
-          }
-        });
-
-
-        </script>
     </div>
   </div>
-
+  {% endfor %}
 </div>
-{% endfor %}
+
+
+<!-- ========== TANKS SECTION ========== -->
+<div id="tank-section" class="d-flex flex-wrap justify-content-center mt-5">
+  {% for tank in tanks %}
+  <div class="d-flex align-items-stretch m-3">
+    <div class="card text-white bg-dark dark-shadow border-0 flex-fill" style="width: 18rem;">
+  
+      <!-- Header -->
+      <div class="card-header bg-black">
+        <h6 class="mb-0">
+          <i class="fa-solid fa-water me-2"></i>{{ tank.tankName }}
+        </h6>
+      </div>
+  
+      <!-- Body -->
+      <div class="card-body text-center">
+  
+        <div class="d-flex justify-content-center align-items-center gap-3">
+  
+          <!-- High/Low Indicators -->
+          <div class="d-flex flex-column justify-content-between align-items-center" style="height: 200px;">
+            <p class="mb-0 mt-3">
+              <i class="fa-solid fa-arrow-up text-danger me-1"></i>
+              <span id="highText{{tank.motor.id}}" class="fw-bold text-danger border border-danger p-2">High</span>
+            </p>
+            <input type="text"
+                 class="form-control form-control-sm text-center"
+                 style="width: 80px;"
+                 id="tank-value-{{ tank.motor.id }}"
+                 readonly>
+  
+            <p class="mb-3">
+              <i class="fa-solid fa-arrow-down text-success me-1"></i>
+              <span id="lowText{{tank.motor.id}}" class="fw-bold text-success border border-success p-2">Low</span>
+            </p>
+          </div>
+  
+          <!-- Scale -->
+          <div class="d-flex justify-content-center align-items-end" style="height: 200px; gap: 5px;">
+
+            <!-- Scale Bar -->
+            <div class="scale-container border border-secondary rounded bg-dark position-relative"
+                 style="height: 100%; width: 30px; overflow: hidden;">
+              <div id="scale-fill-{{ tank.motor.id }}"
+                   class="bg-primary position-absolute bottom-0 start-0 w-100"
+                   style="height: 0%; transition: height 0.5s ease;"></div>
+            </div>
+          
+            <!-- Scale Labels -->
+            <div class="d-flex flex-column justify-content-between" style="height: 100%; font-size: 0.7rem; text-align: left;">
+              <span id="scale-max-{{ tank.motor.id }}">100%</span>
+              <span>75%</span>
+              <span>50%</span>
+              <span>25%</span>
+              <span id="scale-min-{{ tank.motor.id }}">0%</span>
+            </div>
+          
+          </div>
+          
+  
+        </div>
+  
+
+      </div>
+    </div>
+  </div>
     
-
+  {% endfor %}
 </div>
+{% else %}
+<div class="container-fluid" id="main-content">
+        
+  <div class="row">
+      <main class="mt-3">
+          <div id="noDocument">
+              <h1 class="h1 text-center mt-5 pt-5 text-secondary"><i class="fa-solid fa-microchip fa-2x"></i></h1>
+              <h3 class="text-center mt-5 text-secondary">No Motors or Tanks Configured</h3>
+          </div>
+
+      </main>
+  </div>
+</div>
+{% endif %}
+
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -450,48 +462,48 @@
           }
 
           if (data.trip){
-            tripDiv.innerHTML = `<span class='badge bg-danger ms-2'>Trip</span>`;
+            tripDiv.innerHTML = `<span class='badge bg-danger blink ms-2'>Trip</span>`;
           } else {
             tripDiv.innerHTML = ``;
           }
   
           // --- Tank section (if exists) ---
           if (data.tank && Object.keys(data.tank).length > 0) {
+            // Always append % after the value
             document.getElementById(`tank-value-${motorId}`).value = data.tank.value;
             
-            // Icons
+            // Icons logic (unchanged) ...
             let tankCard = document.getElementById(`tank-card-${motorId}`);
-            console.log(data.tank.high)
             if (tankCard) {
+                if (data.tank.high === true || data.tank.high === 1) {
+                    document.getElementById('highText' + motorId).classList.add("text-light", "bg-danger");
+                    document.getElementById('highText' + motorId).classList.remove("text-danger");
+                    document.getElementById('lowText' + motorId).classList.remove("text-light", "bg-success");
+                    document.getElementById('lowText' + motorId).classList.add("text-success");
+                } else {
+                    document.getElementById('highText' + motorId).classList.remove("text-light", "bg-danger");
+                    document.getElementById('highText' + motorId).classList.add("text-danger");
+                    document.getElementById('lowText' + motorId).classList.add("text-light", "bg-success");
+                    document.getElementById('lowText' + motorId).classList.remove("text-success");
+                }
 
-              if (data.tank.high === true || data.tank.high === 1) {
-                document.getElementById('highText' + motorId).classList.add("text-light", "bg-danger");
-                document.getElementById('highText' + motorId).classList.remove("text-danger");
-                document.getElementById('lowText' + motorId).classList.remove("text-light", "bg-success");
-                document.getElementById('lowText' + motorId).classList.add("text-success");
-              } else {
-                document.getElementById('highText' + motorId).classList.remove("text-light", "bg-danger");
-                document.getElementById('highText' + motorId).classList.add("text-danger");
-                document.getElementById('lowText' + motorId).classList.add("text-light", "bg-success");
-                document.getElementById('lowText' + motorId).classList.remove("text-success");
-              }
-
-              if (data.tank.low === true || data.tank.low === 1) {
-                document.getElementById('highText' + motorId).classList.remove("text-light", "bg-danger");
-                document.getElementById('highText' + motorId).classList.add("text-danger");
-                document.getElementById('lowText' + motorId).classList.add("text-light", "bg-success");
-                document.getElementById('lowText' + motorId).classList.remove("text-success");
-              } else {
-                document.getElementById('highText' + motorId).classList.add("text-light", "bg-danger");
-                document.getElementById('highText' + motorId).classList.remove("text-danger");
-                document.getElementById('lowText' + motorId).classList.remove("text-light", "bg-success");
-                document.getElementById('lowText' + motorId).classList.add("text-success");
-              }
+                if (data.tank.low === true || data.tank.low === 1) {
+                    document.getElementById('highText' + motorId).classList.remove("text-light", "bg-danger");
+                    document.getElementById('highText' + motorId).classList.add("text-danger");
+                    document.getElementById('lowText' + motorId).classList.add("text-light", "bg-success");
+                    document.getElementById('lowText' + motorId).classList.remove("text-success");
+                } else {
+                    document.getElementById('highText' + motorId).classList.add("text-light", "bg-danger");
+                    document.getElementById('highText' + motorId).classList.remove("text-danger");
+                    document.getElementById('lowText' + motorId).classList.remove("text-light", "bg-success");
+                    document.getElementById('lowText' + motorId).classList.add("text-success");
+                }
             }
-  
+
             // Scale update
             updateMotorScale(motorId, data.tank.value, data.tank.tankVolume);
-          }
+        }
+
         })
         .catch(() => {
           document.getElementById(`motor-fields-${motorId}`).innerHTML =
@@ -511,13 +523,23 @@
   if (scaleFill && tankVolume > 0) {
     // Normalize value with respect to tankVolume
     let percent = (value / tankVolume) * 100;
-
-    // Clamp between 0–100
-    percent = Math.max(0, Math.min(100, percent));
-
+    percent = Math.max(0, Math.min(100, percent)); // Clamp between 0–100
     scaleFill.style.height = percent + "%";
+
+    // Update annotation labels dynamically
+    document.getElementById(`scale-max-${motorId}`).innerText = tankVolume + "%";
+    document.getElementById(`scale-min-${motorId}`).innerText = "0" + "%";
+
+    // (Optional) show 75%, 50%, 25% as actual values
+    const annots = scaleFill.parentElement.nextElementSibling.querySelectorAll("span");
+    if (annots.length === 5) {
+      annots[1].innerText = Math.round((0.75 * tankVolume)) + "%";
+      annots[2].innerText = Math.round((0.50 * tankVolume)) + "%";
+      annots[3].innerText = Math.round((0.25 * tankVolume)) + "%";
+    }
   }
 }
+
   </script>
   
   
@@ -615,7 +637,7 @@
                   fieldsDiv.innerHTML = `<span class='badge bg-warning text-dark'>Off</span>`;
                 }
                 if (data.trip){
-                  tripDiv.innerHTML = `<span class='badge bg-danger ms-2'>Trip</span>`;
+                  tripDiv.innerHTML = `<span class='badge bg-danger blink ms-2'>Trip</span>`;
                 } else {
                   tripDiv.innerHTML = ``;
                 } 

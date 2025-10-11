@@ -42,7 +42,7 @@ while True:
         time_str = time.strftime('%Y-%m-%d %H:%M:%S')
         print(f"✅ {time_str} → Motor On: {i_motor_on}, Motor Off: {i_motor_off}, Run: {run}, speed ip: {speed}, levelLow: {level_l}, levelHigh: {level_h}, value: {value}, trip: {trip}")
 
-        # set_bool(data, 0, 3, True)
+        set_bool(data, 6, 2, True)
         # set_int(data, 4, 15) 
 
         # --- Write back to PLC ---

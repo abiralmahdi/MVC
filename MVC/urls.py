@@ -16,6 +16,7 @@ urlpatterns = [
     path('location/', include('location.urls')),
     path('api/', include('api.urls')),
     path('scada/', include('scada.urls')),
+    path('billing/', include('billing.urls')),
 ]
 
 

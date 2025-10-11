@@ -27,6 +27,7 @@ class Motor(models.Model):
     tripOffset = models.JSONField()
 
 class Tank(models.Model):
+    tankName = models.CharField(max_length=100, default=True, null=True, blank=True)
     motor = models.ForeignKey(Motor, on_delete=models.CASCADE, related_name='tank', null=True, blank=True)
     highByte = models.IntegerField(null=True, blank=True)
     lowByte = models.IntegerField(null=True, blank=True)

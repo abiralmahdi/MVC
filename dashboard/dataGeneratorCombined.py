@@ -13,6 +13,7 @@ def generate_power_meter_data(meter, start_time, num_entries, interval):
     # Cumulative counters
     total_active_power = 1000.0
     total_reactive_power = 100.0
+    total_energy = 0.0  # in kWh
 
     current_time = start_time
     for _ in tqdm(range(num_entries), desc=f"{meter.name} (Power)"):
@@ -22,10 +23,19 @@ def generate_power_meter_data(meter, start_time, num_entries, interval):
         total_active_power += active_increment
         total_reactive_power += reactive_increment
 
+        # Calculate Apparent Power (S = √(P² + Q²))
+        total_apparent_power = round(
+            (total_active_power**2 + total_reactive_power**2) ** 0.5, 3
+        )
+
+        # Increment Energy (kWh) → Active Power × (interval hours)
+        energy_increment = active_increment * (interval.total_seconds() / 3600.0)
+        total_energy += energy_increment
+
         data = {
-            "Voltage L1-N": round(random.uniform(229, 231), 1),
-            "Voltage L2-N": round(random.uniform(229, 231), 1),
-            "Voltage L3-N": round(random.uniform(229.5, 231.5), 1),
+            "Voltage L1N": round(random.uniform(229, 231), 1),
+            "Voltage L2N": round(random.uniform(229, 231), 1),
+            "Voltage L3N": round(random.uniform(229.5, 231.5), 1),
             "Voltage L1-L2": round(random.uniform(398, 401), 1),
             "Voltage L2-L3": round(random.uniform(398, 401), 1),
             "Voltage L3-L1": round(random.uniform(398, 401), 1),
@@ -49,6 +59,7 @@ def generate_power_meter_data(meter, start_time, num_entries, interval):
             "Power Factor L1": round(random.uniform(0.96, 0.99), 2),
             "Power Factor L2": round(random.uniform(0.96, 0.99), 2),
             "Power Factor L3": round(random.uniform(0.96, 0.99), 2),
+            "Power Factor": round(random.uniform(0.96, 0.99), 2),
 
             "THD Voltage L1-L2": round(random.uniform(3.5, 5.0), 2),
             "THD Voltage L2-L3": round(random.uniform(3.5, 5.0), 2),
@@ -59,9 +70,11 @@ def generate_power_meter_data(meter, start_time, num_entries, interval):
             "3-Phase Average Voltage L-L": round(random.uniform(398, 401), 1),
             "3-Phase Average Current L-L": round(random.uniform(11.5, 12.5), 1),
 
+            # Cumulative values
             "Total Active Power": round(total_active_power, 3),
             "Total Reactive Power": round(total_reactive_power, 3),
-            "Total Power Factor": round(random.uniform(0.96, 0.99), 2),
+            "Total Apparent Power": total_apparent_power,
+            "Energy": round(total_energy, 3),  # in kWh
         }
 
         readings.append(

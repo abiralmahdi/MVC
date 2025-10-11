@@ -13,11 +13,13 @@ def scada(request):
     motors = Motor.objects.all().prefetch_related('tank')
     sites = Site.objects.all().prefetch_related('buildings')
     config = GlobalConfiguration.objects.first()
+    tanks = Tank.objects.all()
     context = {
         "masters":masters,
         "motors":motors,
         "config":config,
         "sites":sites,
+        "tanks":tanks
     }
     return render(request, "scada.html", context)
 
@@ -28,12 +30,14 @@ def scadaBuilding(request, buildingID):
     motors = Motor.objects.filter(building=building).prefetch_related('tank')
     sites = Site.objects.all().prefetch_related('buildings')
     config = GlobalConfiguration.objects.first()
+    tanks = Tank.objects.all()
     context = {
         "building":building,
         "motors":motors,
         "config":config,
         "sites":sites,
         "masters":masters,
+        "tanks":tanks
     }
     return render(request, "scada.html", context)
 
@@ -52,8 +56,8 @@ import snap7
 from snap7.util import get_bool, get_int, get_real, get_dword
 from snap7.type import Areas
 from .models import Motor, Tank
-
 from pprint import pprint
+
 def fetchMotorAndTankData(request, motorID):
     motor = get_object_or_404(Motor, id=motorID)
     tank = Tank.objects.filter(motor=motor).first()
@@ -98,10 +102,11 @@ def fetchMotorAndTankData(request, motorID):
                 val = f"Error: {str(e)}"
 
             trip = get_bool(data, int(motor.tripOffset["byte"]), int(motor.tripOffset["bit"]))
+            isOn = get_bool(data, int(motor.motorOnOffset["byte"]), int(motor.motorOnOffset["bit"]))
 
             response["motor"][field_name] = val
             response["trip"] = bool(trip)
-            response["isOn"] = motor.isOn
+            response["isOn"] = isOn
 
         # --- Tank data ---
         if tank:
@@ -140,7 +145,7 @@ def save_motor(request):
     slot = request.POST.get("slot")
     startByte = request.POST.get("startByte")
     dataSize = request.POST.get("dataSize")
-
+    tankName = request.POST.get("tankName")
     motorOnOffset = {
         "byte": int(request.POST.get("motorOnByte", 0)),
         "bit": int(request.POST.get("motorOnBit", 0))
@@ -185,30 +190,22 @@ def save_motor(request):
         tripOffset=tripOffset
     )
 
-    # --- If Tank form fields were submitted, create Tank ---
-    if request.POST.get("highByte") and (request.POST.get("valueBit") or request.POST.get("valueByte", 0)):
+    # --- Check if any Tank-related field is filled ---
+    tank_fields = ["highByte", "lowByte", "highBit", "lowBit", "valueByte", "valueBit", "tankVolume"]
+    if any(request.POST.get(f) for f in tank_fields):
         Tank.objects.create(
             motor=motor,
-            highByte=request.POST.get("highByte", 0),
-            lowByte=request.POST.get("lowByte", 0),
-            highBit=request.POST.get("highBit", 0),
-            lowBit=request.POST.get("lowBit", 0),
-            valueByte=request.POST.get("valueByte", 0),
-            valueBit=request.POST.get("valueBit", 0),
-
-        )
-    else:
-        Tank.objects.create(
-            motor=motor,
-            highByte=request.POST.get("highByte", 0),
-            lowByte=request.POST.get("lowByte", 0),
-            highBit=request.POST.get("highBit", 0),
-            lowBit=request.POST.get("lowBit", 0),
-            tankVolume=request.POST.get("tankVolume", 0)
+            highByte=request.POST.get("highByte", None),
+            lowByte=request.POST.get("lowByte", None),
+            highBit=request.POST.get("highBit", None),
+            lowBit=request.POST.get("lowBit", None),
+            valueByte=request.POST.get("valueByte", None),
+            valueBit=request.POST.get("valueBit", None),
+            tankVolume=request.POST.get("tankVolume", None),
+            tankName=tankName
         )
 
     return redirect("/scada")
-
 
 # views.py
 import snap7

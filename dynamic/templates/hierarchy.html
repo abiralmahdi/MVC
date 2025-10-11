@@ -614,7 +614,7 @@ if (navigator.geolocation) {
             <h5 class="modal-title">Add Meter</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
           </div>
-          <form method="post" action="/settings/hierarchy/addMeter">
+          <form method="post" action="/settings/hierarchy/addMeter" id="addMeterForm">
             {% csrf_token %}
             <div class="modal-body bg-dark text-white border-dark">
               <div class="mb-3">
@@ -624,6 +624,10 @@ if (navigator.geolocation) {
               <div class="mb-3">
                 <label for="meter_ip" class="form-label">Meter IP Address</label>
                 <input type="text" class="form-control" name="meter_ip" required>
+              </div>
+              <div class="mb-3">
+                <label for="unit_id" class="form-label">Device ID</label>
+                <input type="number" class="form-control" name="unit_id" required>
               </div>
               <div class="mb-3">
                 <label for="meterTypeSelect" class="form-label">Select Meter Type</label>
@@ -661,6 +665,14 @@ if (navigator.geolocation) {
                   <option value="{{ load.id }}">{{ load.name }}</option>
                   {% endfor %}
                 </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold">Register Mapping</label>
+                <div id="register-container"></div>
+                <button type="button" class="btn btn-sm btn-secondary mt-2" id="add-register-btn">
+                  + Add Register Mapping
+                </button>
+                <input type="hidden" name="register_mapping" id="register_mapping_json">
               </div>
               <div class="mb-3">
                 <label for="loadSelect" class="form-label">Select Ecological Status</label>
@@ -885,5 +897,74 @@ if (navigator.geolocation) {
   </div>
 
 </div>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const addBtn = document.getElementById("add-register-btn");
+    const container = document.getElementById("register-container");
+    const hiddenInput = document.getElementById("register_mapping_json");
+    const form = document.getElementById("addMeterForm");
+  
+    // Add new mapping rows
+    addBtn.addEventListener("click", function() {
+      const row = document.createElement("div");
+      row.classList.add("d-flex", "gap-2", "align-items-center", "mb-2");
+  
+      // Measurement dropdown
+      const select = document.createElement("select");
+      select.classList.add("form-select", "bg-dark", "text-white");
+      select.style.flex = "1";
+      select.innerHTML = `
+        <option value="">Select Measurement</option>
+        {% for m in measurements %}
+        <option value="{{ m.name }}">{{ m.name }}</option>
+        {% endfor %}
+      `;
+  
+      // Offset input
+      const input = document.createElement("input");
+      input.type = "number";
+      input.placeholder = "Register Offset";
+      input.classList.add("form-control", "bg-dark", "text-white");
+      input.style.flex = "1";
+  
+      // Remove button
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.classList.add("btn", "btn-sm", "btn-danger");
+      removeBtn.innerHTML = "×";
+      removeBtn.onclick = function() {
+        container.removeChild(row);
+      };
+  
+      row.appendChild(select);
+      row.appendChild(input);
+      row.appendChild(removeBtn);
+      container.appendChild(row);
+    });
+  
+    // Convert register mappings to JSON before submit
+    form.addEventListener("submit", function() {
+      const mapping = {};
+      const rows = container.children; // get all child divs inside container
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const elements = row.getElementsByTagName("select");
+        const inputs = row.getElementsByTagName("input");
+  
+        if (elements.length > 0 && inputs.length > 0) {
+          const select = elements[0];
+          const input = inputs[0];
+          if (select.value && input.value) {
+            mapping[select.value] = parseInt(input.value);
+          }
+        }
+      }
+      hiddenInput.value = JSON.stringify(mapping);
+    });
+  });
+  </script>
+  
+  
+
 
 {% endblock %}
