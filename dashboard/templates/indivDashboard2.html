@@ -621,40 +621,41 @@
                 </div>
                 
                 <div class="d-flex mt-3">
+                    {% if globalConfig.treeType == 'hierarchy' %}
                     <!-- Tree Sidebar -->
-                    <div id="tree" class="me-1 border-end border-dark text-secondary"
+                    <div id="tree" class="me-1 border-end border-dark text-light"
                         style="width: 220px; overflow-y: auto; height: 75vh; font-size: small;">
-                        <ul class="list-group text-secondary">
+                        <ul class="list-group text-light" style="font-size: medium;">
                             {% for site in sites %}
-                            <li class="list-group-item bg-dark border-dark text-secondary">
+                            <li class="list-group-item bg-dark border-dark text-light">
                                 <strong>
-                                    <a class="text-secondary" href="#site-{{ site.id }}" data-bs-toggle="collapse"
+                                    <a class="text-light" href="#site-{{ site.id }}" data-bs-toggle="collapse"
                                         role="button" aria-expanded="false" aria-controls="site-{{ site.id }}">
                                         {{ site.name }}
                                     </a>
                                 </strong>
-                                <ul class="list-group bg-dark border-dark text-secondary collapse"
-                                    id="site-{{ site.id }}">
+                                <ul class="list-group bg-dark border-dark text-light collapse"
+                                    id="site-{{ site.id }}" style="font-size: medium;">
                                     {% for building in site.buildings.all %}
-                                    <li class="list-group-item bg-dark border-dark text-secondary">
-                                        <a class="text-secondary" href="#building-{{ building.id }}"
+                                    <li class="list-group-item bg-dark border-dark text-light">
+                                        <a class="text-light" href="#building-{{ building.id }}"
                                             data-bs-toggle="collapse" role="button" aria-expanded="false"
                                             aria-controls="building-{{ building.id }}">
                                             {{ building.name }}
                                         </a>
-                                        <ul class="list-group bg-dark border-dark text-secondary collapse"
-                                            id="building-{{ building.id }}">
+                                        <ul class="list-group bg-dark border-dark text-light collapse"
+                                            id="building-{{ building.id }}" style="font-size: medium;">
                                             {% for area in building.areas.all %}
-                                            <li class="list-group-item bg-dark border-dark text-secondary">
-                                                <a class="text-secondary" href="#area-{{ area.id }}"
+                                            <li class="list-group-item bg-dark border-dark text-light">
+                                                <a class="text-light" href="#area-{{ area.id }}"
                                                     data-bs-toggle="collapse" role="button" aria-expanded="false"
                                                     aria-controls="area-{{ area.id }}">
                                                     {{ area.name }}
                                                 </a>
-                                                <ul class="list-group bg-dark border-dark text-secondary collapse"
-                                                    style="font-size: smaller; width: 150px;" id="area-{{ area.id }}">
+                                                <ul class="list-group bg-dark border-dark text-light collapse"
+                                                    style="font-size: small; width: 150px;" id="area-{{ area.id }}">
                                                     {% for meter in area.meters.all %}
-                                                    <li class="list-group-item bg-dark border-dark text-secondary meter-item"
+                                                    <li class="list-group-item bg-dark border-dark text-light meter-item"
                                                         id="meter-{{ meter.id }}">
                                                         {{ meter.name }}
                                                     </li>
@@ -670,6 +671,81 @@
                             {% endfor %}
                         </ul>
                     </div>
+                    {% elif globalConfig.treeType == 'loadType' %}
+                    <!-- Load Type Tree -->
+                    <div id="loadtype-tree" class="me-1 border-end border-dark text-light"
+                    style="width: 220px; overflow-y: auto; height: 75vh; font-size: medium;">
+                    <ul class="list-group text-light">
+                        {% for loadType in loadTypes %}
+                        <li class="list-group-item bg-dark border-dark text-light">
+                            <strong>
+                                <a class="text-light" href="#loadtype-{{ loadType.id }}" data-bs-toggle="collapse"
+                                    role="button" aria-expanded="false" aria-controls="loadtype-{{ loadType.id }}">
+                                    {{ loadType.name }}
+                                </a>
+                            </strong>
+                            <ul class="list-group bg-dark border-dark text-light collapse" id="loadtype-{{ loadType.id }}" style=" font-size: medium;">
+                                {% for meter in loadType.meters.all %}
+                                <li class="list-group-item bg-dark border-dark text-light meter-item"
+                                    id="meter-loadtype-{{ meter.id }}">
+                                    {{ meter.name }}
+                                </li>
+                                {% empty %}
+                                <li class="list-group-item bg-dark border-dark text-light text-muted fst-italic">
+                                    No meters found
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    </div>
+                    {% elif globalConfig.treeType == 'meterType'%}
+                    {% comment %}
+Define a simple mapping in the template using the if/elif/else structure.
+⚡ Electricity, 💧 Water, 🔥 Gas, ⛽ Fuel, 🌬️ Air, ♨️ Steam
+{% endcomment %}
+
+<!-- Meter Type Tree -->
+<div id="metertype-tree" class="me-1 border-end border-dark"
+     style="width: 220px; overflow-y: auto; height: 75vh; font-size: medium;">
+    <ul class="list-group text-secondary">
+        {% for meterType in meterTypes %}
+        <li class="list-group-item bg-dark border-dark">
+            <strong>
+            <a class="text-light" href="#metertype-{{ meterType|slugify }}" data-bs-toggle="collapse"
+               role="button" aria-expanded="false" aria-controls="metertype-{{ meterType|slugify }}">
+               {% if "electric" in meterType|lower %}⚡
+               {% elif "water" in meterType|lower %}💧
+               {% elif "gas" in meterType|lower %}🔥
+               {% elif "fuel" in meterType|lower %}⛽
+               {% elif "air" in meterType|lower %}🌬️
+               {% elif "steam" in meterType|lower %}♨️
+               {% else %}🔧{% endif %}
+               {{ meterType }}
+            </a>
+            </strong>
+            <ul class="list-group bg-dark border-dark text-light collapse" id="metertype-{{ meterType|slugify }}" style=" font-size: medium;">
+                {% for meter in meters %}
+                    {% if meter.meterType == meterType %}
+                    <li class="list-group-item bg-dark border-dark text-light meter-item"
+                        id="meter-metertype-{{ meter.id }}">
+                        {{ meter.name }}
+                    </li>
+                    {% endif %}
+                {% empty %}
+                    <li class="list-group-item bg-dark border-dark text-light text-muted fst-italic">
+                        No meters found
+                    </li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+                    {% endif %}
+
 
                     
                     <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>

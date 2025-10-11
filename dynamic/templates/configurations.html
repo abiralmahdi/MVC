@@ -1,0 +1,66 @@
+{% extends 'layout.html' %}
+{% load static %}
+{% block body %}
+
+<div class="container mt-5">
+  <h4 class="mb-3">⚙️ System Configurations</h4>
+  <p class="text-muted">Manage your system configurations below.</p>
+
+  <form id="configForm" method="POST" action="/settings/configurations">
+    {% csrf_token %}
+    
+    <div class="card shadow p-4 mt-4 bg-dark text-light">
+      <h5 class="mb-3">Enable Features</h5>
+
+      <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" id="report" name="report" {% if config.report %}checked{% endif %}>
+        <label class="form-check-label" for="report"> Reports</label>
+      </div>
+
+      <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" id="dashboard" name="dashboard" {% if config.dashboard %}checked{% endif %}>
+        <label class="form-check-label" for="dashboard"> Dashboards</label>
+      </div>
+
+      <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" id="alarm" name="alarm" {% if config.alarm %}checked{% endif %}>
+        <label class="form-check-label" for="alarm"> Alarms</label>
+      </div>
+
+      <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" id="siteLocations" name="siteLocations" {% if config.siteLocations %}checked{% endif %}>
+        <label class="form-check-label" for="siteLocations">Show Site Locations</label>
+      </div>
+
+      <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" id="scada" name="scada" {% if config.scada %}checked{% endif %}>
+        <label class="form-check-label" for="scada"> SCADA</label>
+      </div>
+
+      <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" id="billing" name="billing" {% if config.billing %}checked{% endif %}>
+        <label class="form-check-label" for="billing"> Billing</label>
+      </div>
+
+      <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" id="subscribed" name="subscribed" {% if config.subscribed %}checked{% endif %}>
+        <label class="form-check-label" for="subscribed">Subscription Active</label>
+      </div>
+
+      <hr class="my-4">
+
+      <h5 class="mb-3">Tree View Type</h5>
+      <select class="form-select" name="treeType" id="treeType">
+        <option value="hierarchy" {% if config.treeType == "hierarchy" %}selected{% endif %}>Hierarchy View</option>
+        <option value="loadType" {% if config.treeType == "loadType" %}selected{% endif %}>Load Type View</option>
+        <option value="meterType" {% if config.treeType == "meterType" %}selected{% endif %}>Meter Type View</option>
+      </select>
+
+      <div class="mt-4 text-end">
+        <button type="submit" class="btn btn-info fw-bold px-4">Save Changes</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

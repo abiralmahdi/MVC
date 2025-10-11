@@ -15,6 +15,7 @@ urlpatterns = [
     path('hierarchy/deleteArea/<str:siteID>', views.deleteArea, name='deleteArea'),
     path('hierarchy/deleteBuilding/<str:siteID>', views.deleteBuilding, name='deleteBuilding'),
     path('hierarchy/deleteMeter/<str:siteID>', views.deleteMeter, name='deleteMeter'),
+    path('configurations', views.configurations, name='configurations'),
 
     
 ]

@@ -156,3 +156,22 @@ def deleteArea(request, siteID):
 def deleteMeter(request, siteID):
     Meters.objects.get(id=siteID).delete()
     return redirect('/settings/hierarchy')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def configurations(request):
+    config = GlobalConfiguration.objects.first()
+    if request.method == "POST":
+        config.report = 'report' in request.POST
+        config.dashboard = 'dashboard' in request.POST
+        config.alarm = 'alarm' in request.POST
+        config.siteLocations = 'siteLocations' in request.POST
+        config.scada = 'scada' in request.POST
+        config.billing = 'billing' in request.POST
+        config.subscribed = 'subscribed' in request.POST
+        config.treeType = request.POST.get('treeType', config.treeType)
+        config.save()
+        return redirect('/settings/configurations')
+    return render(request, 'configurations.html', {'config': config})
+    

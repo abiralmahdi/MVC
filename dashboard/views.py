@@ -77,6 +77,7 @@ def format_custom_date(date_obj):
 @login_required
 @subscription_required
 def indivDashboard(request, dashboardID):
+    globalConfig = GlobalConfiguration.objects.first()
     dateNow = format_custom_date(datetime.now())
     config = GlobalConfiguration.objects.first()
     dashboard_ = get_object_or_404(Dashboard, id=dashboardID)
@@ -98,51 +99,51 @@ def indivDashboard(request, dashboardID):
 
     # --- Master measurement order ---
     ORDERED_MEASUREMENTS = [
-                # 🔌 Electricity Meter
-                "Voltage L1N", "Voltage L2N", "Voltage L3N",
-                "Voltage L1-L2", "Voltage L2-L3", "Voltage L3-L1",
-                "3-Phase Average Voltage L-N", "3-Phase Average Voltage L-L",
+        "Voltage L1N", "Voltage L2N", "Voltage L3N",
+        "Voltage L1-L2", "Voltage L2-L3", "Voltage L3-L1",
+        "3-Phase Average Voltage L-N", "3-Phase Average Voltage L-L",
 
-                "Current L1", "Current L2", "Current L3",
-                "3-Phase Average Current L-L",
-                
-                "Line Frequency",
-                
-                "Power Factor L1", "Power Factor L2", "Power Factor L3",
-                "Power Factor",
+        "Current L1", "Current L2", "Current L3",
+        "3-Phase Average Current L-L",
 
-                "Active Power L1", "Active Power L2", "Active Power L3",
-                "Total Active Power",
-                
-                "Reactive Power L1", "Reactive Power L2", "Reactive Power L3",
-                "Total Reactive Power",
-                
-                "Apparent Power L1", "Apparent Power L2", "Apparent Power L3",
-                "Total Apparent Power",
+        "Line Frequency",
 
-                "THD Voltage L1-L2", "THD Voltage L2-L3", "THD Voltage L3-L1",
-                
-                "Energy",
+        "Power Factor L1", "Power Factor L2", "Power Factor L3",
+        "Power Factor",
 
-                # 💧 Water Meter
-                "Flow Rate", "Total Volume",
+        "Active Power L1", "Active Power L2", "Active Power L3",
+        "Total Active Power",
 
-                # 🔥 Gas Meter
-                "Gas Flow Rate", "Gas Pressure", "Total Gas Volume",
+        "Reactive Power L1", "Reactive Power L2", "Reactive Power L3",
+        "Total Reactive Power",
 
-                # 🌡️ Steam Meter
-                "Steam Flow Rate", "Steam Pressure", "Total Steam",
+        "Apparent Power L1", "Apparent Power L2", "Apparent Power L3",
+        "Total Apparent Power",
 
-                # ⛽ Fuel Meter
-                "Fuel Consumption Rate", "Total Fuel Used",
+        "THD Voltage L1-L2", "THD Voltage L2-L3", "THD Voltage L3-L1",
 
-                # 🌡️ Temperature & Humidity
-                "Temperature", "Humidity", "Pressure",
+        "Energy",
 
-                # 🌬️ Air Quality
-                "CO2 Level", "PM2.5", "PM10",
-            ]
-    # Gadgets
+        # 💧 Water Meter
+        "Flow Rate", "Total Volume",
+
+        # 🔥 Gas Meter
+        "Gas Flow Rate", "Gas Pressure", "Total Gas Volume",
+
+        # 🌡️ Steam Meter
+        "Steam Flow Rate", "Steam Pressure", "Total Steam",
+
+        # ⛽ Fuel Meter
+        "Fuel Consumption Rate", "Total Fuel Used",
+
+        # 🌡️ Temperature & Humidity
+        "Temperature", "Humidity", "Pressure",
+
+        # 🌬️ Air Quality
+        "CO2 Level", "PM2.5", "PM10",
+    ]
+
+    # --- Gadgets ---
     gadgets = Gadgets.objects.filter(dashboard=dashboard_).prefetch_related('meters', 'measurement')
     for g in gadgets:
         measurement_names = [m.name for m in g.measurement.all()]
@@ -150,10 +151,10 @@ def indivDashboard(request, dashboardID):
 
     site = dashboard_.site
     areas = Areas.objects.filter(building__site=site).prefetch_related('meters')
-    meters = Meters.objects.filter(area__in=areas)
+    meters = Meters.objects.filter(area__in=areas).select_related('loadType')
     measurements = Measurements.objects.all()
 
-    # Alarms
+    # --- Alarms ---
     alarms = Alarms.objects.filter(acknowledged=False, meter__in=meters)
     for alarm in alarms:
         if alarm.acknowledged:
@@ -165,16 +166,20 @@ def indivDashboard(request, dashboardID):
         else:
             alarm.color = "white"
 
-    # Preload readings for all meters
+    # --- Latest Readings ---
     meter_readings = LatestMeterReading.objects.filter(meter__in=meters)
+    readingArray = [
+        {
+            'meter_id': r.meter.id,
+            'timestamp': r.timestamp.strftime('%H:%M'),
+            'data': r.data,
+        }
+        for r in meter_readings
+    ]
 
-    readingArray = []
-    for reading in meter_readings:
-        readingArray.append({
-            'meter_id': reading.meter.id,
-            'timestamp': reading.timestamp.strftime('%H:%M'),
-            'data': reading.data
-        })
+    # --- Load Types & Meter Types for new trees ---
+    loadTypes = LoadType.objects.prefetch_related('meters').all()
+    meterTypes = sorted(list(set(m.meterType for m in meters)))
 
     context = {
         'dashboard': dashboard_,
@@ -189,6 +194,10 @@ def indivDashboard(request, dashboardID):
         'alarms': alarms,
         'config': config,
         'dateNow': dateNow,
+        'globalConfig':globalConfig,
+        # new:
+        'loadTypes': loadTypes,
+        'meterTypes': meterTypes,
     }
 
     return render(request, 'indivDashboard2.html', context)
