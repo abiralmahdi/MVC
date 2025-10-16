@@ -1,0 +1,11 @@
+{
+    "Power Factor": [4, 53],
+    "Total Active Power": [4, 57],
+    "Total kWh DG": [4, 159],
+    "DG Sensing": [4, 183],
+    "CT Secondary":[3, 1],
+    "CT Primary": [3, 2],
+    "PT Secondary": [3, 3],
+    "PT Primary": [3, 4]
+
+}

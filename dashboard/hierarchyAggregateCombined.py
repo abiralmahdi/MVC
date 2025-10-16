@@ -37,7 +37,12 @@ METER_DEFINITIONS = {
         "THD Voltage L1-L2", "THD Voltage L2-L3", "THD Voltage L3-L1",
         "Line Frequency", "3-Phase Average Voltage L-N", "3-Phase Average Voltage L-L",
         "3-Phase Average Current L-L", "Total Active Power",
-        "Total Reactive Power", "Power Factor", "Total Apparent Power", "Energy"
+        "Total Reactive Power", "Power Factor", "Total Apparent Power", "Energy","Total kWh DG",
+            "DG Sensing",
+            "CT Secondary",
+            "CT Primary",
+            "PT Secondary",
+            "PT Primary"
     ],
 }
 

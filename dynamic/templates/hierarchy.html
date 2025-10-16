@@ -67,7 +67,9 @@
       <input type="text" class="form-control" placeholder="Search...">
     </div>
   </form>
+  <a href="/settings/configurations" class="text-white">Configurations</a>
   <a href="/settings/hierarchy" class="text-white">Hierarchy</a>
+  <a href="/accounts/accountSettings" class="text-white">Account Settings</a>
 </div>
 
 <!-- Overlay -->
@@ -306,6 +308,8 @@ if (navigator.geolocation) {
               <tr>
                 <th>Meter</th>
                 <th>Type</th>
+                <th>IP Address</th>
+                <th>Device ID</th>
                 <th>Area</th>
                 <th>Building</th>
               </tr>
@@ -317,6 +321,8 @@ if (navigator.geolocation) {
               <tr>
                 <td>{{ meter.name }}</td>
                 <td>{{ meter.meterType }}</td>
+                <td>{{ meter.ip }}</td>
+                <td>{{ meter.unit_id }}</td>
                 <td>{{ meter.area.name }}</td>
                 <td>{{ meter.area.building.name }}</td>
               </tr>
@@ -461,6 +467,8 @@ if (navigator.geolocation) {
                   <tr>
                     <th>Meter</th>
                     <th>Type</th>
+                    <th>IP Address</th>
+                    <th>Device ID</th>
                     <th>Area</th>
                   </tr>
                 </thead>
@@ -470,6 +478,8 @@ if (navigator.geolocation) {
                   <tr>
                     <td>{{ meter.name }}</td>
                     <td>{{ meter.meterType }}</td>
+                    <td>{{ meter.ip }}</td>
+                    <td>{{ meter.unit_id }}</td>
                     <td>{{ meter.area.name }}</td>
                   </tr>
                   {% endfor %}
@@ -582,6 +592,8 @@ if (navigator.geolocation) {
                   <tr>
                     <th>Meter</th>
                     <th>Meter Type</th>
+                    <th>IP Address</th>
+                    <th>Device ID</th>
                     <th>Load Type</th>
                   </tr>
                 </thead>
@@ -590,6 +602,8 @@ if (navigator.geolocation) {
                   <tr>
                     <td>{{ meter.name }}</td>
                     <td>{{ meter.meterType }}</td>
+                    <td>{{ meter.ip }}</td>
+                    <td>{{ meter.unit_id }}</td>
                     <td>{{ meter.loadType.name }}</td>
                   </tr>
                   {% endfor %}
@@ -699,6 +713,8 @@ if (navigator.geolocation) {
             <tr>
               <th>Name</th>
               <th>Meter Type</th>
+              <th>IP Address</th>
+              <th>Device ID</th>
               <th>Load Type</th>
               <th>Site</th>
               <th>Building</th>
@@ -712,6 +728,8 @@ if (navigator.geolocation) {
             <tr>
               <td>{{meter.name}}</td>
               <td>{{meter.meterType}}</td>
+              <td>{{meter.ip}}</td>
+              <td>{{meter.unit_id}}</td>
               <td>{{meter.loadType.name}}</td>
               <td>{{meter.area.building.site.name}}</td>
               <td>{{meter.area.building.name}}</td>
@@ -743,10 +761,13 @@ if (navigator.geolocation) {
           <div class="modal-body overflow-auto" style="max-height: calc(90vh - 60px);">
             <p><strong>Meter Name:</strong> {{ meter.name }}</p>
             <p><strong>Meter Type:</strong> {{ meter.meterType }}</p>
+            <p><strong>IP Address:</strong> {{ meter.ip }}</p>
+            <p><strong>Device ID:</strong> {{ meter.unit_id }}</p>
             <p><strong>Load Type:</strong> {{ meter.loadType.name }}</p>
             <p><strong>Area:</strong> {{ meter.area.name }}</p>
             <p><strong>Building:</strong> {{ meter.area.building.name }}</p>
             <p><strong>Site:</strong> {{ meter.area.building.site.name }}</p>
+            <!-- <p><strong>Register Mapping:</strong> {{ meter.registerMapping }}</p> -->
     
             {% if meter.gadgets.all %}
             <hr>

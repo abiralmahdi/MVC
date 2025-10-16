@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
-from connections import datastorage
+from connections import datastorage as datastorage
 from dynamic.models import Meters
 
 class Command(BaseCommand):
