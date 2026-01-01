@@ -940,7 +940,6 @@ def building_heatmap(request, dashboard_id, buildingID, measurement):
     })
 
 
-
 @login_required
 @user_passes_test(lambda u: u.is_superuser)
 def newDashboard(request):
