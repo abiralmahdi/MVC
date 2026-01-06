@@ -169,3 +169,4 @@ class HierarchyDataAggregate(models.Model):
     
     class Meta:
         unique_together = ('site', 'period_type', 'start_date')
+
