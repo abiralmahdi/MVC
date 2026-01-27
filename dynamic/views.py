@@ -103,6 +103,9 @@ def addMeter(request):
         meterIP = request.POST['meter_ip']
         ecological = request.POST.get('ecological') == 'on'
         unit_id = request.POST.get('unit_id')
+        if unit_id == '':
+            unit_id = 99999
+        isScada = request.POST.get('isScada') == 'on'
         
         # Get the register mappings from hidden field
         register_mapping_str = request.POST.get('register_mapping', '{}')
@@ -116,7 +119,8 @@ def addMeter(request):
             ip=meterIP,
             ecological=ecological,
             registerMapping=register_mapping,
-            unit_id=unit_id
+            unit_id=unit_id,
+            isScada=isScada
         )
         return redirect("/settings/hierarchy")
 
@@ -170,6 +174,7 @@ def configurations(request):
         config.scada = 'scada' in request.POST
         config.billing = 'billing' in request.POST
         config.subscribed = 'subscribed' in request.POST
+        config.dataLake = 'dataLake' in request.POST
         config.treeType = request.POST.get('treeType', config.treeType)
         config.save()
         return redirect('/settings/configurations')

@@ -34,10 +34,7 @@ def read_meter_data(meter):
     Connects to the meter via Modbus TCP,
     reads all registers from its registerMapping,
     prints the values and stores the data.
-    Only meters with unit_id == 2 are read.
     """
-    if meter.unit_id != 2:
-        return  # skip other meters
 
     ip = meter.ip
     unit_id = meter.unit_id

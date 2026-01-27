@@ -28,9 +28,6 @@ def parse_float_from_response(response):
         raise ValueError("Response too short to contain float")
 
 def read_meter_data(meter):
-    if meter.unit_id != 2:
-        return False  # Skip other meters
-
     ip = meter.ip
     unit_id = meter.unit_id
     registers = meter.registerMapping or {}
@@ -84,6 +81,88 @@ def read_meter_data(meter):
         return True
     else:
         return False
+    
+
+
+from opcua import Client as OPCUAClient
+import math
+def read_meter_data_scada(meter):
+    """
+    Read data from SCADA (OPC UA – WinCC) and store in DB
+    """
+    ip = meter.ip
+    port = 4862  # optional port field
+    node_map = meter.registerMapping or {}
+
+    if not node_map:
+        print(f"⚠️ No OPC UA nodes defined for meter {meter.name}")
+        return False
+
+    url = f"opc.tcp://{ip}:{port}"
+    client = OPCUAClient(url)
+
+    result = {label: None for label in node_map.keys()}
+    success = False
+
+    try:
+        client.connect()
+        print(f"🔗 Connected to OPC UA SCADA ({meter.name})")
+
+        for label, nodeid in node_map.items():
+            try:
+                node = client.get_node(nodeid)
+                value = node.get_value()
+
+                if isinstance(value, (int, float)):
+                    if math.isnan(value) or math.isinf(value):
+                        value = None
+                    else:
+                        value = round(float(value), 3)
+
+                result[label] = value
+                success = True
+
+            except Exception as e:
+                print(f"❌ OPC UA read failed [{meter.name} | {label}]: {e}")
+                continue
+
+    except Exception as e:
+        print(f"❌ OPC UA connection failed for {meter.name}: {e}")
+        return False
+
+    finally:
+        try:
+            client.disconnect()
+        except:
+            pass
+    print(result)
+
+    if success:
+        try:
+            MeterReading.objects.create(
+                meter=meter,
+                timestamp=datetime.now(),
+                data=result
+            )
+            LatestMeterReading.objects.create(
+                meter=meter,
+                timestamp=datetime.now(),
+                data=result
+            )
+            print(f"✅ SCADA data saved for {meter.name}")
+            return True
+
+        except Exception as e:
+            print(f"❌ Failed to save SCADA data for {meter.name}: {e}")
+            return False
+
+    return False
+
+
+def read_meter_data_all(meter):
+    read_meter_data_scada(meter)
+    read_meter_data(meter)
+
 
 def main():
     from dynamic.models import Meters
@@ -94,9 +173,17 @@ def main():
         return
 
     for meter in meters:
-        stored = read_meter_data(meter)
-        if stored:
-            print(f"Success: Data stored for meter '{meter.name}'")
+        if meter.isScada:
+            stored = read_meter_data_scada(meter)
+            if stored:
+                print(f"Success: Data stored for meter '{meter.name}'")
+            else:
+                print(f"Skipped or failed meter '{meter.name}'")
+            time.sleep(1)    
         else:
-            print(f"Skipped or failed meter '{meter.name}'")
-        time.sleep(1)
+            stored = read_meter_data(meter)
+            if stored:
+                print(f"Success: Data stored for meter '{meter.name}'")
+            else:
+                print(f"Skipped or failed meter '{meter.name}'")
+            time.sleep(1)

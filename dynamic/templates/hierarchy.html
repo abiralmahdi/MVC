@@ -641,7 +641,7 @@ if (navigator.geolocation) {
               </div>
               <div class="mb-3">
                 <label for="unit_id" class="form-label">Device ID</label>
-                <input type="number" class="form-control" name="unit_id" required>
+                <input type="number" class="form-control" name="unit_id" >
               </div>
               <div class="mb-3">
                 <label for="meterTypeSelect" class="form-label">Select Meter Type</label>
@@ -692,6 +692,10 @@ if (navigator.geolocation) {
                 <label for="loadSelect" class="form-label">Select Ecological Status</label>
                 <input type="checkbox" name="ecological" id="ecological">
               </div>
+              <div class="mb-3">
+                <label for="loadSelect" class="form-label">SCADA Connected?</label>
+                <input type="checkbox" name="isScada" id="isScada">
+              </div>
             </div>
             <div class="modal-footer bg-dark text-white border-dark">
               <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Cancel</button>
@@ -719,6 +723,7 @@ if (navigator.geolocation) {
               <th>Site</th>
               <th>Building</th>
               <th>Area</th>
+              <th>SCADA Connected?</th>
               <th style="width: 50px">View</th>
               <th style="width: 50px">Delete</th>
             </tr>
@@ -734,6 +739,7 @@ if (navigator.geolocation) {
               <td>{{meter.area.building.site.name}}</td>
               <td>{{meter.area.building.name}}</td>
               <td>{{meter.area.name}}</td>
+              <td>{% if meter.isScada %} <i class="fa-solid fa-check text-success"></i>{% else %} <i class="fa-solid fa-circle-xmark text-danger"></i>{% endif %} </td>
               <td><a class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#meterDetailsModal{{ meter.id }}"><i class="fa-solid fa-eye"></i></a></td>
               <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteMeter/{{meter.id}}"><i class="fa-solid fa-trash"></i></a></td>
             </tr>
@@ -943,7 +949,7 @@ if (navigator.geolocation) {
   
       // Offset input
       const input = document.createElement("input");
-      input.type = "number";
+      input.type = "text";
       input.placeholder = "Register Offset";
       input.classList.add("form-control", "bg-dark", "text-white");
       input.style.flex = "1";
@@ -976,7 +982,8 @@ if (navigator.geolocation) {
           const select = elements[0];
           const input = inputs[0];
           if (select.value && input.value) {
-            mapping[select.value] = parseInt(input.value);
+            const val = input.value.trim();
+            mapping[select.value] = isNaN(val) ? val : parseInt(val);
           }
         }
       }

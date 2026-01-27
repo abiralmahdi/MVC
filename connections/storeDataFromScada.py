@@ -31,5 +31,5 @@ def main():
         client.disconnect()
         print("Disconnected from WinCC OPC UA")
 
-if __name__ == "__main__":
-    main()
+
+main()

@@ -56,6 +56,11 @@
       </div>
 
       <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" id="dataLake" name="dataLake" {% if config.dataLake %}checked{% endif %}>
+        <label class="form-check-label" for="dataLake"> Data Lake</label>
+      </div>
+
+      <div class="form-check form-switch mb-3">
         <input class="form-check-input" type="checkbox" id="billing" name="billing" {% if config.billing %}checked{% endif %}>
         <label class="form-check-label" for="billing"> Billing</label>
       </div>

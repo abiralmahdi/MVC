@@ -30,15 +30,16 @@ class LoadType(models.Model):
         return self.name
 
 class Meters(models.Model):
-    name = models.CharField(max_length=100,)
-    ip = models.CharField(max_length=100,)
-    area = models.ForeignKey(Areas, related_name='meters', on_delete=models.CASCADE,)
-    loadType = models.ForeignKey(LoadType, related_name='meters', on_delete=models.CASCADE,)
-    meterType = models.CharField(max_length=100,)
-    ecological = models.BooleanField(default=False)
+    name = models.CharField(max_length=100, null = True, blank = True)
+    ip = models.CharField(max_length=100, null = True, blank = True)
+    area = models.ForeignKey(Areas, related_name='meters', on_delete=models.CASCADE, null = True, blank = True)
+    loadType = models.ForeignKey(LoadType, related_name='meters', on_delete=models.CASCADE, null = True, blank = True)
+    meterType = models.CharField(max_length=100, null = True, blank = True)
+    ecological = models.BooleanField(default=False,)
     registerMapping = models.JSONField(default={}, null = True, blank = True)
-    unit_id = models.IntegerField(default=1)
-    
+    unit_id = models.IntegerField(default=1, null = True, blank = True)
+    isScada = models.BooleanField(default=False)
+
     def __str__(self):
         return self.name + ' - ' + self.meterType
     

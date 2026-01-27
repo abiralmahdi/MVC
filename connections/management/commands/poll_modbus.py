@@ -14,7 +14,7 @@ class Command(BaseCommand):
 
             with ThreadPoolExecutor(max_workers=50) as executor:
                 futures = {
-                    executor.submit(datastorage.read_meter_data, meter): meter.ip
+                    executor.submit(datastorage.read_meter_data_all, meter): meter.ip
                     for meter in meters
                 }
 
