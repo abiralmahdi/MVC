@@ -150,42 +150,43 @@ def create_hierarchy_aggregate(site, period_type, start_date, meters, meter_read
 #     meters += list(Meters.objects.filter(meterType=meter_type)[:3])
 
 # ✅ Option B: all meters
-meters = list(Meters.objects.all())
+def run_hierarchy_aggregation():
+    meters = list(Meters.objects.all())
 
-sites = Site.objects.prefetch_related("buildings__areas__meters__loadType").all()
-period_types = ["weekly", "monthly", "yearly"]
+    sites = Site.objects.prefetch_related("buildings__areas__meters__loadType").all()
+    period_types = ["weekly", "monthly", "yearly"]
 
-for site in tqdm(sites, desc="Sites", unit="site"):
-    for period_type in tqdm(period_types, desc=f"{site.name} Periods", leave=False):
-        raw_dates = (
-            MeterReading.objects.filter(meter__in=meters, meter__area__building__site=site)
-            .values_list("timestamp", flat=True)
-            .distinct()
-        )
-
-        normalized_dates = {normalize_start_date(d.date(), period_type) for d in raw_dates}
-
-        for norm_date in tqdm(sorted(normalized_dates), desc=f"{period_type} dates", leave=False):
-            # Batch load all readings once
-            if period_type == "weekly":
-                period_end = norm_date + timedelta(days=7)
-            elif period_type == "monthly":
-                if norm_date.month == 12:
-                    period_end = norm_date.replace(year=norm_date.year + 1, month=1, day=1)
-                else:
-                    period_end = norm_date.replace(month=norm_date.month + 1, day=1)
-            elif period_type == "yearly":
-                period_end = norm_date.replace(year=norm_date.year + 1, month=1, day=1)
-
-            readings = MeterReading.objects.filter(
-                meter__in=meters,
-                timestamp__gte=norm_date,
-                timestamp__lt=period_end,
-                meter__area__building__site=site,
+    for site in tqdm(sites, desc="Sites", unit="site"):
+        for period_type in tqdm(period_types, desc=f"{site.name} Periods", leave=False):
+            raw_dates = (
+                MeterReading.objects.filter(meter__in=meters, meter__area__building__site=site)
+                .values_list("timestamp", flat=True)
+                .distinct()
             )
 
-            meter_readings = defaultdict(list)
-            for r in readings:
-                meter_readings[r.meter_id].append(r)
+            normalized_dates = {normalize_start_date(d.date(), period_type) for d in raw_dates}
 
-            create_hierarchy_aggregate(site, period_type, norm_date, meters, meter_readings)
+            for norm_date in tqdm(sorted(normalized_dates), desc=f"{period_type} dates", leave=False):
+                # Batch load all readings once
+                if period_type == "weekly":
+                    period_end = norm_date + timedelta(days=7)
+                elif period_type == "monthly":
+                    if norm_date.month == 12:
+                        period_end = norm_date.replace(year=norm_date.year + 1, month=1, day=1)
+                    else:
+                        period_end = norm_date.replace(month=norm_date.month + 1, day=1)
+                elif period_type == "yearly":
+                    period_end = norm_date.replace(year=norm_date.year + 1, month=1, day=1)
+
+                readings = MeterReading.objects.filter(
+                    meter__in=meters,
+                    timestamp__gte=norm_date,
+                    timestamp__lt=period_end,
+                    meter__area__building__site=site,
+                )
+
+                meter_readings = defaultdict(list)
+                for r in readings:
+                    meter_readings[r.meter_id].append(r)
+
+                create_hierarchy_aggregate(site, period_type, norm_date, meters, meter_readings)

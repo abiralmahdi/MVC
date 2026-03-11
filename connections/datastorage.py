@@ -101,7 +101,7 @@ def read_meter_data_scada(meter):
     url = f"opc.tcp://{ip}:{port}"
     client = OPCUAClient(url)
 
-    result = {label: None for label in node_map.keys()}
+    result = {label: None for label in node_map.keys()} 
     success = False
 
     try:

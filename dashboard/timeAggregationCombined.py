@@ -133,4 +133,5 @@ def aggregate_meter_data():
                 )
 
 # Run the aggregation
-aggregate_meter_data()
+def run_time_aggregation():
+    aggregate_meter_data()
