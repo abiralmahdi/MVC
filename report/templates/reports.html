@@ -1,295 +1,265 @@
 {% extends 'layout.html' %}
-{% block body %}
 
+{% block title %}Reports - MarksVision{% endblock %}
+
+{% block head %}
 <style>
-    .accordion-button::after {
-    display: none !important;
-}
+  .diagram-item {
+    display: flex; align-items: flex-start; gap: 0.75rem;
+    padding: 0.7rem 0.8rem; margin-bottom: 0.5rem;
+    border-radius: var(--mvc-radius);
+    border: 1px solid var(--mvc-border);
+    background: var(--mvc-surface-2);
+  }
+  .diagram-item::before {
+    content: "201"; font-family: "Font Awesome 6 Free"; font-weight: 900;
+    width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+    display: grid; place-items: center;
+    color: var(--mvc-accent); background: var(--mvc-accent-soft);
+    font-size: 0.8rem;
+  }
+  .diagram-item .btn { width: 30px; height: 30px; padding: 0; }
+  #noDiagrams { border: 1px dashed var(--mvc-border-strong); border-radius: var(--mvc-radius); padding: 1.1rem; text-align: center; }
 </style>
+{% endblock %}
 
+{% block body %}
+{% include 'reports_sidebar.html' with link_prefix="/reports/viewReport/" %}
 
-<!-- Sidebar -->
-<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
-    style="overflow-y: auto;">
-    <div class="d-flex m-3">
-        <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
-        <h3 class="h6">Vision Center</h3>
+<div class="container-xl" id="main-content">
+  <div class="page-header">
+    <div class="page-icon"><i class="fa-solid fa-file-circle-plus"></i></div>
+    <div>
+      <h1 class="page-title">New report</h1>
+      <p class="page-subtitle">Combine charts, tables and heat maps into a report you can view live and export to PDF.</p>
     </div>
+  </div>
 
-    <form class="form m-3">
-        <div class="form-group">
-            <input type="text" class="form-control" placeholder="Search...">
+  <form method="POST" action="/reports/createReportFormat" enctype="multipart/form-data" id="reportForm" style="max-width: 900px;">
+    {% csrf_token %}
+    <section class="mvc-panel p-4 mb-3">
+      <h2 class="panel-title"><i class="fa-solid fa-circle-info"></i>Details</h2>
+      <div class="row g-3">
+        <div class="col-md-8">
+          <label for="reportTitle" class="form-label">Report title</label>
+          <input type="text" class="form-control" id="reportTitle" name="title" maxlength="255" placeholder="e.g. Monthly energy report" required>
         </div>
-    </form>
-
-    <div class="accordion accordion-flush" id="sidebarAccordion">
-      {% for site in sites %}
-      <!-- Site Accordion -->
-      <div class="accordion-item bg-dark border-0">
-          <h2 class="accordion-header">
-              <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
-                  data-bs-target="#siteCollapse{{ forloop.counter }}">
-                  <i class="fa-solid fa-folder"></i> 
-                  <span class="mx-2">{{ site.name }}</span>
-              </button>
-          </h2>
-          <div id="siteCollapse{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-              <div class="accordion-body pl-3">
-  
-                  <ul class="list-unstyled">
-                      {% for report in site.reports.all %}
-                      <li>
-                          <a href="/reports/viewReport/{{ report.id }}"
-                              class="text-white text-decoration-none">
-                              <i class="fa-solid fa-file"></i> 
-                              {{ report.title }}
-                          </a>
-                      </li>
-                      {% endfor %}
-                  </ul>
-  
-              </div>
-          </div>
+        <div class="col-md-4">
+          <label for="reportSite" class="form-label">Site</label>
+          <select class="form-select" id="reportSite" name="site" required>
+            {% for site in sites %}
+            <option value="{{ site.id }}" {% if default_site and default_site.id == site.id %}selected{% endif %}>{{ site.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12">
+          <label for="reportDescription" class="form-label">Summary</label>
+          <textarea class="form-control" id="reportDescription" name="description" rows="3" placeholder="What this report covers"></textarea>
+        </div>
+        <div class="col-12">
+          <label for="reportImage" class="form-label">Logo <span class="text-muted">(optional, shown on the PDF)</span></label>
+          <input type="file" class="form-control" id="reportImage" name="reportImage" accept="image/*">
+        </div>
       </div>
-  {% endfor %}
-  
-    </div>
-</div>
+    </section>
 
-
-<!-- Overlay -->
-<div id="overlay" class="overlay"></div>
-<div class="container mt-5 d-flex justify-content-center align-items-center">
-    <form method="POST" action="/reports/createReportFormat" class="bg-dark text-light shadow p-4 rounded" style="width: 100%; max-width: 700px;" enctype="multipart/form-data">
-      {% csrf_token %}
-      <div class="mb-3">
-        <label for="reportTitle" class="form-label fw-bold">Report Title</label>
-        <input type="text" class="form-control" id="reportTitle" name="title" required>
-      </div>
-
-      <div class="mb-3">
-        <label for="reportImage" class="form-label fw-bold">Report Logo</label>
-        <input type="file" class="form-control" id="reportImage" name="reportImage" required>
-      </div>
-  
-      <!-- Diagrams List -->
-      <div class="mb-3">
-        <label class="form-label fw-bold">Diagrams</label>
-        <div id="diagramsList"></div>
-        <button type="button" class="btn btn-sm btn-info mt-2" data-bs-toggle="modal" data-bs-target="#addDiagramModal">
-          <i class="fa-solid fa-plus me-1"></i> Add Diagram
+    <section class="mvc-panel p-4 mb-3">
+      <div class="d-flex align-items-center mb-3">
+        <h2 class="panel-title mb-0"><i class="fa-solid fa-chart-pie"></i>Diagrams</h2>
+        <button type="button" class="btn btn-sm btn-outline-info ms-auto" data-bs-toggle="modal" data-bs-target="#addDiagramModal">
+          <i class="fa-solid fa-plus me-1"></i>Add diagram
         </button>
       </div>
-  
-      <!-- Description -->
-      <div class="mb-3">
-        <label for="reportDescription" class="form-label fw-bold">Description</label>
-        <textarea class="form-control" id="reportDescription" name="description" rows="4"></textarea>
-      </div>
-  
-      <button type="submit" class="btn btn-success">
-        <i class="fa-solid fa-save me-1"></i> Save Format
-      </button>
-    </form>
-  
-    <!-- Modal for adding a diagram -->
-    <div class="modal fade" id="addDiagramModal" tabindex="-1" aria-labelledby="addDiagramModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content bg-dark text-light">
-          <div class="modal-header">
-            <h5 class="modal-title" id="addDiagramModalLabel">
-              <i class="fa-solid fa-chart-simple me-1"></i> Add Diagram
-            </h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-  
-          <div class="modal-body">
-            <div class="mb-2">
-              <label class="form-label">Diagram Type</label>
-              <select class="form-select" id="diagramType">
-                <option value="heatmap">Heatmap</option>
-                <option value="bar">Bar Chart</option>
-                <option value="sankey">Sankey</option>
-                <option value="line">Line Graph</option>
-                <option value="pie">Pie Chart</option>
-                <option value="table">Table</option>
-              </select>
-            </div>
-  
-            <div class="mb-2">
-              <label class="form-label">Meters</label>
-              <select class="form-select" id="diagramMeters" multiple>
-                {% for meter in meters %}
-                  <option value="{{ meter.id }}">{{ meter.name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-  
-            <div class="mb-2">
-              <label class="form-label">Measurement</label>
-              <select class="form-select" id="diagramMeasurement">
-                {% for measurement in measurements %}
-                  <option value="{{ measurement.id }}">{{ measurement.name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-  
-            <div class="mb-2">
-              <label class="form-label">Date Range</label>
-              <div class="d-flex gap-2">
-                <input type="date" class="form-control" id="diagramStartDate">
-                <input type="date" class="form-control" id="diagramEndDate">
-              </div>
-            </div>
-  
-            <div class="mb-2">
-              <label class="form-label">Period Type</label>
-              <select class="form-select" id="diagramPeriodType">
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-                <option value="yearly">Yearly</option>
-              </select>
-            </div>
+      <div id="diagramsList"></div>
+      <p class="small text-muted mb-0" id="noDiagrams">No diagrams added yet. Add at least one to save the report.</p>
+    </section>
 
-            <div class="mb-2">
-                <label class="form-label">Description</label>
-                <textarea name="description" id="description" cols="30" rows="10" class="form-control"></textarea>
-            </div>
-  
-          </div>
-  
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-primary" id="addDiagramBtn">
-              <i class="fa-solid fa-plus me-1"></i> Add Diagram
-            </button>
+    <div class="d-flex justify-content-end">
+      <button type="submit" class="btn btn-info px-4"><i class="fa-solid fa-floppy-disk me-2"></i>Save report</button>
+    </div>
+  </form>
+</div>
+
+<!-- Add diagram modal -->
+<div class="modal fade" id="addDiagramModal" tabindex="-1" aria-labelledby="addDiagramModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addDiagramModalLabel"><i class="fa-solid fa-chart-simple me-2 text-info"></i>Add diagram</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label" for="diagramType">Diagram type</label>
+          <select class="form-select" id="diagramType">
+            <option value="bar">Bar Chart</option>
+            <option value="pie">Pie Chart</option>
+            <option value="line">Line Graph</option>
+            <option value="table">Table</option>
+            <option value="heatmap">Heatmap</option>
+            <option value="sankey">Sankey</option>
+          </select>
+          <div class="form-text" id="diagramHelp"></div>
+        </div>
+
+        <div class="mb-3" id="metersField">
+          <label class="form-label" for="diagramMeters">Meters</label>
+          <select class="form-select" id="diagramMeters" multiple size="6">
+            {% for meter in meters %}
+            <option value="{{ meter.id }}" data-site="{{ meter.area.building.site_id }}">{{ meter.name }} ({{ meter.area.building.name }} / {{ meter.area.name }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="diagramMeasurement">Measurement</label>
+          <select class="form-select" id="diagramMeasurement">
+            {% for name in measurement_names %}
+            <option value="{{ name }}">{{ name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-3" id="dateField">
+          <label class="form-label">Date range</label>
+          <div class="d-flex gap-2">
+            <input type="date" class="form-control" id="diagramStartDate" aria-label="Start">
+            <input type="date" class="form-control" id="diagramEndDate" aria-label="End">
           </div>
         </div>
+
+        <div class="mb-3" id="periodField">
+          <label class="form-label" for="diagramPeriodType">Period</label>
+          <select class="form-select" id="diagramPeriodType">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="3monthly">3-Monthly</option>
+            <option value="6monthly">6-Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="diagramDescription">Caption / analysis</label>
+          <textarea id="diagramDescription" rows="4" class="form-control" maxlength="1000"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-info" id="addDiagramBtn"><i class="fa-solid fa-plus me-1"></i>Add diagram</button>
       </div>
     </div>
-
-  
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-          const diagramType = document.getElementById('diagramType');
-          const metersSelect = document.getElementById('diagramMeters');
-          const measurementSelect = document.getElementById('diagramMeasurement');
-          const periodType = document.getElementById('diagramPeriodType');
-          const dateRangeContainer = document.querySelector('#diagramPeriodType').parentElement.previousElementSibling; // The div containing Date Range
-          const startDateInput = document.getElementById('diagramStartDate');
-          const endDateInput = document.getElementById('diagramEndDate');
-        
-          function updateForm() {
-            const selected = diagramType.value;
-        
-            // Reset to default for all options
-            metersSelect.multiple = true;
-            metersSelect.parentElement.style.display = 'block';
-            measurementSelect.multiple = false;
-            periodType.parentElement.style.display = 'block';
-        
-            dateRangeContainer.style.display = 'block';
-            startDateInput.type = 'date';
-            endDateInput.type = 'date';
-            endDateInput.style.display = 'inline-block';
-        
-            if (selected === 'heatmap') {
-              // Heatmap: single meter, no period type
-              metersSelect.multiple = false;
-              periodType.parentElement.style.display = 'none';
-        
-            } else if (selected === 'sankey') {
-              // Sankey: no meters, single date input, keep period type
-              metersSelect.parentElement.style.display = 'none';
-              endDateInput.style.display = 'none';
-        
-            } else if (selected === 'line') {
-              // Trend: keep meters, remove period type, change date to datetime
-              periodType.parentElement.style.display = 'none';
-              startDateInput.type = 'datetime-local';
-              endDateInput.type = 'datetime-local';
-        
-            } else if (selected === 'table') {
-              // Table: single meter, multiple measurement
-              metersSelect.multiple = false;
-              measurementSelect.multiple = true;
-        
-            }
-          }
-        
-          // Initial state on page load
-          updateForm();
-        
-          // Listen for changes
-          diagramType.addEventListener('change', updateForm);
-        });
-        </script>
-        
-
-
-
-
   </div>
-  
-      <script>
-        const diagramsList = document.getElementById('diagramsList');
-        const addDiagramBtn = document.getElementById('addDiagramBtn');
-      
-        addDiagramBtn.addEventListener('click', function() {
-            const type = document.getElementById('diagramType').value;
-            const meters = Array.from(document.getElementById('diagramMeters').selectedOptions).map(opt => opt.value);
-            const measurementSelect = document.getElementById('diagramMeasurement');
-            const measurements = Array.from(measurementSelect.selectedOptions).map(opt => opt.value);
-            const startDate = document.getElementById('diagramStartDate').value;
-            const endDate = document.getElementById('diagramEndDate').value;
-            const periodType = document.getElementById('diagramPeriodType').value;
-            const description = document.getElementById('description').value;
+</div>
+{% endblock %}
 
+{% block scripts %}
+<script>
+(function () {
+  const RULES = {
+    bar:     { meters: 'multiple', measurements: 'single', dates: 'date-range', period: ['daily', 'weekly', 'monthly', '3monthly', '6monthly', 'yearly'], help: 'One bar per meter per period.' },
+    pie:     { meters: 'multiple', measurements: 'single', dates: 'date-range', period: ['daily', 'weekly', 'monthly', '3monthly', '6monthly', 'yearly'], help: 'Share of each meter over the whole range.' },
+    line:    { meters: 'multiple', measurements: 'single', dates: 'datetime-range', period: null, help: 'Raw readings over time.' },
+    table:   { meters: 'single', measurements: 'multiple', dates: 'date-range', period: null, help: 'Raw readings of one meter (max 2000 rows).' },
+    heatmap: { meters: 'single', measurements: 'single', dates: 'date-range', period: null, help: 'Hour-by-day profile of one meter (max one year).' },
+    sankey:  { meters: 'none', measurements: 'single', dates: 'single-date', period: ['weekly', 'monthly', 'yearly'], help: 'Flow through the site hierarchy for the period containing the date.' },
+  };
+  const $ = (id) => document.getElementById(id);
+  const type = $('diagramType'), meters = $('diagramMeters'), measurement = $('diagramMeasurement');
+  const start = $('diagramStartDate'), end = $('diagramEndDate'), period = $('diagramPeriodType');
+  const siteSelect = $('reportSite'), list = $('diagramsList');
 
-            if (!type || !startDate) {
-                alert('Please fill in all required fields!');
-                return;
-            }
+  function filterMetersBySite() {
+    Array.from(meters.options).forEach(option => {
+      const visible = option.dataset.site === siteSelect.value;
+      option.hidden = !visible;
+      if (!visible) option.selected = false;
+    });
+  }
 
-            // Validate meters
-            if (type !== 'sankey' && meters.length === 0) {
-                alert('Please select meters!');
-                return;
-            }
+  function update() {
+    const rule = RULES[type.value];
+    $('metersField').classList.toggle('d-none', rule.meters === 'none');
+    meters.multiple = rule.meters === 'multiple';
+    meters.size = 6;
+    measurement.multiple = rule.measurements === 'multiple';
+    measurement.size = rule.measurements === 'multiple' ? 6 : 1;
+    const inputType = rule.dates === 'datetime-range' ? 'datetime-local' : 'date';
+    if (start.type !== inputType) { start.type = inputType; end.type = inputType; start.value = ''; end.value = ''; }
+    end.classList.toggle('d-none', rule.dates === 'single-date');
+    $('periodField').classList.toggle('d-none', !rule.period);
+    Array.from(period.options).forEach(o => { o.hidden = rule.period ? !rule.period.includes(o.value) : false; });
+    if (rule.period && !rule.period.includes(period.value)) period.value = 'monthly';
+    $('diagramHelp').textContent = rule.help;
+  }
 
-            let payload = { type, meters, startDate, endDate, periodType, description };
+  function removeEmptyNote() {
+    $('noDiagrams').classList.toggle('d-none', list.children.length > 0);
+  }
 
-            if (type === 'table') {
-                if (measurements.length === 0) {
-                alert('Please select at least one measurement for Table!');
-                return;
-                }
-                payload.measurements = measurements;
-            } else {
-                if (!measurements[0]) {
-                alert('Please select a measurement!');
-                return;
-                }
-                payload.measurement = measurements[0];
-            }
+  $('addDiagramBtn').addEventListener('click', () => {
+    const rule = RULES[type.value];
+    const selectedMeters = Array.from(meters.selectedOptions).map(o => o.value);
+    const selectedMeasurements = Array.from(measurement.selectedOptions).map(o => o.value);
+    const problems = [];
+    if (!start.value) problems.push('a start date');
+    if (rule.dates !== 'single-date' && !end.value) problems.push('an end date');
+    if (rule.meters !== 'none' && !selectedMeters.length) problems.push('at least one meter');
+    if (!selectedMeasurements.length) problems.push('a measurement');
+    if (problems.length) { alert(`Please select ${problems.join(', ')}.`); return; }
+    if (rule.dates !== 'single-date' && end.value < start.value) { alert('The end must be after the start.'); return; }
 
-            const div = document.createElement('div');
-            div.classList.add('p-2', 'mb-2', 'bg-info', 'rounded');
-            div.innerHTML = `
-                <strong>${type}</strong> | Meters: ${meters.join(', ')} | Measurements: ${type === 'table' ? measurements.join(', ') : payload.measurement} | ${startDate} to ${endDate} | ${periodType}
-                <input type="hidden" name="diagrams[]" value='${JSON.stringify(payload)}'>
-            `;
-            diagramsList.appendChild(div);
+    const payload = {
+      type: type.value,
+      meters: rule.meters === 'none' ? [] : selectedMeters,
+      startDate: start.value,
+      endDate: rule.dates === 'single-date' ? start.value : end.value,
+      periodType: rule.period ? period.value : null,
+      description: $('diagramDescription').value,
+    };
+    if (rule.measurements === 'multiple') payload.measurements = selectedMeasurements; else payload.measurement = selectedMeasurements[0];
 
-            const modal = bootstrap.Modal.getInstance(document.getElementById('addDiagramModal'));
-            modal.hide();
-            });
+    const item = document.createElement('div');
+    item.className = 'diagram-item';
+    const text = document.createElement('div');
+    text.className = 'small flex-grow-1 align-self-center';
+    const meterNames = Array.from(meters.selectedOptions).map(o => o.textContent.trim()).join(', ');
+    text.textContent = `${type.options[type.selectedIndex].text} · ${selectedMeasurements.join(', ')} · ${meterNames || siteSelect.options[siteSelect.selectedIndex].text} · ${payload.startDate}${payload.endDate !== payload.startDate ? ' → ' + payload.endDate : ''}${payload.periodType ? ' · ' + payload.periodType : ''}`;
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'diagrams[]';
+    hidden.value = JSON.stringify(payload);   // set via DOM: quotes in captions cannot break the markup
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'btn btn-sm btn-outline-danger';
+    remove.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    remove.title = 'Remove diagram';
+    remove.addEventListener('click', () => { item.remove(); removeEmptyNote(); });
+    item.append(text, hidden, remove);
+    list.appendChild(item);
+    removeEmptyNote();
+    $('diagramDescription').value = '';
+    bootstrap.Modal.getOrCreateInstance($('addDiagramModal')).hide();
+  });
 
-      </script>
-
-  
-
-
-
+  let currentSite = siteSelect.value;
+  siteSelect.addEventListener('change', () => {
+    if (list.children.length && !confirm('Changing the site removes the diagrams added so far. Continue?')) {
+      siteSelect.value = currentSite;
+      return;
+    }
+    currentSite = siteSelect.value;
+    list.replaceChildren();
+    removeEmptyNote();
+    filterMetersBySite();
+  });
+  $('reportForm').addEventListener('submit', (event) => {
+    if (!list.children.length) { event.preventDefault(); alert('Add at least one diagram.'); }
+  });
+  type.addEventListener('change', update);
+  filterMetersBySite();
+  update();
+})();
+</script>
 {% endblock %}

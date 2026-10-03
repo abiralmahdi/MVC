@@ -1,0 +1,68 @@
+{# Fields of the add/edit meter forms. Expects: meter (or None), areas, loadTypes, meter_types. #}
+{# The protocol section and the data point rows are built by the script in hierarchy.html from the protocol catalogue. #}
+{% with form_id=meter.id|default:'new' %}
+<input type="hidden" name="register_mapping" class="js-mapping-json" value="{}">
+<input type="hidden" name="connection" class="js-connection-json" value="{}">
+{% if meter %}{{ meter.form_state|json_script:meter.form_state_id }}{% endif %}
+<div class="js-initial-state d-none" data-source="{% if meter %}{{ meter.form_state_id }}{% endif %}"></div>
+
+<div class="row">
+  <div class="col-md-4 mb-3">
+    <label class="form-label">Meter Name</label>
+    <input type="text" class="form-control" name="meter_name" value="{{ meter.name|default:'' }}" maxlength="100" required>
+  </div>
+  <div class="col-md-4 mb-3">
+    <label class="form-label">Meter Type</label>
+    <select class="form-select" name="meterType" required>
+      {% for type in meter_types %}
+      <option value="{{ type }}" {% if meter.meterType == type %}selected{% endif %}>{{ type }}</option>
+      {% endfor %}
+      {% if meter and meter.meterType not in meter_types %}
+      <option value="{{ meter.meterType }}" selected>{{ meter.meterType }}</option>
+      {% endif %}
+    </select>
+  </div>
+  <div class="col-md-4 mb-3">
+    <label class="form-label">Area</label>
+    <select class="form-select" name="area_id" required>
+      {% for area in areas %}
+      <option value="{{ area.id }}" {% if meter.area_id == area.id %}selected{% endif %}>{{ area.building.site.name }} / {{ area.building.name }} / {{ area.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-4 mb-3">
+    <label class="form-label">Load Type</label>
+    <select class="form-select" name="load_id">
+      <option value="">— none —</option>
+      {% for load in loadTypes %}
+      <option value="{{ load.id }}" {% if meter.loadType_id == load.id %}selected{% endif %}>{{ load.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-8 mb-3 d-flex align-items-end">
+    <div class="form-check form-switch mb-2">
+      <input class="form-check-input" type="checkbox" name="ecological" id="ecological{{ form_id }}" {% if meter.ecological %}checked{% endif %}>
+      <label class="form-check-label" for="ecological{{ form_id }}">Ecological meter (site-map alarms)</label>
+    </div>
+  </div>
+</div>
+
+<div class="protocol-section">
+  <div class="eyebrow mb-2">Communication protocol</div>
+  <div class="protocol-picker js-protocol-picker" role="radiogroup" aria-label="Communication protocol"></div>
+  <p class="small text-muted mt-2 mb-3 js-protocol-summary"></p>
+  <div class="row g-3 align-items-start js-connection-fields"></div>
+</div>
+
+<hr>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+  <div class="eyebrow">Data points</div>
+  <button type="button" class="btn btn-sm btn-outline-info ms-auto js-add-standard">Add standard measurements for type</button>
+  <button type="button" class="btn btn-sm btn-outline-light js-add-register"><i class="fa-solid fa-plus me-1"></i>Add point</button>
+</div>
+<p class="small text-muted mb-2 js-point-help"></p>
+<div class="mapping-head small text-muted js-mapping-head"></div>
+<div class="mapping-rows"></div>
+{% endwith %}

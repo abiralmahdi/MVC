@@ -1,92 +1,38 @@
 {% extends 'layout.html' %}
+
+{% block title %}{{ report.title }} - Saved Report - MarksVision{% endblock %}
+
 {% block body %}
+{% include 'reports_sidebar.html' with link_prefix="/reports/viewSavedReports/" current_report=report %}
 
-
-<!-- Sidebar -->
-<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
-  style="overflow-y: auto;">
-  <div class="d-flex m-3">
-    <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
-    <h3 class="h6">Vision Center</h3>
-  </div>
-
-  <form class="form m-3">
-    <div class="form-group">
-      <input type="text" class="form-control" placeholder="Search...">
+<div class="container-xxl" id="main-content">
+  <div class="page-header">
+    <div class="page-icon"><i class="fa-solid fa-file-pdf"></i></div>
+    <div>
+      <div class="eyebrow">Saved PDF</div>
+      <h1 class="page-title">{{ report.title }}</h1>
+      {% if pdf_generated_at %}<p class="page-subtitle">Generated {{ pdf_generated_at|date:"d M Y H:i" }}</p>{% endif %}
     </div>
-  </form>
-
-  <div class="accordion accordion-flush" id="sidebarAccordion">
-    {% for site in sites %}
-    <!-- Site Accordion -->
-    <div class="accordion-item bg-dark border-0">
-        <h2 class="accordion-header">
-            <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
-                data-bs-target="#siteCollapse{{ forloop.counter }}">
-                <i class="fa-solid fa-folder"></i> 
-                <span class="mx-2">{{ site.name }}</span>
-            </button>
-        </h2>
-        <div id="siteCollapse{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-            <div class="accordion-body pl-3">
-
-                <ul class="list-unstyled">
-                    {% for report in site.reports.all %}
-                    <li>
-                        <a href="/reports/viewSavedReports/{{ report.id }}"
-                            class="text-white text-decoration-none">
-                            <i class="fa-solid fa-file"></i> 
-                            {{ report.title }}
-                        </a>
-                    </li>
-                    {% endfor %}
-                </ul>
-
-            </div>
-        </div>
+    <div class="page-actions">
+      <a class="btn btn-outline-light" href="/reports/viewReport/{{ report.id }}"><i class="fa-solid fa-chart-column me-2"></i>Open live report</a>
+      {% if pdf_exists %}
+      <a class="btn btn-info" href="{% url 'viewSavedReport' reportID=report.id %}" download="{{ report.title|slugify|default:'report' }}-{{ report.id }}.pdf">
+        <i class="fa-solid fa-download me-2"></i>Download PDF
+      </a>
+      {% endif %}
     </div>
-{% endfor %}
-
   </div>
-</div>
-
-<!-- Overlay -->
-<div id="overlay" class="overlay"></div>
-
-<div class="container">
-  <div class="d-flex my-4">
-    <h4 class="text-info">{{ report.title }}</h4>
-
-    <a class="btn btn-info fw-bold ms-auto no-print"
-        id="reportButton"
-        href="/media/generatedReports/Report-{{ report.id|urlencode }}.pdf"
-        data-report-id="{{ individualReport.id }}"
-        data-report-title="{{ individualReport.title }}"
-        download
-        >
-        <i class="fa-solid fa-print me-2"></i>
-        Save PDF
-    </a>
-  </div>
-  {% if pdf_url %}
-  <div id="fileViewer" class="container">
-    <!-- src="/media/generatedReports/Report-{{ report.id|urlencode }}.pdf" -->
-    <iframe
-      src="{% url 'viewSavedReport' reportID=report.id %}"
-      width="90%"
-      height="800px"
-      style="border: none;">
-    </iframe>
+  {% if pdf_exists %}
+  <div class="mvc-panel p-2">
+    <iframe src="{% url 'viewSavedReport' reportID=report.id %}" title="{{ report.title }}" width="100%" height="820px" style="border: none; border-radius: 8px; display: block;"></iframe>
   </div>
   {% else %}
-  <div id="noDocument">
-    <h1 class="h1 text-center mt-5 pt-5 text-secondary"><i class="fa-solid fa-file fa-2x"></i></h1>
-    <h3 class="text-center mt-5 text-secondary">Select a report to view details</h3>
-    <p class="text-center text-secondary">Click on any report link from the sidebar to see its content here.</p>
+  <div class="empty-state mvc-panel">
+    <div class="empty-icon"><i class="fa-solid fa-file-circle-exclamation"></i></div>
+    <h3>No PDF generated yet</h3>
+    <p>Open the live report and click “Generate PDF”.</p>
+    <a class="btn btn-info mt-3" href="/reports/viewReport/{{ report.id }}"><i class="fa-solid fa-chart-column me-2"></i>Open live report</a>
   </div>
   {% endif %}
 </div>
-
-
-
 {% endblock %}

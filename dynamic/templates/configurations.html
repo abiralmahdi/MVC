@@ -1,84 +1,132 @@
 {% extends 'layout.html' %}
-{% load static %}
+
+{% block title %}Configurations - MarksVision{% endblock %}
+
+{% block head %}
+<style>
+  .feature-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.75rem; }
+  .feature-row {
+    display: flex; align-items: center; gap: 0.85rem;
+    padding: 0.85rem 1rem;
+    border-radius: var(--mvc-radius);
+    border: 1px solid var(--mvc-border);
+    background: var(--mvc-surface-2);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    margin: 0;
+  }
+  .feature-row:hover { border-color: var(--mvc-border-strong); }
+  .feature-row:has(input:checked) { border-color: rgba(34, 211, 238, 0.35); background: linear-gradient(90deg, rgba(34, 211, 238, 0.07), var(--mvc-surface-2)); }
+  .feature-row .feature-icon { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; background: var(--mvc-surface-3); color: var(--mvc-muted); flex-shrink: 0; }
+  .feature-row:has(input:checked) .feature-icon { color: var(--mvc-accent); background: var(--mvc-accent-soft); }
+  .feature-row .feature-name { font-weight: 600; font-size: 0.88rem; }
+  .feature-row .feature-desc { font-size: 0.76rem; color: var(--mvc-muted); }
+  .feature-row .form-switch { margin: 0 0 0 auto; padding: 0; min-height: 0; }
+  .feature-row .form-switch .form-check-input { margin: 0; float: none; cursor: pointer; }
+  .feature-row.danger:has(input:not(:checked)) { border-color: rgba(240, 82, 82, 0.45); background: linear-gradient(90deg, rgba(240, 82, 82, 0.1), var(--mvc-surface-2)); }
+  .tree-option { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.9rem 1rem; border-radius: var(--mvc-radius); border: 1px solid var(--mvc-border); background: var(--mvc-surface-2); cursor: pointer; height: 100%; margin: 0; }
+  .tree-option:has(input:checked) { border-color: rgba(34, 211, 238, 0.5); box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.2); }
+  .tree-option input { position: absolute; opacity: 0; }
+  .tree-option i { color: var(--mvc-accent); }
+</style>
+{% endblock %}
+
 {% block body %}
-<!-- Sidebar -->
-<div id="sidebar" class="sidebar position-fixed d-flex flex-column">
-  <div class="d-flex mt-5">
-    <h3 class="h5 text-info fw-bold mx-2">MARKS</h3>
-    <h3 class="h5"> Vision Center</h3>
-  </div>
-  <form action="" class="form p-3">
-    <div class="form-group mb-1">
-      <input type="text" class="form-control" placeholder="Search...">
+{% include 'settings_sidebar.html' %}
+
+<div class="container-xl" id="main-content">
+  <div class="page-header">
+    <div class="page-icon"><i class="fa-solid fa-toggle-on"></i></div>
+    <div>
+      <h1 class="page-title">System Configurations</h1>
+      <p class="page-subtitle">Turn modules on or off for every user. Disabled modules are blocked on the server, not just hidden.</p>
     </div>
-  </form>
-  <a href="/settings/configurations" class="text-white">Configurations</a>
-  <a href="/settings/hierarchy" class="text-white">Hierarchy</a>
-  <a href="/accounts/accountSettings" class="text-white">Account Settings</a>
-</div>
-
-<!-- Overlay -->
-<div id="overlay" class="overlay"></div>
-
-<div class="container mt-5">
-  <h4 class="mb-3">⚙️ System Configurations</h4>
-  <p class="text-muted">Manage your system configurations below.</p>
+  </div>
 
   <form id="configForm" method="POST" action="/settings/configurations">
     {% csrf_token %}
-    
-    <div class="card shadow p-4 mt-4 bg-dark text-light">
-      <h5 class="mb-3">Enable Features</h5>
 
-      <div class="form-check form-switch mb-3">
-        <input class="form-check-input" type="checkbox" id="report" name="report" {% if config.report %}checked{% endif %}>
-        <label class="form-check-label" for="report"> Reports</label>
+    <section class="mvc-panel p-4 mb-3">
+      <h2 class="panel-title"><i class="fa-solid fa-cubes"></i>Modules</h2>
+      <div class="feature-list">
+        <label class="feature-row" for="dashboard">
+          <span class="feature-icon"><i class="fa-solid fa-chart-line"></i></span>
+          <span><span class="feature-name d-block">Dashboards</span><span class="feature-desc">Live gadgets, trends and KPIs</span></span>
+          <span class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="dashboard" name="dashboard" {% if config.dashboard %}checked{% endif %}></span>
+        </label>
+        <label class="feature-row" for="alarm">
+          <span class="feature-icon"><i class="fa-solid fa-bell"></i></span>
+          <span><span class="feature-name d-block">Alarms</span><span class="feature-desc">Limits, active alarms and history</span></span>
+          <span class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="alarm" name="alarm" {% if config.alarm %}checked{% endif %}></span>
+        </label>
+        <label class="feature-row" for="report">
+          <span class="feature-icon"><i class="fa-solid fa-file-lines"></i></span>
+          <span><span class="feature-name d-block">Reports</span><span class="feature-desc">Report builder and saved PDFs</span></span>
+          <span class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="report" name="report" {% if config.report %}checked{% endif %}></span>
+        </label>
+        <label class="feature-row" for="billing">
+          <span class="feature-icon"><i class="fa-solid fa-receipt"></i></span>
+          <span><span class="feature-name d-block">Billing</span><span class="feature-desc">Electricity bills from meter counters</span></span>
+          <span class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="billing" name="billing" {% if config.billing %}checked{% endif %}></span>
+        </label>
+        <label class="feature-row" for="siteLocations">
+          <span class="feature-icon"><i class="fa-solid fa-location-dot"></i></span>
+          <span><span class="feature-name d-block">Site locations</span><span class="feature-desc">Map of sites with alarm status</span></span>
+          <span class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="siteLocations" name="siteLocations" {% if config.siteLocations %}checked{% endif %}></span>
+        </label>
+        <label class="feature-row" for="scada">
+          <span class="feature-icon"><i class="fa-solid fa-gears"></i></span>
+          <span><span class="feature-name d-block">SCADA</span><span class="feature-desc">PLC motor control and tank levels</span></span>
+          <span class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="scada" name="scada" {% if config.scada %}checked{% endif %}></span>
+        </label>
+        <label class="feature-row" for="machineLearning">
+          <span class="feature-icon"><i class="fa-solid fa-brain"></i></span>
+          <span><span class="feature-name d-block">Machine Learning</span><span class="feature-desc">Predictive maintenance (superusers only)</span></span>
+          <span class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="machineLearning" name="machineLearning" {% if config.machineLearning %}checked{% endif %}></span>
+        </label>
       </div>
+    </section>
 
-      <div class="form-check form-switch mb-3">
-        <input class="form-check-input" type="checkbox" id="dashboard" name="dashboard" {% if config.dashboard %}checked{% endif %}>
-        <label class="form-check-label" for="dashboard"> Dashboards</label>
+    <section class="mvc-panel p-4 mb-3">
+      <h2 class="panel-title"><i class="fa-solid fa-shield-halved"></i>Licence</h2>
+      <label class="feature-row danger" for="subscribed" style="max-width: 640px;">
+        <span class="feature-icon"><i class="fa-solid fa-key"></i></span>
+        <span><span class="feature-name d-block">Subscription active</span><span class="feature-desc">Turning this off locks every module until it is switched on again (here or from the MVC Master console).</span></span>
+        <span class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="subscribed" name="subscribed" {% if config.subscribed %}checked{% endif %}></span>
+      </label>
+    </section>
+
+    <section class="mvc-panel p-4 mb-3">
+      <h2 class="panel-title"><i class="fa-solid fa-sitemap"></i>Dashboard tree view</h2>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="tree-option position-relative">
+            <input type="radio" name="treeType" value="hierarchy" {% if config.treeType == "hierarchy" %}checked{% endif %}>
+            <span><i class="fa-solid fa-sitemap me-2"></i><strong>Hierarchy</strong></span>
+            <span class="small text-muted">Site → building → area → meter</span>
+          </label>
+        </div>
+        <div class="col-md-4">
+          <label class="tree-option position-relative">
+            <input type="radio" name="treeType" value="loadType" {% if config.treeType == "loadType" %}checked{% endif %}>
+            <span><i class="fa-solid fa-layer-group me-2"></i><strong>Load type</strong></span>
+            <span class="small text-muted">Meters grouped by what they supply</span>
+          </label>
+        </div>
+        <div class="col-md-4">
+          <label class="tree-option position-relative">
+            <input type="radio" name="treeType" value="meterType" {% if config.treeType == "meterType" %}checked{% endif %}>
+            <span><i class="fa-solid fa-gauge me-2"></i><strong>Meter type</strong></span>
+            <span class="small text-muted">Electricity, water, gas, steam…</span>
+          </label>
+        </div>
       </div>
+    </section>
 
-      <div class="form-check form-switch mb-3">
-        <input class="form-check-input" type="checkbox" id="alarm" name="alarm" {% if config.alarm %}checked{% endif %}>
-        <label class="form-check-label" for="alarm"> Alarms</label>
-      </div>
-
-      <div class="form-check form-switch mb-3">
-        <input class="form-check-input" type="checkbox" id="siteLocations" name="siteLocations" {% if config.siteLocations %}checked{% endif %}>
-        <label class="form-check-label" for="siteLocations">Show Site Locations</label>
-      </div>
-
-      <div class="form-check form-switch mb-3">
-        <input class="form-check-input" type="checkbox" id="scada" name="scada" {% if config.scada %}checked{% endif %}>
-        <label class="form-check-label" for="scada"> SCADA</label>
-      </div>
-
-      <div class="form-check form-switch mb-3">
-        <input class="form-check-input" type="checkbox" id="billing" name="billing" {% if config.billing %}checked{% endif %}>
-        <label class="form-check-label" for="billing"> Billing</label>
-      </div>
-
-      <div class="form-check form-switch mb-3">
-        <input class="form-check-input" type="checkbox" id="subscribed" name="subscribed" {% if config.subscribed %}checked{% endif %}>
-        <label class="form-check-label" for="subscribed">Subscription Active</label>
-      </div>
-
-      <hr class="my-4">
-
-      <h5 class="mb-3">Tree View Type</h5>
-      <select class="form-select" name="treeType" id="treeType">
-        <option value="hierarchy" {% if config.treeType == "hierarchy" %}selected{% endif %}>Hierarchy View</option>
-        <option value="loadType" {% if config.treeType == "loadType" %}selected{% endif %}>Load Type View</option>
-        <option value="meterType" {% if config.treeType == "meterType" %}selected{% endif %}>Meter Type View</option>
-      </select>
-
-      <div class="mt-4 text-end">
-        <button type="submit" class="btn btn-info fw-bold px-4">Save Changes</button>
-      </div>
+    <div class="d-flex justify-content-end gap-2">
+      <a href="/settings/configurations" class="btn btn-outline-light">Discard</a>
+      <button type="submit" class="btn btn-info px-4"><i class="fa-solid fa-floppy-disk me-2"></i>Save changes</button>
     </div>
   </form>
 </div>
-
 {% endblock %}

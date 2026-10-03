@@ -1,998 +1,811 @@
 {% extends 'layout.html' %}
-{% block body %}
 
+{% block title %}Hierarchy - Settings - MarksVision{% endblock %}
 
-<!-- Include Leaflet CSS and JS for OpenStreetMap -->
+{% block head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-
-
 <style>
-  .modal-content.bg-dark-custom {
-    color: #fff;
-  }
-
-  .modal-header.bg-dark-custom {
-    border-bottom: 1px solid #444;
-  }
-
-  .modal-body .detail-label {
-    font-weight: bold;
-    color: #aaa;
-  }
-
-  .modal-body .detail-value {
-    color: #fff;
-    margin-bottom: 0.75rem;
-  }
-
-  /* Base tab styles */
-  .nav-tabs .nav-link {
-    background-color: #2a2e36;
-    /* Gray background */
-    color: white;
-    /* White text */
-    border: none;
-    /* Remove borders */
-    margin-right: 4px;
-    border-radius: 0;
-  }
-
-  /* Active tab styles */
-  .nav-tabs .nav-link.active {
-    background-color: #292a2a;
-    color: #00eaff;
-    border-bottom: 3px solid #00eaff;
-    font-weight: bolder;
-  }
-
-  /* Hover effect */
-  .nav-tabs .nav-link:hover {
-    transition: 0.15s;
-    color: #00eaff;
-    border-bottom: 3px solid #00eaff;
-  }
+  .hier-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem; margin-bottom: 1.1rem; }
+  .hier-stat { padding: 0.85rem 1rem; }
+  .hier-stat .num { font-size: 1.45rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .tab-toolbar { display: flex; align-items: center; margin: 0.9rem 0 0.75rem; }
+  .tab-toolbar h2 { font-size: 0.95rem; margin: 0; }
+  .icon-actions { display: inline-flex; gap: 0.3rem; justify-content: flex-end; }
+  .icon-actions .btn { width: 30px; height: 30px; padding: 0; display: inline-grid; place-items: center; }
+  .mapping-row .form-control, .mapping-row .form-select { font-size: 0.82rem; }
+  .mapping-row.invalid .form-control, .mapping-row.invalid .form-select { border-color: rgba(240, 82, 82, 0.7) !important; }
+  .mapping-rows { max-height: 46vh; overflow-y: auto; padding-right: 4px; }
+  .mapping-head { padding-right: 4px; }
+  .mapping-head .row { --bs-gutter-y: 0; }
+  .protocol-picker { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.5rem; }
+  .protocol-tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.3rem;
+    min-height: 74px; padding: 0.55rem 0.4rem; border: 1px solid var(--mvc-border); border-radius: var(--mvc-radius-sm);
+    background: var(--mvc-surface-2); color: var(--mvc-text-2, #9fb0c3); cursor: pointer; text-align: center; transition: border-color .15s, background .15s, color .15s; }
+  .protocol-tile i { font-size: 1.05rem; }
+  .protocol-tile .name { font-size: 0.8rem; font-weight: 600; line-height: 1.15; }
+  .protocol-tile:hover { border-color: rgba(34, 211, 238, 0.45); color: var(--mvc-text, #e6edf3); }
+  .protocol-tile input { position: absolute; opacity: 0; pointer-events: none; }
+  .protocol-tile.active { border-color: var(--mvc-accent, #22d3ee); background: rgba(34, 211, 238, 0.09); color: var(--mvc-text, #e6edf3); box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.35) inset; }
+  .protocol-tile.active i { color: var(--mvc-accent, #22d3ee); }
+  .protocol-tile:focus-within { outline: 2px solid rgba(34, 211, 238, 0.6); outline-offset: 2px; }
+  .conn-help { font-size: 0.74rem; color: var(--mvc-text-3, #7d8b9c); margin-top: 0.2rem; }
+  .protocol-counts { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-left: 1rem; }
+  .point-list { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 0.2rem 1rem; font-size: 0.82rem; }
+  .point-list .addr { font-family: var(--mvc-font-mono, monospace); color: #a5f3fc; overflow-wrap: anywhere; }
+  @media (max-width: 991.98px) { .protocol-picker { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (max-width: 575.98px) { .protocol-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .test-result pre { background: var(--mvc-surface-0); color: #a5f3fc; border: 1px solid var(--mvc-border); border-radius: var(--mvc-radius-sm); max-height: 260px; overflow: auto; font-size: 0.8rem; }
+  .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin-bottom: 1rem; }
+  .detail-grid > div { padding: 0.6rem 0.8rem; border-radius: var(--mvc-radius-sm); background: var(--mvc-surface-2); border: 1px solid var(--mvc-border); }
+  .detail-grid .value { font-weight: 600; margin-top: 0.1rem; }
+  #map, [id^="map"] .leaflet-container { border-radius: var(--mvc-radius); }
 </style>
+{% endblock %}
 
+{% block body %}
+{% include 'settings_sidebar.html' %}
 
-<!-- Sidebar -->
-<div id="sidebar" class="sidebar position-fixed d-flex flex-column">
-  <div class="d-flex mt-5">
-    <h3 class="h5 text-info fw-bold mx-2">MARKS</h3>
-    <h3 class="h5"> Vision Center</h3>
-  </div>
-  <form action="" class="form p-3">
-    <div class="form-group mb-1">
-      <input type="text" class="form-control" placeholder="Search...">
+<datalist id="measurement-names">
+  {% for name in measurement_names %}<option value="{{ name }}"></option>{% endfor %}
+</datalist>
+
+<div class="container-xxl" id="main-content">
+  <div class="page-header">
+    <div class="page-icon"><i class="fa-solid fa-sitemap"></i></div>
+    <div>
+      <h1 class="page-title">Plant hierarchy</h1>
+      <p class="page-subtitle">Sites contain buildings, buildings contain areas and areas contain meters. Load types group meters by what they supply.</p>
     </div>
-  </form>
-  <a href="/settings/configurations" class="text-white">Configurations</a>
-  <a href="/settings/hierarchy" class="text-white">Hierarchy</a>
-  <a href="/accounts/accountSettings" class="text-white">Account Settings</a>
-</div>
+  </div>
 
-<!-- Overlay -->
-<div id="overlay" class="overlay"></div>
+  <div class="hier-stats">
+    <div class="mvc-panel hier-stat"><div class="eyebrow">Sites</div><div class="num">{{ sites|length }}</div></div>
+    <div class="mvc-panel hier-stat"><div class="eyebrow">Buildings</div><div class="num">{{ buildings|length }}</div></div>
+    <div class="mvc-panel hier-stat"><div class="eyebrow">Areas</div><div class="num">{{ areas|length }}</div></div>
+    <div class="mvc-panel hier-stat"><div class="eyebrow">Meters</div><div class="num">{{ meters|length }}</div></div>
+    <div class="mvc-panel hier-stat"><div class="eyebrow">Load types</div><div class="num">{{ loadTypes|length }}</div></div>
+  </div>
 
-<div class="container" id="main-content">
-  <!-- Tab Navigation -->
-  <ul class="nav nav-tabs" id="myTab" role="tablist" style="border: none;">
-    <li class="nav-item" role="presentation">
-      <a class="nav-link active" id="site-tab" data-bs-toggle="tab" data-bs-target="#site" type="button" role="tab"
-        aria-controls="site" aria-selected="true">Site</a>
-    </li>
-    <li class="nav-item" role="presentation">
-      <a class="nav-link" id="buildings-tab" data-bs-toggle="tab" data-bs-target="#buildings" type="button" role="tab"
-        aria-controls="buildings" aria-selected="false">Buildings</a>
-    </li>
-    <li class="nav-item" role="presentation">
-      <a class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#areas" type="button" role="tab"
-        aria-controls="areas" aria-selected="false">Areas</a>
-    </li>
-    <li class="nav-item" role="presentation">
-      <a class="nav-link" id="meters-tab" data-bs-toggle="tab" data-bs-target="#meters" type="button" role="tab"
-        aria-controls="meters" aria-selected="false">Meters</a>
-    </li>
-    <li class="nav-item" role="presentation">
-      <a class="nav-link" id="load-tab" data-bs-toggle="tab" data-bs-target="#load" type="button" role="tab"
-        aria-controls="load" aria-selected="false">Load Types</a>
-    </li>
+  <ul class="nav nav-tabs" id="hierarchyTabs" role="tablist">
+    <li class="nav-item" role="presentation"><button class="nav-link active" id="site-tab" data-bs-toggle="tab" data-bs-target="#site" type="button" role="tab" aria-controls="site" aria-selected="true"><i class="fa-solid fa-industry me-2"></i>Sites</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="buildings-tab" data-bs-toggle="tab" data-bs-target="#buildings" type="button" role="tab" aria-controls="buildings" aria-selected="false"><i class="fa-solid fa-building me-2"></i>Buildings</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="areas-tab" data-bs-toggle="tab" data-bs-target="#areas" type="button" role="tab" aria-controls="areas" aria-selected="false"><i class="fa-solid fa-vector-square me-2"></i>Areas</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="meters-tab" data-bs-toggle="tab" data-bs-target="#meters" type="button" role="tab" aria-controls="meters" aria-selected="false"><i class="fa-solid fa-gauge me-2"></i>Meters</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="load-tab" data-bs-toggle="tab" data-bs-target="#load" type="button" role="tab" aria-controls="load" aria-selected="false"><i class="fa-solid fa-layer-group me-2"></i>Load Types</button></li>
   </ul>
 
+  <div class="tab-content" id="hierarchyTabContent">
 
-
-
-
-
-
-
-  <!-- Modal -->
-  <div class="modal fade" id="addSiteModal" tabindex="-1" aria-labelledby="addSiteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content shadow">
-
-        <!-- Modal Header -->
-        <div class="modal-header bg-dark text-white border-dark">
-          <h5 class="modal-title" id="addSiteModalLabel">Add New Site</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-
-        <!-- Modal Body -->
-        <div class="modal-body bg-dark text-white">
-          <form method="post" action="/settings/hierarchy/addSite">
-            {% csrf_token %}
-            <div class="mb-3">
-              <input type="text" class="form-control" id="siteName" name="site_name" placeholder="Enter Site Name" required>
-            </div>
-          
-            <div class="mb-3">
-              <label for="latitude" class="form-label text-white">Latitude</label>
-              <input type="text" class="form-control" id="latitude" name="latitude" placeholder="Latitude" required>
-            </div>
-          
-            <div class="mb-3">
-              <label for="longitude" class="form-label text-white">Longitude</label>
-              <input type="text" class="form-control" id="longitude" name="longitude" placeholder="Longitude" required>
-            </div>
-          
-            <div id="map" style="height: 300px; margin-bottom: 1rem;"></div>
-          
-            <div class="modal-footer border-dark">
-              <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-info">Save</button>
-            </div>
-          </form>
-        </div>
-
-      </div>
-    </div>
-  </div>
-  <script>
-    // Initialize map variable globally
-let map, marker;
-
-// Function to initialize map at given coords
-function initMap(lat, lon) {
-  map = L.map('map').setView([lat, lon], 13); // Zoom 13 for city-level
-
-  // Add OpenStreetMap tile layer
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-
-  // Add marker at user location initially
-  marker = L.marker([lat, lon]).addTo(map);
-
-  // On map click, update lat/lon inputs and move marker
-  map.on('click', function (e) {
-    const latClicked = e.latlng.lat.toFixed(6);
-    const lonClicked = e.latlng.lng.toFixed(6);
-
-    document.getElementById('latitude').value = latClicked;
-    document.getElementById('longitude').value = lonClicked;
-
-    marker.setLatLng(e.latlng);
-  });
-
-  // Update the lat/lon input with initial location
-  document.getElementById('latitude').value = lat.toFixed(6);
-  document.getElementById('longitude').value = lon.toFixed(6);
-}
-
-// Try to get user's current location via browser
-if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      initMap(position.coords.latitude, position.coords.longitude);
-    },
-    (error) => {
-      console.warn('Geolocation failed or denied. Using default location.');
-      initMap(23.8103, 90.4125); // Dhaka fallback
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 5000,
-      maximumAge: 0
-    }
-  );
-} else {
-  // Browser doesn't support Geolocation
-  console.warn('Geolocation not supported. Using default location.');
-  initMap(23.8103, 90.4125); // Dhaka fallback
-}
-
-  </script>
-    
-  <!-- Tab Content -->
-  <div class="tab-content p-3 shadow" id="myTabContent">
+    <!-- ============ SITES ============ -->
     <div class="tab-pane fade show active" id="site" role="tabpanel" aria-labelledby="site-tab">
-      <h4 class="container d-flex">
-        Site
-        <button class="btn btn-sm btn-success ms-auto" type="button" data-bs-toggle="modal"
-          data-bs-target="#addSiteModal"><i class="fa-solid fa-plus"></i> Add Site</button>
-      </h4>
-      <div class="table-responsive" style="max-height: 450px;">
-        <table class="table table-striped table-hover text-white table-dark bg-dark">
-          <thead class="table-dark">
-            <tr>
-              <th>Name</th>
-              <th>No. of Buildings</th>
-              <th style="width: 50px">View</th>
-              <th style="width: 50px">Delete</th>
-            </tr>
-          </thead>
+      <div class="tab-toolbar"><h2>Sites</h2>
+        <button class="btn btn-sm btn-info ms-auto" type="button" data-bs-toggle="modal" data-bs-target="#addSiteModal"><i class="fa-solid fa-plus me-1"></i>Add Site</button>
+      </div>
+      <div class="mvc-table-wrap" style="max-height: 62vh;">
+        <table class="table table-hover align-middle">
+          <thead><tr><th>Name</th><th>Latitude</th><th>Longitude</th><th>Buildings</th><th>Areas</th><th>Meters</th><th class="text-end" style="width: 110px">Actions</th></tr></thead>
           <tbody>
             {% for site in sites %}
             <tr>
-              <td>{{site.name}}</td>
-              <td>{{site.buildings.count}}</td>
-              <td><a class="btn btn-sm btn-info" data-bs-toggle="modal"
-                  data-bs-target="#siteDetailsModal{{ site.id }}"><i class="fa-solid fa-eye"></i></a></td>
-              <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteSite/{{site.id}}"><i class="fa-solid fa-trash"></i></a></td>
+              <td>{{ site.name }}</td>
+              <td>{{ site.latitude }}</td>
+              <td>{{ site.longitude }}</td>
+              <td>{{ site.buildings.all|length }}</td>
+              <td>{{ site.area_count }}</td>
+              <td>{{ site.meter_count }}</td>
+              <td class="text-end"><span class="icon-actions"><button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="modal" data-bs-target="#siteDetailsModal{{ site.id }}" title="Details"><i class="fa-solid fa-eye"></i></button><form method="POST" action="/settings/hierarchy/deleteSite/{{ site.id }}" class="d-inline m-0" data-confirm="Delete site &quot;{{ site.name }}&quot;? All its buildings, areas, meters, readings and dashboards are deleted too.">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit" title="Delete"><i class="fa-solid fa-trash-can"></i></button></form></span></td>
             </tr>
+            {% empty %}
+            <tr><td colspan="8" class="text-muted">No sites yet.</td></tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
-
     </div>
 
-
-    {% for site in sites %}
-    <!-- Modal -->
-<div class="modal fade" id="siteDetailsModal{{ site.id }}" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content bg-dark text-white border-dark" style="height: 90vh; overflow: hidden;">
-      
-      <!-- Modal Header (fixed, not scrollable) -->
-      <div class="modal-header">
-        <h5 class="modal-title">Site Details - {{ site.name }}</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    <!-- ============ BUILDINGS ============ -->
+    <div class="tab-pane fade" id="buildings" role="tabpanel" aria-labelledby="buildings-tab">
+      <div class="tab-toolbar"><h2>Buildings</h2>
+        <button class="btn btn-sm btn-info ms-auto" type="button" data-bs-toggle="modal" data-bs-target="#addBuildingModal" {% if not sites %}disabled title="Add a site first"{% endif %}><i class="fa-solid fa-plus me-1"></i>Add Building</button>
       </div>
-
-      <!-- Modal Body (scrollable) -->
-      <div class="modal-body overflow-auto" style="max-height: calc(90vh - 60px);">
-        <p class="detail-value"><span class="fw-bold">No of Buildings: </span> {{ site.buildings.count }}</p>
-
-        <div class="table-responsive">
-          <table class="table table-striped table-hover text-white table-dark bg-dark">
-            <thead class="table-dark">
-              <tr>
-                <th>Buildings</th>
-                <th>No of Areas</th>
-                <th>No of Meters</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for building in site.buildings.all %}
-              <tr>
-                <td>{{ building.name }}</td>
-                <td>{{ building.areas.count }}</td>
-                <td>{{ building.meter_count }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-
-        <p class="detail-value"><span class="fw-bold">No of Areas: </span> {{ site.area_count }}</p>
-        <div class="table-responsive">
-          <table class="table table-striped table-hover text-white table-dark bg-dark">
-            <thead class="table-dark">
-              <tr>
-                <th>Area</th>
-                <th>Building</th>
-                <th>No of Meters</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for building in site.buildings.all %}
-              {% for area in building.areas.all %}
-              <tr>
-                <td>{{ area.name }}</td>
-                <td>{{ area.building.name }}</td>
-                <td>{{ area.meters.count }}</td>
-              </tr>
-              {% endfor %}
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-
-        <p class="detail-value"><span class="fw-bold">No of Meter: </span> {{ site.meter_count }}</p>
-        <div class="table-responsive">
-          <table class="table table-striped table-hover text-white table-dark bg-dark">
-            <thead class="table-dark">
-              <tr>
-                <th>Meter</th>
-                <th>Type</th>
-                <th>IP Address</th>
-                <th>Device ID</th>
-                <th>Area</th>
-                <th>Building</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for building in site.buildings.all %}
-              {% for area in building.areas.all %}
-              {% for meter in area.meters.all %}
-              <tr>
-                <td>{{ meter.name }}</td>
-                <td>{{ meter.meterType }}</td>
-                <td>{{ meter.ip }}</td>
-                <td>{{ meter.unit_id }}</td>
-                <td>{{ meter.area.name }}</td>
-                <td>{{ meter.area.building.name }}</td>
-              </tr>
-              {% endfor %}
-              {% endfor %}
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+      <div class="mvc-table-wrap" style="max-height: 62vh;">
+        <table class="table table-hover align-middle">
+          <thead><tr><th>Name</th><th>Site</th><th>Areas</th><th>Meters</th><th class="text-end" style="width: 110px">Actions</th></tr></thead>
+          <tbody>
+            {% for building in buildings %}
+            <tr>
+              <td>{{ building.name }}</td>
+              <td>{{ building.site.name }}</td>
+              <td>{{ building.area_count }}</td>
+              <td>{{ building.meter_count }}</td>
+              <td class="text-end"><span class="icon-actions"><button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="modal" data-bs-target="#buildingDetailsModal{{ building.id }}" title="Details"><i class="fa-solid fa-eye"></i></button><form method="POST" action="/settings/hierarchy/deleteBuilding/{{ building.id }}" class="d-inline m-0" data-confirm="Delete building &quot;{{ building.name }}&quot; with all its areas, meters and readings?">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit" title="Delete"><i class="fa-solid fa-trash-can"></i></button></form></span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-muted">No buildings yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
+    </div>
 
+    <!-- ============ AREAS ============ -->
+    <div class="tab-pane fade" id="areas" role="tabpanel" aria-labelledby="areas-tab">
+      <div class="tab-toolbar"><h2>Areas</h2>
+        <button class="btn btn-sm btn-info ms-auto" type="button" data-bs-toggle="modal" data-bs-target="#addAreaModal" {% if not buildings %}disabled title="Add a building first"{% endif %}><i class="fa-solid fa-plus me-1"></i>Add Area</button>
+      </div>
+      <div class="mvc-table-wrap" style="max-height: 62vh;">
+        <table class="table table-hover align-middle">
+          <thead><tr><th>Name</th><th>Site</th><th>Building</th><th>Meters</th><th class="text-end" style="width: 110px">Actions</th></tr></thead>
+          <tbody>
+            {% for area in areas %}
+            <tr>
+              <td>{{ area.name }}</td>
+              <td>{{ area.building.site.name }}</td>
+              <td>{{ area.building.name }}</td>
+              <td>{{ area.meters.all|length }}</td>
+              <td class="text-end"><span class="icon-actions"><button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="modal" data-bs-target="#areaDetailsModal{{ area.id }}" title="Details"><i class="fa-solid fa-eye"></i></button><form method="POST" action="/settings/hierarchy/deleteArea/{{ area.id }}" class="d-inline m-0" data-confirm="Delete area &quot;{{ area.name }}&quot; with all its meters and readings?">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit" title="Delete"><i class="fa-solid fa-trash-can"></i></button></form></span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-muted">No areas yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ METERS ============ -->
+    <div class="tab-pane fade" id="meters" role="tabpanel" aria-labelledby="meters-tab">
+      <div class="tab-toolbar"><h2>Meters</h2>
+        <div class="protocol-counts d-none d-lg-flex">
+          {% for label, count in protocol_counts %}{% if count %}<span class="status-pill neutral">{{ label }} · {{ count }}</span>{% endif %}{% endfor %}
+        </div>
+        <button class="btn btn-sm btn-info ms-auto" type="button" data-bs-toggle="modal" data-bs-target="#addMeterModal" {% if not areas %}disabled title="Add an area first"{% endif %}><i class="fa-solid fa-plus me-1"></i>Add Meter</button>
+      </div>
+      <div class="mvc-table-wrap" style="max-height: 62vh;">
+        <table class="table table-hover align-middle">
+          <thead><tr><th>Name</th><th>Type</th><th>Protocol</th><th>Address</th><th>Points</th><th>Load Type</th><th>Site / Building / Area</th><th class="text-nowrap text-end">Actions</th></tr></thead>
+          <tbody>
+            {% for meter in meters %}
+            <tr>
+              <td class="fw-semibold">{{ meter.name }}{% if meter.ecological %} <span class="badge text-bg-success ms-1" title="Ecological meter">eco</span>{% endif %}</td>
+              <td>{{ meter.meterType }}</td>
+              <td><span class="status-pill {% if meter.protocol == 'modbus' %}neutral{% else %}info{% endif %} text-nowrap">{{ meter.protocol_label }}</span></td>
+              <td class="mvc-mono small">{{ meter.address_summary }}</td>
+              <td>{{ meter.registerMapping|length }}</td>
+              <td>{{ meter.loadType.name|default:"—" }}</td>
+              <td class="small text-muted">{{ meter.area.building.site.name }} / {{ meter.area.building.name }} / {{ meter.area.name }}</td>
+              <td class="text-nowrap text-end">
+                <span class="icon-actions">
+                <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="modal" data-bs-target="#meterDetailsModal{{ meter.id }}" title="Details"><i class="fa-solid fa-eye"></i></button>
+                <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="modal" data-bs-target="#editMeterModal{{ meter.id }}" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn btn-sm btn-outline-info js-test-meter" type="button" data-meter-id="{{ meter.id }}" data-protocol="{{ meter.protocol }}" data-meter-name="{{ meter.name }}" title="Test connection"><i class="fa-solid fa-plug"></i></button>
+                <form method="POST" action="/settings/hierarchy/deleteMeter/{{ meter.id }}" class="d-inline m-0" data-confirm="Delete meter &quot;{{ meter.name }}&quot; and all of its readings?">
+                  {% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
+                </form>
+                </span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="text-muted">No meters yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ LOAD TYPES ============ -->
+    <div class="tab-pane fade" id="load" role="tabpanel" aria-labelledby="load-tab">
+      <div class="tab-toolbar"><h2>Load Types</h2>
+        <button class="btn btn-sm btn-info ms-auto" type="button" data-bs-toggle="modal" data-bs-target="#addLoadTypeModal"><i class="fa-solid fa-plus me-1"></i>Add Load Type</button>
+      </div>
+      <div class="mvc-table-wrap" style="max-height: 62vh;">
+        <table class="table table-hover align-middle">
+          <thead><tr><th>Name</th><th>Meters</th><th class="text-end" style="width: 110px">Actions</th></tr></thead>
+          <tbody>
+            {% for load in loadTypes %}
+            <tr>
+              <td>{{ load.name }}</td>
+              <td style="max-width: 700px;">{% for meter in load.meters.all %}{{ meter.name }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="text-muted">—</span>{% endfor %}</td>
+              <td class="text-end"><span class="icon-actions"><button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="modal" data-bs-target="#loadDetailsModal{{ load.id }}" title="Details"><i class="fa-solid fa-eye"></i></button><form method="POST" action="/settings/hierarchy/deleteLoadType/{{ load.id }}" class="d-inline m-0" data-confirm="Delete load type &quot;{{ load.name }}&quot;? Its meters are kept without a load type.">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit" title="Delete"><i class="fa-solid fa-trash-can"></i></button></form></span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-muted">No load types yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
 
-    {% endfor %}
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="modal fade" id="addBuildingModal" tabindex="-1" aria-labelledby="addBuildingModalLabel"
-      aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header bg-dark text-white border-dark">
-            <h5 class="modal-title">Add Building</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <form method="post" action="/settings/hierarchy/addBuilding">
-            {% csrf_token %}
-            <div class="modal-body bg-dark text-white border-dark">
-              <div class="mb-3">
-                <label for="buildingName" class="form-label">Building Name</label>
-                <input type="text" class="form-control" name="building_name" required>
-              </div>
-              <div class="mb-3">
-                <label for="siteSelect" class="form-label">Select Site</label>
-                <select class="form-select" name="site_id" required>
-                  {% for site in sites %}
-                  <option value="{{ site.id }}">{{ site.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-
-            </div>
-            <div class="modal-footer bg-dark text-white border-dark">
-              <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-info">Save</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <div class="tab-pane fade" id="buildings" role="tabpanel" aria-labelledby="buildings-tab">
-      <h4 class="container d-flex">
-        Buildings
-        <button class="btn btn-sm btn-success ms-auto" data-bs-toggle="modal" data-bs-target="#addBuildingModal"><i
-            class="fa-solid fa-plus"></i> Add Building</button>
-      </h4>
-      <div class="table-responsive" style="max-height: 450px;">
-        <table class="table table-striped table-hover text-white table-dark bg-dark">
-          <thead class="table-dark">
-            <tr>
-              <th>Name</th>
-              <th>Site</th>
-              <th>No of Areas</th>
-              <th>No of Meters</th>
-              <th style="width: 50px">View</th>
-              <th style="width: 50px">Delete</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for building in buildings %}
-            <tr>
-              <td>{{building.name}}</td>
-              <td>{{building.site.name}}</td>
-              <td>{{building.areas.count}}</td>
-              <td>{{building.meter_count}}</td>
-              <td><a class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#buildingDetailsModal{{ building.id }}"><i class="fa-solid fa-eye"></i></a></td>
-              <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteBuilding/{{building.id}}"><i class="fa-solid fa-trash"></i></a></td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-
-
-    {% for building in buildings %}
-    <!-- Modal -->
-    <div class="modal fade" id="buildingDetailsModal{{ building.id }}" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark text-white border-dark" style="height: 90vh; overflow: hidden;">
-          
-          <!-- Modal Header -->
-          <div class="modal-header">
-            <h5 class="modal-title">Building Details - {{ building.name }}</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-    
-          <!-- Modal Body -->
-          <div class="modal-body overflow-auto" style="max-height: calc(90vh - 60px);">
-            <p><span class="fw-bold">Site: </span> {{ building.site.name }}</p>
-            <p><span class="fw-bold">No of Areas: </span> {{ building.areas.count }}</p>
-    
-            <!-- Area Table -->
-            <div class="table-responsive mb-4">
-              <table class="table table-striped table-hover text-white table-dark bg-dark">
-                <thead class="table-dark">
-                  <tr>
-                    <th>Area</th>
-                    <th>No of Meters</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for area in building.areas.all %}
-                  <tr>
-                    <td>{{ area.name }}</td>
-                    <td>{{ area.meters.count }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-    
-            <!-- Meter Table -->
-            <p><span class="fw-bold">No of Meters: </span> {{ building.meter_count }}</p>
-            <div class="table-responsive">
-              <table class="table table-striped table-hover text-white table-dark bg-dark">
-                <thead class="table-dark">
-                  <tr>
-                    <th>Meter</th>
-                    <th>Type</th>
-                    <th>IP Address</th>
-                    <th>Device ID</th>
-                    <th>Area</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for area in building.areas.all %}
-                  {% for meter in area.meters.all %}
-                  <tr>
-                    <td>{{ meter.name }}</td>
-                    <td>{{ meter.meterType }}</td>
-                    <td>{{ meter.ip }}</td>
-                    <td>{{ meter.unit_id }}</td>
-                    <td>{{ meter.area.name }}</td>
-                  </tr>
-                  {% endfor %}
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </div>
-    
-        </div>
-      </div>
-    </div>
-    {% endfor %}
-    
-
-
-
-
-
-
-
-    <div class="modal fade" id="addAreaModal" tabindex="-1" aria-labelledby="addAreaModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header bg-dark text-white border-dark">
-            <h5 class="modal-title">Add Area</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <form method="post" action="/settings/hierarchy/addArea">
-            {% csrf_token %}
-            <div class="modal-body bg-dark text-white border-dark">
-              <div class="mb-3">
-                <label for="areaName" class="form-label">Area Name</label>
-                <input type="text" class="form-control" name="area_name" required>
-              </div>
-              <div class="mb-3">
-                <label for="buildingSelect" class="form-label">Select Building</label>
-                <select class="form-select" name="building_id" required>
-                  {% for building in buildings %}
-                  <option value="{{ building.id }}">{{ building.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="modal-footer bg-dark text-white border-dark">
-              <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-info">Save</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-    <div class="tab-pane fade" id="areas" role="tabpanel" aria-labelledby="areas-tab">
-      <h4 class="container d-flex">
-        Areas
-        <a class="btn btn-sm btn-success ms-auto" data-bs-toggle="modal" data-bs-target="#addAreaModal"><i
-            class="fa-solid fa-plus"></i> Add Area</a>
-      </h4>
-      <div class="table-responsive" style="max-height: 450px;">
-        <table class="table table-striped table-hover text-white table-dark bg-dark">
-          <thead class="table-dark">
-            <tr>
-              <th>Name</th>
-              <th>Site</th>
-              <th>Building</th>
-              <th>No of Meters</th>
-              <th style="width: 50px">View</th>
-              <th style="width: 50px">Delete</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for area in areas %}
-            <tr>
-              <td>{{area.name}}</td>
-              <td>{{area.building.site.name}}</td>
-              <td>{{area.building.name}}</td>
-              <td>{{area.meters.count}}</td>
-              <td><a class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#areaDetailsModal{{ area.id }}"><i class="fa-solid fa-eye"></i></a></td>
-              <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteArea/{{area.id}}"><i class="fa-solid fa-trash"></i></a></td>            
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-
-    {% for area in areas %}
-    <!-- Area Details Modal -->
-    <div class="modal fade" id="areaDetailsModal{{ area.id }}" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark text-white border-dark" style="height: 90vh; overflow: hidden;">
-          
-          <!-- Modal Header -->
-          <div class="modal-header">
-            <h5 class="modal-title">Area Details - {{ area.name }}</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-    
-          <!-- Modal Body -->
-          <div class="modal-body overflow-auto" style="max-height: calc(90vh - 60px);">
-            <p><span class="fw-bold">Site: </span> {{ area.building.site.name }}</p>
-            <p><span class="fw-bold">Building: </span> {{ area.building.name }}</p>
-            <p><span class="fw-bold">No of Meters: </span> {{ area.meters.count }}</p>
-    
-            <!-- Meters Table -->
-            <div class="table-responsive">
-              <table class="table table-striped table-hover text-white table-dark bg-dark">
-                <thead class="table-dark">
-                  <tr>
-                    <th>Meter</th>
-                    <th>Meter Type</th>
-                    <th>IP Address</th>
-                    <th>Device ID</th>
-                    <th>Load Type</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for meter in area.meters.all %}
-                  <tr>
-                    <td>{{ meter.name }}</td>
-                    <td>{{ meter.meterType }}</td>
-                    <td>{{ meter.ip }}</td>
-                    <td>{{ meter.unit_id }}</td>
-                    <td>{{ meter.loadType.name }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </div>
-    
-        </div>
-      </div>
-    </div>
-    {% endfor %}
-    
-
-
-
-
-    <div class="modal fade" id="addMeterModal" tabindex="-1" aria-labelledby="addMeterModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header bg-dark text-white border-dark">
-            <h5 class="modal-title">Add Meter</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <form method="post" action="/settings/hierarchy/addMeter" id="addMeterForm">
-            {% csrf_token %}
-            <div class="modal-body bg-dark text-white border-dark">
-              <div class="mb-3">
-                <label for="meterName" class="form-label">Meter Name</label>
-                <input type="text" class="form-control" name="meter_name" required>
-              </div>
-              <div class="mb-3">
-                <label for="meter_ip" class="form-label">Meter IP Address</label>
-                <input type="text" class="form-control" name="meter_ip" required>
-              </div>
-              <div class="mb-3">
-                <label for="unit_id" class="form-label">Device ID</label>
-                <input type="number" class="form-control" name="unit_id" >
-              </div>
-              <div class="mb-3">
-                <label for="meterTypeSelect" class="form-label">Select Meter Type</label>
-                <select class="form-select" name="meterType" required>
-                  <option value="Electricity Meter">Electricity Meter</option>
-                  <hr>
-                  <option>Flow Meters</option>
-                  <hr>
-                  <option value="Water Meter">Water Meter</option>
-                  <option value="Gas Meter">Gas Meter</option>
-                  <option value="Air Meter">Air Meter</option>
-                  <option value="Fuel Meter">Fuel Meter</option>
-                  <option value="Steam">Steam Meter</option>
-                  <hr>
-                  <option value="Transmitter">Transmitter</option>
-                  <hr>
-                  <option value="Temperature">Temperature</option>
-                  <option value="Temperature">Pressure</option>
-                  <option value="Humidity">Humidity</option>
-                  <option value="Air Quality">Air Quality</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label for="areaSelect" class="form-label">Select Area</label>
-                <select class="form-select" name="area_id" required>
-                  {% for area in areas %}
-                  <option value="{{ area.id }}">{{ area.name }} - {{area.building.name}} - {{area.building.site.name}}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="mb-3">
-                <label for="loadSelect" class="form-label">Select Load Type</label>
-                <select class="form-select" name="load_id" required>
-                  {% for load in loadTypes %}
-                  <option value="{{ load.id }}">{{ load.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-bold">Register Mapping</label>
-                <div id="register-container"></div>
-                <button type="button" class="btn btn-sm btn-secondary mt-2" id="add-register-btn">
-                  + Add Register Mapping
-                </button>
-                <input type="hidden" name="register_mapping" id="register_mapping_json">
-              </div>
-              <div class="mb-3">
-                <label for="loadSelect" class="form-label">Select Ecological Status</label>
-                <input type="checkbox" name="ecological" id="ecological">
-              </div>
-              <div class="mb-3">
-                <label for="loadSelect" class="form-label">SCADA Connected?</label>
-                <input type="checkbox" name="isScada" id="isScada">
-              </div>
-            </div>
-            <div class="modal-footer bg-dark text-white border-dark">
-              <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-info">Save</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-    <div class="tab-pane fade" id="meters" role="tabpanel" aria-labelledby="meters-tab">
-      <h4 class="container d-flex">
-        Meters
-        <a class="btn btn-sm btn-success ms-auto" data-bs-toggle="modal" data-bs-target="#addMeterModal"><i
-            class="fa-solid fa-plus"></i> Add Meter</a>
-      </h4>
-      <div class="table-responsive" style="max-height: 450px;">
-        <table class="table table-striped table-hover text-white table-dark bg-dark">
-          <thead class="table-dark">
-            <tr>
-              <th>Name</th>
-              <th>Meter Type</th>
-              <th>IP Address</th>
-              <th>Device ID</th>
-              <th>Load Type</th>
-              <th>Site</th>
-              <th>Building</th>
-              <th>Area</th>
-              <th>SCADA Connected?</th>
-              <th style="width: 50px">View</th>
-              <th style="width: 50px">Delete</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for meter in meters %}
-            <tr>
-              <td>{{meter.name}}</td>
-              <td>{{meter.meterType}}</td>
-              <td>{{meter.ip}}</td>
-              <td>{{meter.unit_id}}</td>
-              <td>{{meter.loadType.name}}</td>
-              <td>{{meter.area.building.site.name}}</td>
-              <td>{{meter.area.building.name}}</td>
-              <td>{{meter.area.name}}</td>
-              <td>{% if meter.isScada %} <i class="fa-solid fa-check text-success"></i>{% else %} <i class="fa-solid fa-circle-xmark text-danger"></i>{% endif %} </td>
-              <td><a class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#meterDetailsModal{{ meter.id }}"><i class="fa-solid fa-eye"></i></a></td>
-              <td><a class="btn btn-sm btn-danger" href="/settings/hierarchy/deleteMeter/{{meter.id}}"><i class="fa-solid fa-trash"></i></a></td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-
-
-    {% for meter in meters %}
-    <!-- Modal -->
-    <div class="modal fade" id="meterDetailsModal{{ meter.id }}" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark text-white border-dark" style="height: 90vh; overflow: hidden;">
-          
-          <!-- Modal Header (fixed) -->
-          <div class="modal-header">
-            <h5 class="modal-title">Meter Details - {{ meter.name }}</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-    
-          <!-- Modal Body (scrollable) -->
-          <div class="modal-body overflow-auto" style="max-height: calc(90vh - 60px);">
-            <p><strong>Meter Name:</strong> {{ meter.name }}</p>
-            <p><strong>Meter Type:</strong> {{ meter.meterType }}</p>
-            <p><strong>IP Address:</strong> {{ meter.ip }}</p>
-            <p><strong>Device ID:</strong> {{ meter.unit_id }}</p>
-            <p><strong>Load Type:</strong> {{ meter.loadType.name }}</p>
-            <p><strong>Area:</strong> {{ meter.area.name }}</p>
-            <p><strong>Building:</strong> {{ meter.area.building.name }}</p>
-            <p><strong>Site:</strong> {{ meter.area.building.site.name }}</p>
-            <!-- <p><strong>Register Mapping:</strong> {{ meter.registerMapping }}</p> -->
-    
-            {% if meter.gadgets.all %}
-            <hr>
-            <h6>Connected Gadgets</h6>
-            <div class="table-responsive">
-              <table class="table table-striped table-hover text-white table-dark bg-dark">
-                <thead class="table-dark">
-                  <tr>
-                    <th>Gadget Name</th>
-                    <th>Type</th>
-                    <th>Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for gadget in meter.gadgets.all %}
-                  <tr>
-                    <td>{{ gadget.name }}</td>
-                    <td>{{ gadget.type }}</td>
-                    <td>{{ gadget.details }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-            {% else %}
-            <p class="text-muted">No gadgets connected.</p>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-    {% endfor %}
-    
-
-
-
-    <div class="modal fade" id="addLoadTypeModal" tabindex="-1" aria-labelledby="addLoadTypeModalLabel"
-      aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header bg-dark text-white border-dark">
-            <h5 class="modal-title">Add Load Type</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <form method="post" action="/settings/hierarchy/addLoadType">
-            {% csrf_token %}
-            <div class="modal-body bg-dark text-white border-dark">
-              <div class="mb-3">
-                <label for="load_name" class="form-label">Load Type Name</label>
-                <input type="text" class="form-control" name="load_name" required>
-              </div>
-            </div>
-            <div class="modal-footer bg-dark text-white border-dark">
-              <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-info">Save</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-    <div class="tab-pane fade" id="load" role="tabpanel" aria-labelledby="load-tab">
-      <h4 class="container d-flex">
-        Load Types
-        <a class="btn btn-sm btn-success ms-auto" data-bs-toggle="modal" data-bs-target="#addLoadTypeModal"><i
-            class="fa-solid fa-plus"></i> Add Load Type</a>
-      </h4>
-      <div class="table-responsive" style="max-height: 450px;">
-        <table class="table table-striped table-hover text-white table-dark bg-dark">
-          <thead class="table-dark">
-            <tr>
-              <th>Name</th>
-              <th>Meters</th>
-              <th style="width: 50px">View</th>
-              <th style="width: 50px">Delete</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for load in loadTypes %}
-            <tr>
-              <td>{{load.name}}</td>
-              <td style="max-width: 900px;">{% for meter in load.meters.all %} {{meter.name}}, {% endfor %}</td>
-              <td><a class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#loadDetailsModal{{ load.id }}"><i class="fa-solid fa-eye"></i></a></td>
-              <td><a class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i></a></td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-
-    {% for load in loadTypes %}
-<!-- Modal -->
-<div class="modal fade" id="loadDetailsModal{{ load.id }}" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content bg-dark text-white border-dark" style="height: 90vh; overflow: hidden;">
-
-      <!-- Header -->
+<!-- ============ ADD SITE ============ -->
+<div class="modal fade" id="addSiteModal" tabindex="-1" aria-labelledby="addSiteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" action="/settings/hierarchy/addSite" class="modal-content">
+      {% csrf_token %}
       <div class="modal-header">
-        <h5 class="modal-title">Load Type Details - {{ load.name }}</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <h5 class="modal-title" id="addSiteModalLabel">Add New Site</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-
-      <!-- Body -->
-      <div class="modal-body overflow-auto" style="max-height: calc(90vh - 60px);">
-        <p><strong>Load Type Name:</strong> {{ load.name }}</p>
-        <hr>
-
-        <h6>Meters using this Load Type:</h6>
-        {% if load.meters.all %}
-        <div class="table-responsive">
-          <table class="table table-striped table-hover text-white table-dark bg-dark">
-            <thead class="table-dark">
-              <tr>
-                <th>Meter</th>
-                <th>Meter Type</th>
-                <th>Area</th>
-                <th>Building</th>
-                <th>Site</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for meter in load.meters.all %}
-              <tr>
-                <td>{{ meter.name }}</td>
-                <td>{{ meter.meterType }}</td>
-                <td>{{ meter.area.name }}</td>
-                <td>{{ meter.area.building.name }}</td>
-                <td>{{ meter.area.building.site.name }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="siteName" class="form-label">Site Name</label>
+          <input type="text" class="form-control" id="siteName" name="site_name" maxlength="100" required>
         </div>
-        {% else %}
-        <p class="text-muted">No meters associated with this load type.</p>
-        {% endif %}
+        <div class="row">
+          <div class="col-6 mb-3"><label for="latitude" class="form-label">Latitude</label><input type="number" step="0.000001" min="-90" max="90" class="form-control" id="latitude" name="latitude" required></div>
+          <div class="col-6 mb-3"><label for="longitude" class="form-label">Longitude</label><input type="number" step="0.000001" min="-180" max="180" class="form-control" id="longitude" name="longitude" required></div>
+        </div>
+        <p class="small text-secondary mb-1">Click on the map to set the coordinates.</p>
+        <div id="map" style="height: 300px;"></div>
       </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-info">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
 
+<!-- ============ ADD BUILDING ============ -->
+<div class="modal fade" id="addBuildingModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" action="/settings/hierarchy/addBuilding" enctype="multipart/form-data" class="modal-content">
+      {% csrf_token %}
+      <div class="modal-header"><h5 class="modal-title">Add Building</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-3"><label class="form-label">Building Name</label><input type="text" class="form-control" name="building_name" maxlength="100" required></div>
+        <div class="mb-3"><label class="form-label">Site</label>
+          <select class="form-select" name="site_id" required>{% for site in sites %}<option value="{{ site.id }}">{{ site.name }}</option>{% endfor %}</select>
+        </div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-info">Save</button></div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ ADD AREA ============ -->
+<div class="modal fade" id="addAreaModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" action="/settings/hierarchy/addArea" class="modal-content">
+      {% csrf_token %}
+      <div class="modal-header"><h5 class="modal-title">Add Area</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-3"><label class="form-label">Area Name</label><input type="text" class="form-control" name="area_name" maxlength="100" required></div>
+        <div class="mb-3"><label class="form-label">Building</label>
+          <select class="form-select" name="building_id" required>{% for building in buildings %}<option value="{{ building.id }}">{{ building.site.name }} / {{ building.name }}</option>{% endfor %}</select>
+        </div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-info">Save</button></div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ ADD LOAD TYPE ============ -->
+<div class="modal fade" id="addLoadTypeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" action="/settings/hierarchy/addLoadType" class="modal-content">
+      {% csrf_token %}
+      <div class="modal-header"><h5 class="modal-title">Add Load Type</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body"><label class="form-label">Load Type Name</label><input type="text" class="form-control" name="load_name" maxlength="100" required></div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-info">Save</button></div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ ADD METER ============ -->
+<div class="modal fade" id="addMeterModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <form method="post" action="/settings/hierarchy/addMeter" class="modal-content js-meter-form">
+      {% csrf_token %}
+      <div class="modal-header"><h5 class="modal-title">Add Meter</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        {% include 'meter_form_fields.html' with meter=None %}
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-info">Save</button></div>
+    </form>
+  </div>
+</div>
+
+{% for meter in meters %}
+<!-- Edit meter -->
+<div class="modal fade" id="editMeterModal{{ meter.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <form method="post" action="/settings/hierarchy/editMeter/{{ meter.id }}" class="modal-content js-meter-form">
+      {% csrf_token %}
+      <div class="modal-header"><h5 class="modal-title">Edit Meter - {{ meter.name }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        {% include 'meter_form_fields.html' with meter=meter %}
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-info">Save changes</button></div>
+    </form>
+  </div>
+</div>
+
+<!-- Meter details -->
+<div class="modal fade" id="meterDetailsModal{{ meter.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Meter Details - {{ meter.name }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div><div class="eyebrow">Type</div><div class="value">{{ meter.meterType }}</div></div>
+          <div><div class="eyebrow">Protocol</div><div class="value">{{ meter.protocol_label }}</div></div>
+          <div><div class="eyebrow">Address</div><div class="value mvc-mono">{{ meter.address_summary }}</div></div>
+          <div><div class="eyebrow">Load type</div><div class="value">{{ meter.loadType.name|default:"—" }}</div></div>
+          <div style="grid-column: span 2;"><div class="eyebrow">Location</div><div class="value">{{ meter.area.building.site.name }} / {{ meter.area.building.name }} / {{ meter.area.name }}</div></div>
+        </div>
+        <div class="eyebrow mb-1">Connection settings</div>
+        <div class="point-list mb-3">
+          {% for key, value in meter.public_connection.items %}<div class="text-muted">{{ key }}</div><div class="addr">{{ value|default_if_none:"—" }}</div>{% empty %}<div class="text-muted">None</div>{% endfor %}
+        </div>
+        <div class="eyebrow mb-1">Data points ({{ meter.point_summaries|length }})</div>
+        <div class="point-list">
+          {% for name, address in meter.point_summaries %}<div>{{ name }}</div><div class="addr">{{ address }}</div>{% empty %}<div class="text-muted">No data points configured.</div>{% endfor %}
+        </div>
+        <div class="eyebrow mb-1 mt-3">Connected gadgets</div>
+        {% for gadget in meter.gadgets.all %}
+        <div>{{ gadget.name }} <span class="text-muted">({{ gadget.gadget_type }})</span></div>
+        {% empty %}
+        <p class="text-muted">No gadgets connected.</p>
+        {% endfor %}
+      </div>
     </div>
   </div>
 </div>
 {% endfor %}
 
-
-
-
+{% for site in sites %}
+<div class="modal fade" id="siteDetailsModal{{ site.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Site Details - {{ site.name }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <table class="table table-sm align-middle">
+          <thead><tr><th>Building</th><th>Area</th><th>Meter</th><th>Type</th><th>Protocol</th></tr></thead>
+          <tbody>
+            {% for building in site.buildings.all %}{% for area in building.areas.all %}{% for meter in area.meters.all %}
+            <tr><td>{{ building.name }}</td><td>{{ area.name }}</td><td>{{ meter.name }}</td><td>{{ meter.meterType }}</td><td>{{ meter.protocol_label }}</td></tr>
+            {% empty %}<tr><td>{{ building.name }}</td><td>{{ area.name }}</td><td colspan="3" class="text-muted">No meters</td></tr>
+            {% endfor %}{% empty %}<tr><td>{{ building.name }}</td><td colspan="4" class="text-muted">No areas</td></tr>
+            {% endfor %}{% empty %}<tr><td colspan="5" class="text-muted">No buildings</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
-
 </div>
+{% endfor %}
+
+{% for building in buildings %}
+<div class="modal fade" id="buildingDetailsModal{{ building.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Building Details - {{ building.name }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <p><strong>Site:</strong> {{ building.site.name }}</p>
+        <table class="table table-sm align-middle">
+          <thead><tr><th>Area</th><th>Meter</th><th>Type</th><th>Protocol</th><th>Address</th></tr></thead>
+          <tbody>
+            {% for area in building.areas.all %}{% for meter in area.meters.all %}
+            <tr><td>{{ area.name }}</td><td>{{ meter.name }}</td><td>{{ meter.meterType }}</td><td>{{ meter.protocol_label }}</td><td class="mvc-mono small">{{ meter.address_summary }}</td></tr>
+            {% empty %}<tr><td>{{ area.name }}</td><td colspan="4" class="text-muted">No meters</td></tr>
+            {% endfor %}{% empty %}<tr><td colspan="5" class="text-muted">No areas</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% for area in areas %}
+<div class="modal fade" id="areaDetailsModal{{ area.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Area Details - {{ area.name }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <p><strong>Site:</strong> {{ area.building.site.name }} · <strong>Building:</strong> {{ area.building.name }}</p>
+        <table class="table table-sm align-middle">
+          <thead><tr><th>Meter</th><th>Type</th><th>Protocol</th><th>Address</th><th>Load Type</th></tr></thead>
+          <tbody>
+            {% for meter in area.meters.all %}
+            <tr><td>{{ meter.name }}</td><td>{{ meter.meterType }}</td><td>{{ meter.protocol_label }}</td><td class="mvc-mono small">{{ meter.address_summary }}</td><td>{{ meter.loadType.name|default:"—" }}</td></tr>
+            {% empty %}<tr><td colspan="5" class="text-muted">No meters</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% for load in loadTypes %}
+<div class="modal fade" id="loadDetailsModal{{ load.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Load Type Details - {{ load.name }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <table class="table table-sm align-middle">
+          <thead><tr><th>Meter</th><th>Type</th><th>Area</th><th>Building</th><th>Site</th></tr></thead>
+          <tbody>
+            {% for meter in load.meters.all %}
+            <tr><td>{{ meter.name }}</td><td>{{ meter.meterType }}</td><td>{{ meter.area.name }}</td><td>{{ meter.area.building.name }}</td><td>{{ meter.area.building.site.name }}</td></tr>
+            {% empty %}<tr><td colspan="5" class="text-muted">No meters use this load type.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Test connection result -->
+<div class="modal fade" id="testMeterModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="testMeterTitle">Test connection</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body test-result" id="testMeterBody"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ meter_definitions|json_script:"meter-definitions" }}
+{{ protocol_catalogue|json_script:"protocol-catalogue" }}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  document.addEventListener("DOMContentLoaded", function() {
-    const addBtn = document.getElementById("add-register-btn");
-    const container = document.getElementById("register-container");
-    const hiddenInput = document.getElementById("register_mapping_json");
-    const form = document.getElementById("addMeterForm");
-  
-    // Add new mapping rows
-    addBtn.addEventListener("click", function() {
-      const row = document.createElement("div");
-      row.classList.add("d-flex", "gap-2", "align-items-center", "mb-2");
-  
-      // Measurement dropdown
-      const select = document.createElement("select");
-      select.classList.add("form-select", "bg-dark", "text-white");
-      select.style.flex = "1";
-      select.innerHTML = `
-        <option value="">Select Measurement</option>
-        {% for m in measurements %}
-        <option value="{{ m.name }}">{{ m.name }}</option>
-        {% endfor %}
-      `;
-  
-      // Offset input
-      const input = document.createElement("input");
-      input.type = "text";
-      input.placeholder = "Register Offset";
-      input.classList.add("form-control", "bg-dark", "text-white");
-      input.style.flex = "1";
-  
-      // Remove button
-      const removeBtn = document.createElement("button");
-      removeBtn.type = "button";
-      removeBtn.classList.add("btn", "btn-sm", "btn-danger");
-      removeBtn.innerHTML = "×";
-      removeBtn.onclick = function() {
-        container.removeChild(row);
-      };
-  
-      row.appendChild(select);
-      row.appendChild(input);
-      row.appendChild(removeBtn);
-      container.appendChild(row);
-    });
-  
-    // Convert register mappings to JSON before submit
-    form.addEventListener("submit", function() {
-      const mapping = {};
-      const rows = container.children; // get all child divs inside container
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        const elements = row.getElementsByTagName("select");
-        const inputs = row.getElementsByTagName("input");
-  
-        if (elements.length > 0 && inputs.length > 0) {
-          const select = elements[0];
-          const input = inputs[0];
-          if (select.value && input.value) {
-            const val = input.value.trim();
-            mapping[select.value] = isNaN(val) ? val : parseInt(val);
-          }
-        }
+(function () {
+  const METER_DEFINITIONS = JSON.parse(document.getElementById('meter-definitions').textContent);
+  const PROTOCOLS = JSON.parse(document.getElementById('protocol-catalogue').textContent);
+
+  // ---------- Site map (created when the modal is first opened) ----------
+  const siteModal = document.getElementById('addSiteModal');
+  let map = null, marker = null;
+  function setPoint(lat, lon, pan) {
+    document.getElementById('latitude').value = Number(lat).toFixed(6);
+    document.getElementById('longitude').value = Number(lon).toFixed(6);
+    if (marker) marker.setLatLng([lat, lon]); else if (map) marker = L.marker([lat, lon]).addTo(map);
+    if (pan && map) map.setView([lat, lon], 13);
+  }
+  siteModal.addEventListener('shown.bs.modal', () => {
+    if (!window.L) return;
+    if (!map) {
+      map = L.map('map').setView([23.8103, 90.4125], 12);
+      MVC.addBaseMap(map);
+      map.on('click', (e) => setPoint(e.latlng.lat, e.latlng.lng, false));
+      setPoint(23.8103, 90.4125, false);
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((p) => setPoint(p.coords.latitude, p.coords.longitude, true), () => {}, { timeout: 5000 });
       }
-      hiddenInput.value = JSON.stringify(mapping);
+    }
+    map.invalidateSize();
+  });
+  ['latitude', 'longitude'].forEach(id => document.getElementById(id).addEventListener('change', () => {
+    const lat = parseFloat(document.getElementById('latitude').value);
+    const lon = parseFloat(document.getElementById('longitude').value);
+    if (Number.isFinite(lat) && Number.isFinite(lon)) setPoint(lat, lon, true);
+  }));
+
+  // ---------- Meter form: protocol, connection settings and data points ----------
+  const BY_KEY = Object.fromEntries(PROTOCOLS.map(p => [p.key, p]));
+  const ICONS = {
+    modbus: 'fa-network-wired', bacnet: 'fa-building', knx: 'fa-house-signal', dali: 'fa-lightbulb',
+    mbus: 'fa-gauge-high', mqtt: 'fa-tower-broadcast', opcua: 'fa-server',
+  };
+  let uid = 0;
+
+  function el(tag, attrs = {}, children = []) {
+    const node = document.createElement(tag);
+    Object.entries(attrs).forEach(([k, v]) => {
+      if (v === undefined || v === null || v === false) return;
+      if (k === 'className') node.className = v;
+      else if (k === 'text') node.textContent = v;
+      else node.setAttribute(k, v === true ? '' : v);
+    });
+    children.forEach(c => c && node.appendChild(c));
+    return node;
+  }
+
+  function applies(field, values) {
+    if (!field.show_if) return true;
+    return Object.entries(field.show_if).every(([other, allowed]) => allowed.map(String).includes(String(values[other])));
+  }
+
+  // One input for a catalogue field. `role` is "conn" or "point".
+  function fieldInput(field, value, role) {
+    const cls = `form-control form-control-sm js-${role}-field`;
+    const current = value === undefined || value === null ? (field.default ?? '') : value;
+    let input;
+    if (field.type === 'choice') {
+      input = el('select', { className: `form-select form-select-sm js-${role}-field` });
+      field.choices.forEach(([v, label]) => {
+        const o = el('option', { value: v, text: label });
+        o.selected = String(v) === String(current);
+        input.appendChild(o);
+      });
+    } else if (field.type === 'bool') {
+      input = el('input', { type: 'checkbox', className: `form-check-input js-${role}-field` });
+      input.checked = current === true || current === 'true';
+    } else {
+      const type = field.type === 'int' || field.type === 'float' ? 'number' : field.type === 'secret' ? 'password' : 'text';
+      input = el('input', {
+        type, className: cls, placeholder: field.placeholder || null,
+        min: field.min ?? null, max: field.max ?? null,
+        step: field.type === 'float' ? 'any' : field.type === 'int' ? '1' : null,
+        autocomplete: field.type === 'secret' ? 'new-password' : null,
+      });
+      input.value = current;
+    }
+    input.dataset.name = field.name;
+    input.dataset.type = field.type;
+    input.title = field.label;
+    return input;
+  }
+
+  function readInput(input) {
+    const type = input.dataset.type;
+    if (type === 'bool') return input.checked;
+    const raw = input.value.trim();
+    if (raw === '') return '';
+    if (type === 'int' || type === 'float') return Number(raw);
+    if (type === 'choice' && /^-?\d+(\.\d+)?$/.test(raw)) return Number(raw);
+    return raw;
+  }
+
+  function collect(container, role) {
+    const values = {};
+    container.querySelectorAll(`.js-${role}-field`).forEach(input => {
+      if (!input.closest('.d-none')) values[input.dataset.name] = readInput(input);
+    });
+    return values;
+  }
+
+  function stateOf(form) {
+    if (!form._state) {
+      const source = form.querySelector('.js-initial-state').dataset.source;
+      const holder = source ? document.getElementById(source) : null;
+      const initial = holder ? JSON.parse(holder.textContent) : null;
+      form._state = {
+        initial,
+        protocol: initial ? initial.protocol : 'modbus',
+        // remembered values per protocol, so switching back and forth does not lose typing
+        connections: initial ? { [initial.protocol]: initial.connection } : {},
+        host: initial ? initial.host : '',
+      };
+    }
+    return form._state;
+  }
+
+  function renderPicker(form) {
+    const state = stateOf(form);
+    const picker = form.querySelector('.js-protocol-picker');
+    picker.replaceChildren();
+    PROTOCOLS.forEach(p => {
+      const radio = el('input', { type: 'radio', name: 'protocol', value: p.key });
+      radio.checked = p.key === state.protocol;
+      const tile = el('label', { className: 'protocol-tile' + (radio.checked ? ' active' : ''), title: p.summary }, [
+        radio, el('i', { className: `fa-solid ${ICONS[p.key] || 'fa-plug'}` }), el('span', { className: 'name', text: p.label }),
+      ]);
+      radio.addEventListener('change', () => switchProtocol(form, p.key));
+      picker.appendChild(tile);
+    });
+  }
+
+  function renderConnection(form) {
+    const state = stateOf(form);
+    const spec = BY_KEY[state.protocol];
+    const values = { ...Object.fromEntries(spec.connection.map(f => [f.name, f.default])), ...(state.connections[state.protocol] || {}) };
+    const box = form.querySelector('.js-connection-fields');
+    box.replaceChildren();
+
+    const hostInput = el('input', {
+      type: 'text', className: 'form-control form-control-sm js-host', name: 'meter_ip', placeholder: spec.host_placeholder,
+      maxlength: 100, pattern: '^[0-9A-Za-z.\\-:\\[\\]]+$',
+    });
+    hostInput.value = state.host || '';
+    hostInput.addEventListener('input', () => { state.host = hostInput.value; });
+    const hostCol = el('div', { className: 'col-md-3 js-host-col' }, [
+      el('label', { className: 'form-label small mb-1', text: spec.host_label }), hostInput,
+    ]);
+    box.appendChild(hostCol);
+
+    spec.connection.forEach(field => {
+      const input = fieldInput(field, values[field.name], 'conn');
+      if (field.type === 'secret' && state.initial && state.initial.protocol === state.protocol && state.initial.secrets.includes(field.name)) {
+        input.placeholder = 'unchanged';
+      }
+      const col = el('div', { className: `col-md-${field.width || 3} js-conn-col` });
+      col.dataset.field = field.name;
+      if (field.type === 'bool') {
+        const id = `conn-${++uid}`;
+        input.id = id;
+        col.append(el('label', { className: 'form-label small mb-1 d-block', text: field.label }),
+          el('div', { className: 'form-check form-switch mt-1' }, [input, el('label', { className: 'form-check-label small', for: id, text: 'On' })]));
+      } else {
+        col.append(el('label', { className: 'form-label small mb-1', text: field.label + (field.required && field.default === null ? ' *' : '') }), input);
+      }
+      if (field.help) col.appendChild(el('div', { className: 'conn-help', text: field.help }));
+      input.addEventListener('change', () => { refreshConnection(form); });
+      box.appendChild(col);
+    });
+
+    form.querySelector('.js-protocol-summary').textContent =
+      `${spec.summary} Python driver: ${spec.libraries.join(', ')}.`;
+    refreshConnection(form);
+  }
+
+  // Show or hide conditional connection fields (e.g. serial port only for serial M-Bus).
+  function refreshConnection(form) {
+    const state = stateOf(form);
+    const spec = BY_KEY[state.protocol];
+    const box = form.querySelector('.js-connection-fields');
+    const values = {};
+    box.querySelectorAll('.js-conn-field').forEach(input => { values[input.dataset.name] = readInput(input); });
+    box.querySelectorAll('.js-conn-col').forEach(col => {
+      const field = spec.connection.find(f => f.name === col.dataset.field);
+      col.classList.toggle('d-none', !applies(field, values));
+    });
+    const hostCol = box.querySelector('.js-host-col');
+    const hostNeeded = spec.host_required && (!spec.host_show_if || applies({ show_if: spec.host_show_if }, values));
+    hostCol.classList.toggle('d-none', !hostNeeded);
+    hostCol.querySelector('input').required = hostNeeded;
+  }
+
+  function renderHead(form) {
+    const spec = BY_KEY[stateOf(form).protocol];
+    const head = form.querySelector('.js-mapping-head');
+    const cols = el('div', { className: 'row g-2' }, [
+      el('div', { className: 'col-md-3', text: 'Measurement' }),
+      el('div', { className: 'col-md-8' }, [el('div', { className: 'row g-2' },
+        spec.point.map(f => el('div', { className: `col-${f.width || 3}`, text: f.label })))]),
+    ]);
+    head.replaceChildren(cols);
+    form.querySelector('.js-point-help').textContent = spec.point_help;
+  }
+
+  function addRow(form, label = '', point = null) {
+    const spec = BY_KEY[stateOf(form).protocol];
+    const container = form.querySelector('.mapping-rows');
+    const values = point && typeof point === 'object' ? point : {};
+    const name = el('input', { className: 'form-control form-control-sm map-label', placeholder: 'Measurement name', list: 'measurement-names' });
+    name.value = label;
+    const fields = el('div', { className: 'row g-2' }, spec.point.map(field =>
+      el('div', { className: `col-${field.width || 3}` }, [fieldInput(field, values[field.name], 'point')])));
+    const remove = el('button', { type: 'button', className: 'btn btn-sm btn-outline-danger w-100 px-0', title: 'Remove' }, [el('i', { className: 'fa-solid fa-xmark' })]);
+    const row = el('div', { className: 'row g-2 align-items-center mb-2 mapping-row' }, [
+      el('div', { className: 'col-md-3' }, [name]),
+      el('div', { className: 'col-md-8' }, [fields]),
+      el('div', { className: 'col-md-1' }, [remove]),
+    ]);
+    remove.addEventListener('click', () => row.remove());
+    container.appendChild(row);
+    return row;
+  }
+
+  function switchProtocol(form, key) {
+    const state = stateOf(form);
+    if (key === state.protocol) return;
+    // remember what was typed for the old protocol
+    state.connections[state.protocol] = collect(form.querySelector('.js-connection-fields'), 'conn');
+    const labels = [...form.querySelectorAll('.map-label')].map(i => i.value.trim()).filter(Boolean);
+    state.protocol = key;
+    form.querySelectorAll('.protocol-tile').forEach(tile => tile.classList.toggle('active', tile.querySelector('input').value === key));
+    renderConnection(form);
+    renderHead(form);
+    form.querySelector('.mapping-rows').replaceChildren();
+    const keepPoints = state.initial && state.initial.protocol === key;
+    labels.forEach(label => addRow(form, label, keepPoints ? state.initial.mapping[label] : null));
+  }
+
+  function validateRow(row, spec) {
+    let ok = true;
+    row.querySelectorAll('.js-point-field').forEach(input => {
+      const field = spec.point.find(f => f.name === input.dataset.name);
+      const value = readInput(input);
+      let bad = field.required && field.default === null && value === '';
+      if (!bad && field.pattern && field.type === 'str' && value !== '' && !(new RegExp(field.pattern).test(value))) bad = true;
+      if (!bad && (field.type === 'int' || field.type === 'float') && value !== '') {
+        if (Number.isNaN(value) || (field.min !== null && value < field.min) || (field.max !== null && value > field.max)) bad = true;
+      }
+      input.classList.toggle('is-invalid', bad);
+      if (bad) ok = false;
+    });
+    return ok;
+  }
+
+  document.querySelectorAll('form.js-meter-form').forEach(form => {
+    const state = stateOf(form);
+    renderPicker(form);
+    renderConnection(form);
+    renderHead(form);
+    if (state.initial) Object.entries(state.initial.mapping).forEach(([label, point]) => addRow(form, label, point));
+
+    form.querySelector('.js-add-register').addEventListener('click', () => addRow(form).querySelector('.map-label').focus());
+    form.querySelector('.js-add-standard').addEventListener('click', () => {
+      const type = form.querySelector('[name="meterType"]').value;
+      const existing = new Set([...form.querySelectorAll('.map-label')].map(i => i.value.trim()));
+      (METER_DEFINITIONS[type] || []).forEach(name => { if (!existing.has(name)) addRow(form, name); });
+    });
+
+    form.addEventListener('submit', (event) => {
+      const spec = BY_KEY[state.protocol];
+      const mapping = {};
+      let valid = true;
+      form.querySelectorAll('.mapping-row').forEach(row => {
+        const label = row.querySelector('.map-label').value.trim();
+        row.classList.remove('invalid');
+        if (!label) { row.remove(); return; }
+        if (!validateRow(row, spec) || label in mapping) { valid = false; row.classList.add('invalid'); return; }
+        mapping[label] = collect(row, 'point');
+      });
+      if (!valid) {
+        event.preventDefault();
+        window.alert('Complete, correct or remove the highlighted data points (names must be unique).');
+        return;
+      }
+      form.querySelector('.js-mapping-json').value = JSON.stringify(mapping);
+      form.querySelector('.js-connection-json').value = JSON.stringify(collect(form.querySelector('.js-connection-fields'), 'conn'));
     });
   });
-  </script>
-  
-  
 
+  // ---------- Test connection ----------
+  const testModal = new bootstrap.Modal(document.getElementById('testMeterModal'));
+  const DISCOVERY = { mbus: 'List data records', mqtt: 'List topics on the broker' };
 
+  function renderDiscovery(body, protocol, items) {
+    if (!items) return;
+    const title = el('div', { className: 'eyebrow mt-3 mb-1', text: protocol === 'mbus' ? 'Data records reported by the meter' : 'Topics seen on the broker' });
+    const table = el('table', { className: 'table table-sm align-middle small' });
+    const keys = items.length ? Object.keys(items[0]) : [];
+    table.appendChild(el('thead', {}, [el('tr', {}, keys.map(k => el('th', { text: k })))]));
+    table.appendChild(el('tbody', {}, items.map(item => el('tr', {}, keys.map(k => el('td', { className: 'mvc-mono', text: item[k] === null || item[k] === undefined ? '' : String(item[k]) }))))));
+    body.append(title, items.length ? el('div', { className: 'mvc-table-wrap', style: 'max-height: 260px;' }, [table]) : el('p', { className: 'text-muted', text: 'Nothing found.' }));
+  }
+
+  async function runTest(button, discover) {
+    const body = document.getElementById('testMeterBody');
+    const protocol = button.dataset.protocol;
+    document.getElementById('testMeterTitle').textContent = `Test connection - ${button.dataset.meterName}`;
+    body.textContent = discover ? 'Reading the device and listing what it offers…' : 'Reading the meter… (this can take a few seconds)';
+    testModal.show();
+    try {
+      const params = new URLSearchParams();
+      if (discover) params.set('discover', '1');
+      const result = await MVC.fetchJSON(`/settings/hierarchy/testMeter/${button.dataset.meterId}`, { method: 'POST', body: params });
+      body.replaceChildren();
+      body.appendChild(el('p', { className: 'small text-muted mb-1', text: `${result.protocol} · ${result.address}` }));
+      body.appendChild(el('p', { className: result.ok ? 'text-success' : 'text-danger', text: result.ok ? 'Values received.' : 'No values could be read.' }));
+      body.appendChild(el('pre', { className: 'p-2', text: JSON.stringify(result.data, null, 2) }));
+      if (result.errors.length) {
+        body.appendChild(el('ul', { className: 'small text-warning' }, result.errors.map(e => el('li', { text: e }))));
+      }
+      renderDiscovery(body, protocol, result.discovered);
+      if (DISCOVERY[protocol] && !discover) {
+        const again = el('button', { type: 'button', className: 'btn btn-sm btn-outline-info', text: DISCOVERY[protocol] });
+        again.addEventListener('click', () => runTest(button, true));
+        body.appendChild(again);
+      }
+    } catch (error) {
+      body.textContent = error.message;
+    }
+  }
+  document.querySelectorAll('.js-test-meter').forEach(button => button.addEventListener('click', () => runTest(button, false)));
+
+  // Re-open the tab the user was on after a form submission.
+  const tabKey = 'mvc-hierarchy-tab';
+  document.querySelectorAll('#hierarchyTabs button').forEach(tab => tab.addEventListener('shown.bs.tab', () => {
+    try { sessionStorage.setItem(tabKey, tab.id); } catch (e) {}
+  }));
+  try {
+    const saved = sessionStorage.getItem(tabKey);
+    if (saved && document.getElementById(saved)) bootstrap.Tab.getOrCreateInstance(document.getElementById(saved)).show();
+  } catch (e) {}
+})();
+</script>
 {% endblock %}

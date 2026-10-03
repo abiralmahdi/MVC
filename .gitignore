@@ -9,12 +9,19 @@ env/
 
 # Database files
 db.sqlite3
+shots.sqlite3
+
+# Dev / generated artifacts (kept local, not in the repo)
+ML works/
+/*.pdf
+/*.pptx
 
 # Django stuff:
 *.log
 *.pot
 *.pyc
 media/
+ml_artifacts/
 staticfiles/
 
 # IDE/editor files

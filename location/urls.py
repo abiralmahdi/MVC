@@ -3,8 +3,7 @@ from . import views
 
 
 urlpatterns = [
-    path('', views.location, name='location'),   
-    path('triggerAlarm/<str:siteID>', views.triggerAlarm, name='triggerLarams'),   
-
+    path('', views.location, name='location'),
+    path('alarmStatus', views.alarmStatus, name='alarmStatus'),
+    path('triggerAlarm/<str:siteID>', views.triggerAlarm, name='triggerLarams'),
 ]
-

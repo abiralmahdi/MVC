@@ -1,12 +1,17 @@
 {% extends 'layout.html' %}
 
+{% block title %}Subscription inactive - MarksVision{% endblock %}
+
 {% block body %}
-
-<div class="container">
-    <h1 class="h1 text-center mt-5 pt-5 text-secondary">
-        Your subscription is over.<br> Please contact <span class="text-info">MARKS</span> <span class="text-light">Automation Ltd.</span> for further action.<br><br> <span>Hotline: 01730797466</span>
-        <br><span>Email: info@marksautomation.com</span>
-    </h1>
+<div class="container" id="main-content">
+  <div class="empty-state mvc-panel mx-auto mt-5" style="max-width: 640px;">
+    <div class="empty-icon" style="color:#f87171; background: radial-gradient(circle at 30% 20%, rgba(240,82,82,.22), rgba(240,82,82,.04)); border-color: rgba(240,82,82,.3);"><i class="fa-solid fa-key"></i></div>
+    <h1 class="h4">Your subscription is over</h1>
+    <p class="mt-2">All modules are locked until the subscription is renewed. Please contact <strong class="text-info">MARKS</strong> <strong class="text-white">Automation Ltd.</strong> for further action.</p>
+    <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
+      <span class="badge text-bg-secondary fw-medium" style="font-size: .82rem; padding: .5rem .9rem;"><i class="fa-solid fa-phone"></i>&nbsp;01730797466</span>
+      <span class="badge text-bg-secondary fw-medium" style="font-size: .82rem; padding: .5rem .9rem;"><i class="fa-solid fa-envelope"></i>&nbsp;info@marksautomation.com</span>
+    </div>
+  </div>
 </div>
-
 {% endblock %}

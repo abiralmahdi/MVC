@@ -1,52 +1,20 @@
-from django.shortcuts import render, redirect
-from dynamic.models import *
-from utils.decorators import subscription_revoked, subscription_required
+from django.shortcuts import redirect, render
 
-# Create your views here.
+from utils.decorators import subscription_required, subscription_revoked
+
+from .features import get_config, landing_url
+
+
 @subscription_required
 def introPage(request):
-    if not request.user.is_anonymous:
-        if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
-            return redirect('/location')
-        else:
-            return redirect('/dashboard/siteDashboard/'+str(request.user.userModel.first().site.id))
-    else:
+    if not request.user.is_authenticated:
         return redirect('/accounts/login')
+    target = landing_url(request.user, get_config(request))
+    if target is None:
+        return render(request, 'featureDisabled.html', {'feature_label': None, 'landing': None})
+    return redirect(target)
+
 
 @subscription_revoked
 def subscriptionRevoked(request):
     return render(request, 'subscriptionRevoked.html')
-
-def energyCostComparison(request):
-    return render(request, 'energyCostComparison.html')
-
-def plantSummary(request):
-    return render(request, 'plantSummary.html')
-
-def allUtilities(request):
-    return render(request, 'allUtilities.html')
-
-def plantHeatMaps(request):
-    return render(request, "plantHeatMaps.html")
-
-def sankeyDiagram(request):
-    return render(request, 'sankeyDiagram.html')
-
-def statusTable(request):
-    return render(request, 'plantStatusTable.html')
-
-def trends(request):
-    return render(request, 'trends.html')
-
-def activeAlarms(request):
-    return render(request, 'activeAlarms.html')
-
-def incidents(request):
-    return render(request, 'incidents.html')
-
-def addReport(request):
-    return render(request, 'addReport.html')
-
-def savedReports(request):
-    return render(request, "savedReports.html")
-

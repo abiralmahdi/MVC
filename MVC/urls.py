@@ -1,8 +1,8 @@
-from django.contrib import admin
-from django.urls import path
-from django.urls import include
 from django.conf import settings
-from django.conf.urls.static import static
+from django.contrib import admin
+from django.contrib.auth.decorators import login_required
+from django.urls import include, path, re_path
+from django.views.static import serve
 
 
 urlpatterns = [
@@ -17,8 +17,8 @@ urlpatterns = [
     path('api/', include('api.urls')),
     path('scada/', include('scada.urls')),
     path('billing/', include('billing.urls')),
+    path('ml/', include('ml.urls')),
+    # Uploaded files (profile pictures, logos, report images/PDFs) are only for logged-in users.
+    # Served by Django so the app also works without a separate web server; put nginx in front for heavy use.
+    re_path(r'^media/(?P<path>.*)$', login_required(serve), {'document_root': settings.MEDIA_ROOT}),
 ]
-
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

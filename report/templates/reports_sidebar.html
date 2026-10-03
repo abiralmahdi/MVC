@@ -1,0 +1,30 @@
+{# Expects: sites (with prefetched reports), link_prefix ("/reports/viewReport/" or "/reports/viewSavedReports/") #}
+<aside id="sidebar" class="sidebar" aria-label="Reports">
+  {% include 'sidebar_brand.html' with section="Reports" %}
+  <a href="/reports/" class="{% if request.path == '/reports/' %}active{% endif %}"><i class="fa-solid fa-plus"></i>New report</a>
+  <a href="/reports/viewSavedReports" class="{% if request.path == '/reports/viewSavedReports' %}active{% endif %}"><i class="fa-solid fa-box-archive"></i>Saved PDFs</a>
+  <div class="sidebar-label">Reports by site</div>
+  <div class="accordion accordion-flush" id="sidebarAccordion">
+    {% for site in sites %}
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button {% if not current_report or current_report.site_id != site.id %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#siteCollapse{{ site.id }}">
+          <i class="fa-solid fa-industry me-2"></i>{{ site.name }}
+        </button>
+      </h2>
+      <div id="siteCollapse{{ site.id }}" class="accordion-collapse collapse {% if current_report and current_report.site_id == site.id %}show{% endif %}" data-bs-parent="#sidebarAccordion">
+        <div class="accordion-body">
+          <ul class="list-unstyled">
+            {% for report in site.reports.all %}
+            <li><a href="{{ link_prefix }}{{ report.id }}" class="{% if current_report and report.id == current_report.id %}text-info{% endif %}"><i class="fa-solid fa-file-lines"></i>{{ report.title }}</a></li>
+            {% empty %}
+            <li class="small text-muted py-1">No reports yet</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</aside>
+<div id="overlay" class="overlay"></div>

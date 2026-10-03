@@ -1,0 +1,31 @@
+<aside id="sidebar" class="sidebar" aria-label="Bills">
+  {% include 'sidebar_brand.html' with section="Billing" %}
+  <a href="/billing/" class="{% if not billing %}active{% endif %}"><i class="fa-solid fa-plus"></i>New bill</a>
+  <div class="sidebar-label">Bills by site</div>
+  <div class="accordion accordion-flush" id="sidebarAccordion">
+    {% for site in sites %}
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button {% if not billing or billing.meter.area.building.site_id != site.id %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#siteCollapse{{ site.id }}">
+          <i class="fa-solid fa-industry me-2"></i>{{ site.name }}
+        </button>
+      </h2>
+      <div id="siteCollapse{{ site.id }}" class="accordion-collapse collapse {% if billing and billing.meter.area.building.site_id == site.id %}show{% endif %}" data-bs-parent="#sidebarAccordion">
+        <div class="accordion-body">
+          <ul class="list-unstyled">
+            {% for bill in billings %}{% if bill.meter.area.building.site_id == site.id %}
+            <li>
+              <a href="/billing/{{ bill.id }}" class="{% if billing and bill.id == billing.id %}text-info{% endif %}">
+                <i class="fa-solid fa-file-invoice"></i>
+                <span class="lh-sm">#{{ bill.id }} · {{ bill.meter.name }}<br><span class="small text-muted">{{ bill.date_range_start|date:"d M" }} – {{ bill.date_range_end|date:"d M Y" }}</span></span>
+              </a>
+            </li>
+            {% endif %}{% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</aside>
+<div id="overlay" class="overlay"></div>

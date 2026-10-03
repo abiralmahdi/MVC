@@ -1,66 +1,56 @@
 {% extends 'layout.html' %}
+
+{% block title %}Settings - MarksVision{% endblock %}
+
 {% block body %}
+{% include 'settings_sidebar.html' %}
 
-<style>
-
-
-/* graph */
-.graph-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            justify-content: space-between;
-        }
-
-        .graph-card {
-            background-color: #1e1e1e;
-            border-radius: 10px;
-            padding: 1rem;
-            flex: 1 1 calc(50% - 1rem);
-            /* Two per row */
-            min-width: 300px;
-            max-width: 48%;
-        }
-
-        .graph-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .graph-header h5 {
-            margin: 0;
-        }
-
-</style>
-
-
-<!-- Sidebar -->
-<div id="sidebar" class="sidebar position-fixed d-flex flex-column">
-    <div class="d-flex mt-5">
-        <h3 class="h5 text-info fw-bold mx-2">MARKS</h3><h3 class="h5"> Vision Center</h3>
-      </div>
-    <form action="" class="form p-3">
-        <div class="form-group mb-1">
-            <input type="text" class="form-control" placeholder="Search..." >
-        </div>
-    </form>
-    <a href="/settings/configurations" class="text-white">Configurations</a>
-    <a href="/settings/hierarchy" class="text-white">Hierarchy</a>
-    <a href="/accounts/accountSettings" class="text-white">Account Settings</a>
+<div class="container-xxl" id="main-content">
+  <div class="page-header">
+    <div class="page-icon"><i class="fa-solid fa-sliders"></i></div>
+    <div>
+      <h1 class="page-title">Settings</h1>
+      <p class="page-subtitle">Configure modules, the plant hierarchy and who can access the system.</p>
+    </div>
   </div>
 
-  <!-- Overlay -->
-  <div id="overlay" class="overlay"></div>
-
-    <div class="container-fluid" id="main-content">
-        <div id="noDocument" class="">
-            <h1 class="h1 text-center mt-5 pt-5 text-secondary"><i class="fa-solid fa-gear fa-2x"></i></h1>
-            <h3 class="text-center mt-5 text-secondary">No Option Selected</h3>
-            <p class="text-center text-secondary">Click on any option from the sidebar to configure settings</p>
+  <div class="row g-3">
+    <div class="col-md-6 col-xl-3">
+      <a href="/settings/configurations" class="card h-100 text-decoration-none">
+        <div class="card-body">
+          <div class="tile-icon"><i class="fa-solid fa-toggle-on"></i></div>
+          <h2 class="h6 text-white mb-1">Configurations</h2>
+          <p class="small text-muted mb-0">Enable modules and choose the dashboard tree view.</p>
         </div>
-        
+      </a>
     </div>
-  
+    <div class="col-md-6 col-xl-3">
+      <a href="/settings/hierarchy" class="card h-100 text-decoration-none">
+        <div class="card-body">
+          <div class="tile-icon"><i class="fa-solid fa-sitemap"></i></div>
+          <h2 class="h6 text-white mb-1">Plant hierarchy</h2>
+          <p class="small text-muted mb-0">Sites, buildings, areas, meters, register maps and load types.</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <a href="/accounts/accountSettings" class="card h-100 text-decoration-none">
+        <div class="card-body">
+          <div class="tile-icon"><i class="fa-solid fa-users"></i></div>
+          <h2 class="h6 text-white mb-1">User accounts</h2>
+          <p class="small text-muted mb-0">Users, roles and site assignments.</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <a href="/accounts/loginHistory" class="card h-100 text-decoration-none">
+        <div class="card-body">
+          <div class="tile-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+          <h2 class="h6 text-white mb-1">Login history</h2>
+          <p class="small text-muted mb-0">Who logged in, from where, and active sessions.</p>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
 {% endblock %}

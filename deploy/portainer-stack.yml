@@ -1,0 +1,48 @@
+# MarksVision (MVC) - Portainer stack
+# Paste this into Portainer -> Stacks -> Add stack -> Web editor.
+# Before deploying, edit the two values marked  <-- CHANGE.
+#
+# Path A (recommended on a LAN): build the image on your PC, import it on the
+#   Portainer host, then deploy this stack as-is (uses `image:` below).
+# Path B: deploy this stack from a Git repository and let Portainer build it
+#   (comment out `image:` and uncomment `build: ..`).
+
+services:
+  web:
+    image: marksvision:latest
+    # build: ..                     # <-- use this instead of image: for Path B (Git build)
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_DEBUG: "0"
+      DJANGO_SECRET_KEY: "change-me-to-a-long-random-string"   # <-- CHANGE
+      DJANGO_ALLOWED_HOSTS: "192.168.1.50"                     # <-- CHANGE to the Portainer PC's IP/hostname
+      DJANGO_CSRF_TRUSTED_ORIGINS: "http://192.168.1.50:8000"  # <-- CHANGE (same IP, keep http://...:8000)
+      MVC_DB_PATH: "/data/db.sqlite3"
+      # --- optional: real email alerts (otherwise alerts just print to the container log) ---
+      # DJANGO_EMAIL_HOST: "smtp.gmail.com"
+      # DJANGO_EMAIL_HOST_USER: "you@example.com"
+      # DJANGO_EMAIL_HOST_PASSWORD: "app-password"
+      # DJANGO_DEFAULT_FROM_EMAIL: "MarksVision Alerts <you@example.com>"
+    volumes:
+      - mvc_db:/data                # sqlite database  (persists across updates)
+      - mvc_media:/app/media        # uploaded files (profile pictures)
+      - mvc_ml:/app/ml_artifacts    # trained ML models + cached datasets
+
+  # Optional background meter poller. Enable ONLY if the meters are reachable
+  # from the Portainer PC's network. It shares the same database as the web app.
+  # poller:
+  #   image: marksvision:latest
+  #   restart: unless-stopped
+  #   command: python manage.py poll_modbus
+  #   environment:
+  #     MVC_DB_PATH: "/data/db.sqlite3"
+  #   volumes:
+  #     - mvc_db:/data
+  #     - mvc_ml:/app/ml_artifacts
+
+volumes:
+  mvc_db:
+  mvc_media:
+  mvc_ml:

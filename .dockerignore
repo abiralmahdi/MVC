@@ -1,0 +1,29 @@
+# VCS / editor
+.git
+.gitignore
+.vscode/
+.idea/
+
+# Python caches / virtualenvs
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+.mypy_cache/
+.pytest_cache/
+
+# Runtime data -> these live in Docker volumes, not the image
+*.sqlite3
+db.sqlite3
+shots.sqlite3
+media/
+ml_artifacts/
+staticfiles/
+
+# Dev / docs artifacts not needed at runtime
+ML works/
+*.pptx
+*.pdf
+*.log

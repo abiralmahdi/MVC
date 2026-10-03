@@ -1,298 +1,206 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse
 import json
-from .models import *
-from home.models import GlobalConfiguration
+import logging
+from collections import defaultdict
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
+
+from utils.access import can_access_site, can_control_equipment, json_login_required, superuser_required, visible_sites
 from utils.decorators import subscription_required
 
-# Create your views here.
+from .models import Buildings, Motor, Tank
+from .plc import FIELD_TYPES, PlcError, decode_motor, decode_tank, plc_connection, read_db, write_command
+
+logger = logging.getLogger('scada')
+
+
+def _visible_motors(user):
+    return Motor.objects.filter(building__site__in=visible_sites(user)).select_related('building__site').prefetch_related('tank')
+
+
+def _render_scada(request, building=None):
+    motors = _visible_motors(request.user)
+    if building is not None:
+        motors = motors.filter(building=building)
+    tanks = Tank.objects.filter(motor__in=motors).select_related('motor')
+    context = {
+        "building": building,
+        "motors": motors,
+        "tanks": tanks,
+        "sites": visible_sites(request.user).prefetch_related('buildings'),
+        "can_control": can_control_equipment(request.user),
+        "field_types": list(FIELD_TYPES.keys()),
+    }
+    return render(request, "scada.html", context)
+
+
+@login_required
 @subscription_required
 def scada(request):
-    masters = MotorMasters.objects.all()
-    motors = Motor.objects.all().prefetch_related('tank')
-    sites = Site.objects.all().prefetch_related('buildings')
-    config = GlobalConfiguration.objects.first()
-    tanks = Tank.objects.all()
-    context = {
-        "masters":masters,
-        "motors":motors,
-        "config":config,
-        "sites":sites,
-        "tanks":tanks
-    }
-    return render(request, "scada.html", context)
+    return _render_scada(request)
 
+
+@login_required
 @subscription_required
 def scadaBuilding(request, buildingID):
-    masters = MotorMasters.objects.all()
-    building = Buildings.objects.get(id=buildingID)
-    motors = Motor.objects.filter(building=building).prefetch_related('tank')
-    sites = Site.objects.all().prefetch_related('buildings')
-    config = GlobalConfiguration.objects.first()
-    tanks = Tank.objects.all()
-    context = {
-        "building":building,
-        "motors":motors,
-        "config":config,
-        "sites":sites,
-        "masters":masters,
-        "tanks":tanks
-    }
-    return render(request, "scada.html", context)
+    building = get_object_or_404(Buildings.objects.select_related('site'), id=buildingID)
+    if not can_access_site(request.user, building.site):
+        messages.error(request, "You are not authorized to view that building.")
+        return redirect('/scada')
+    return _render_scada(request, building)
 
 
+def _status_for_motors(motors):
+    """Read many motors using one PLC connection per (ip, rack, slot)."""
+    results = {}
+    groups = defaultdict(list)
+    for motor in motors:
+        groups[(motor.ip, motor.rack, motor.slot)].append(motor)
 
-import snap7
-from snap7.util import get_int, get_bool, get_real, get_dword
-from snap7.type import Areas
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from .models import Motor
+    for (ip, rack, slot), group in groups.items():
+        try:
+            with plc_connection(ip, rack, slot) as client:
+                for motor in group:
+                    try:
+                        data = read_db(client, motor)
+                        status = decode_motor(motor, data)
+                        status['tanks'] = [decode_tank(tank, data) for tank in motor.tank.all()]
+                        status['tank'] = status['tanks'][0] if status['tanks'] else {}
+                    except PlcError as exc:
+                        status = {'error': str(exc)}
+                    results[motor.id] = status
+        except PlcError as exc:
+            for motor in group:
+                results[motor.id] = {'error': str(exc)}
+    return results
 
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-import snap7
-from snap7.util import get_bool, get_int, get_real, get_dword
-from snap7.type import Areas
-from .models import Motor, Tank
-from pprint import pprint
 
+@json_login_required
+@subscription_required
+def scadaStatus(request):
+    """Status of every motor visible to the user (optionally ?building=<id>)."""
+    motors = _visible_motors(request.user)
+    if request.GET.get('building'):
+        motors = motors.filter(building_id=request.GET['building'])
+    return JsonResponse({'motors': {str(k): v for k, v in _status_for_motors(list(motors)).items()}})
+
+
+@json_login_required
+@subscription_required
 def fetchMotorAndTankData(request, motorID):
-    motor = get_object_or_404(Motor, id=motorID)
-    tank = Tank.objects.filter(motor=motor).first()
-
-    PLC_IP = motor.ip
-    RACK = motor.rack
-    SLOT = motor.slot
-    DB_NUMBER = motor.dbNo
-    START_BYTE = motor.startByte
-    DATA_SIZE = motor.dataSize or 256
-
-    response = {"motor": {}, "tank": {}}
-
-    try:
-        plc = snap7.client.Client()
-        plc.connect(PLC_IP, RACK, SLOT)
-
-        if not plc.get_connected():
-            return JsonResponse({"error": "PLC not connected"}, status=500)
-
-        # Read DB once
-        data = plc.read_area(Areas.DB, DB_NUMBER, START_BYTE, DATA_SIZE)
-
-        # --- Motor fields ---
-        for field_name, field_info in motor.fields.items():
-            dtype = field_info[0]   # "BOOL", "INT", etc.
-            offset1 = int(field_info[1])  # byte offset
-            offset2 = int(field_info[2])  # bit offset or 0
-
-            try:
-                if dtype == "BOOL":
-                    val = int(get_bool(data, offset1, offset2))
-                elif dtype == "INT":
-                    val = int(get_int(data, offset1))
-                elif dtype == "REAL":
-                    val = float(get_real(data, offset1))
-                elif dtype == "DWORD":
-                    val = int(get_dword(data, offset1))
-                else:
-                    val = None
-            except Exception as e:
-                val = f"Error: {str(e)}"
-
-            trip = get_bool(data, int(motor.tripOffset["byte"]), int(motor.tripOffset["bit"]))
-            isOn = get_bool(data, int(motor.motorOnOffset["byte"]), int(motor.motorOnOffset["bit"]))
-
-            response["motor"][field_name] = val
-            response["trip"] = bool(trip)
-            response["isOn"] = isOn
-
-        # --- Tank data ---
-        if tank:
-            try:
-                high = get_bool(data, int(tank.highByte), int(tank.highBit))
-                low = get_bool(data, int(tank.lowByte), int(tank.lowBit))
-                try:
-                    value = get_int(data, int(tank.valueByte))
-                except:
-                    value = 0
-                print("Success")
-                
-            except Exception as e:
-                high, low, value = False, False, 0
-
-            response["tank"] = {"high": high, "low": low, "value": value, "tankVolume":tank.tankVolume}
+    motor = get_object_or_404(_visible_motors(request.user), id=motorID)
+    status = _status_for_motors([motor])[motor.id]
+    if 'error' in status:
+        return JsonResponse(status, status=502)
+    return JsonResponse(status)
 
 
-        pprint(response)
-        plc.disconnect()
+def _int_field(request, name, default=0, minimum=0, maximum=None):
+    raw = request.POST.get(name, '')
+    if raw in ('', None):
+        return default
+    value = int(raw)
+    if value < minimum or (maximum is not None and value > maximum):
+        raise ValueError(f'{name} must be between {minimum} and {maximum}')
+    return value
 
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
 
-    return JsonResponse(response, safe=False)
-
-
+@login_required
+@superuser_required
 @require_POST
 def save_motor(request):
-    # --- Extract Motor fields ---
-    motorName = request.POST.get("motorName")
-    building_id = request.POST.get("building")
-    ip = request.POST.get("ip")
-    dbNo = request.POST.get("dbNo")
-    rack = request.POST.get("rack")
-    slot = request.POST.get("slot")
-    startByte = request.POST.get("startByte")
-    dataSize = request.POST.get("dataSize")
-    tankName = request.POST.get("tankName")
-    motorOnOffset = {
-        "byte": int(request.POST.get("motorOnByte", 0)),
-        "bit": int(request.POST.get("motorOnBit", 0))
-    }
-    motorOffOffset = {
-        "byte": int(request.POST.get("motorOffByte", 0)),
-        "bit": int(request.POST.get("motorOffBit", 1))
-    }
-
-    runFeedbackOffset = {
-        "byte": int(request.POST.get("runFeedbackByte", 0)),
-        "bit": int(request.POST.get("runFeedbackBit", 1))
-    }
-
-    tripOffset = {
-        "byte": int(request.POST.get("tripByte", 0)),
-        "bit": int(request.POST.get("tripBit", 1))
-    }
-
-    fields_raw = request.POST.get("fields", "{}")
+    building = get_object_or_404(Buildings, id=request.POST.get("building") or 0)
     try:
-        fields_data = json.loads(fields_raw)
-    except json.JSONDecodeError:
-        fields_data = {}
+        fields = json.loads(request.POST.get("fields") or "{}")
+        if not isinstance(fields, dict):
+            raise ValueError("fields must be an object")
+        for name, info in fields.items():
+            if not isinstance(info, list) or len(info) < 2 or str(info[0]).upper() not in FIELD_TYPES:
+                raise ValueError(f'invalid field definition for "{name}"')
 
-    building = get_object_or_404(Buildings, id=building_id)
+        def offset(prefix):
+            return {"byte": _int_field(request, f"{prefix}Byte"), "bit": _int_field(request, f"{prefix}Bit", maximum=7)}
 
-    # --- Create Motor ---
-    motor = Motor.objects.create(
-        motorName=motorName,
-        building=building,
-        ip=ip,
-        dbNo=int(dbNo) if dbNo else 0,
-        rack=int(rack) if rack else 0,
-        slot=int(slot) if slot else 0,
-        startByte=int(startByte) if startByte else 0,
-        dataSize=int(dataSize) if dataSize else 0,
-        motorOnOffset=motorOnOffset,
-        motorOffOffset=motorOffOffset,
-        runFeedbackOffset=runFeedbackOffset,
-        fields=fields_data,
-        tripOffset=tripOffset
-    )
-
-    # --- Check if any Tank-related field is filled ---
-    tank_fields = ["highByte", "lowByte", "highBit", "lowBit", "valueByte", "valueBit", "tankVolume"]
-    if any(request.POST.get(f) for f in tank_fields):
-        Tank.objects.create(
-            motor=motor,
-            highByte=request.POST.get("highByte", None),
-            lowByte=request.POST.get("lowByte", None),
-            highBit=request.POST.get("highBit", None),
-            lowBit=request.POST.get("lowBit", None),
-            valueByte=request.POST.get("valueByte", None),
-            valueBit=request.POST.get("valueBit", None),
-            tankVolume=request.POST.get("tankVolume", None),
-            tankName=tankName
+        motor = Motor(
+            motorName=(request.POST.get("motorName") or '').strip() or 'Motor',
+            building=building,
+            ip=(request.POST.get("ip") or '').strip(),
+            dbNo=_int_field(request, "dbNo", minimum=1),
+            rack=_int_field(request, "rack"),
+            slot=_int_field(request, "slot"),
+            startByte=_int_field(request, "startByte"),
+            dataSize=_int_field(request, "dataSize", default=16, minimum=1, maximum=65535),
+            motorOnOffset=offset("motorOn"),
+            motorOffOffset=offset("motorOff"),
+            runFeedbackOffset=offset("runFeedback"),
+            tripOffset=offset("trip"),
+            fields=fields,
         )
+        if not motor.ip:
+            raise ValueError("PLC IP address is required")
 
-    return redirect("/scada")
+        tank_fields = ["highByte", "lowByte", "highBit", "lowBit", "valueByte", "valueBit", "tankVolume"]
+        tank = None
+        if any(request.POST.get(f) for f in tank_fields):
+            tank = Tank(
+                tankName=(request.POST.get("tankName") or '').strip() or None,
+                highByte=_int_field(request, "highByte", default=None),
+                lowByte=_int_field(request, "lowByte", default=None),
+                highBit=_int_field(request, "highBit", default=None, maximum=7),
+                lowBit=_int_field(request, "lowBit", default=None, maximum=7),
+                valueByte=_int_field(request, "valueByte", default=None),
+                valueBit=_int_field(request, "valueBit", default=None, maximum=7),
+                tankVolume=_int_field(request, "tankVolume", default=100, minimum=1),
+            )
+    except ValueError as exc:
+        messages.error(request, f"Motor not saved: {exc}")
+        return redirect(request.META.get('HTTP_REFERER') or "/scada")
 
-# views.py
-import snap7
-from snap7.util import set_bool, get_bool
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
-from .models import Motor
+    motor.save()
+    if tank is not None:
+        tank.motor = motor
+        tank.save()
+    messages.success(request, f"Motor {motor.motorName} saved.")
+    return redirect(f"/scada/building/{building.id}")
 
-@csrf_exempt
+
+@login_required
+@superuser_required
+@require_POST
+def delete_motor(request, motorID):
+    motor = get_object_or_404(Motor, id=motorID)
+    building_id = motor.building_id
+    motor.delete()
+    messages.success(request, "Motor deleted.")
+    return redirect(f"/scada/building/{building_id}")
+
+
+@json_login_required
+@subscription_required
 @require_POST
 def control_motor(request):
-    PLC_CLIENT = snap7.client.Client()
-    motor_id = request.POST.get("motor_id")
-    action = request.POST.get("action")  # start / stop
-    motor = Motor.objects.get(id=motor_id)
+    if not can_control_equipment(request.user):
+        return JsonResponse({"success": False, "error": "You are not authorized to operate equipment."}, status=403)
 
+    action = request.POST.get("action")
+    if action not in ("start", "stop"):
+        return JsonResponse({"success": False, "error": "Unknown action."}, status=400)
+    motor = _visible_motors(request.user).filter(id=request.POST.get("motor_id") or 0).first()
+    if motor is None:
+        return JsonResponse({"success": False, "error": "Motor not found."}, status=404)
+
+    logger.warning("Motor command %s -> %s (id %s, PLC %s) by %s", action, motor.motorName, motor.id, motor.ip, request.user.username)
     try:
-        PLC_CLIENT.connect(motor.ip, motor.rack, motor.slot)
+        with plc_connection(motor.ip, motor.rack, motor.slot) as client:
+            write_command(client, motor, action)
+            status = decode_motor(motor, read_db(client, motor))
+    except PlcError as exc:
+        logger.error("Motor command failed for %s: %s", motor.motorName, exc)
+        return JsonResponse({"success": False, "error": str(exc)}, status=502)
 
-        # Read DB block
-        data = PLC_CLIENT.read_area(Areas.DB, motor.dbNo, motor.startByte, motor.dataSize)
-
-        if action == "start":
-            set_bool(data, motor.motorOnOffset["byte"], motor.motorOnOffset["bit"], True)
-            set_bool(data, motor.motorOffOffset["byte"], motor.motorOffOffset["bit"], False)
-        elif action == "stop":
-            set_bool(data, motor.motorOnOffset["byte"], motor.motorOnOffset["bit"], False)
-            set_bool(data, motor.motorOffOffset["byte"], motor.motorOffOffset["bit"], True)
-
-        # Write modified data
-        PLC_CLIENT.write_area(Areas.DB, motor.dbNo, motor.startByte, data)
-
-        # Read back to update model
-        data = PLC_CLIENT.read_area(Areas.DB, motor.dbNo, motor.startByte, motor.dataSize)
-        i_motor_on = int(get_bool(data, motor.motorOnOffset["byte"], motor.motorOnOffset["bit"]))
-        i_motor_off = int(get_bool(data, motor.motorOffOffset["byte"], motor.motorOffOffset["bit"]))
-        run_feedback = get_bool(data, motor.runFeedbackOffset["byte"], motor.runFeedbackOffset["bit"])
-        
-        print(i_motor_off)
-        print(i_motor_on)
-        motor.isOn = bool(i_motor_on and not i_motor_off)
-        # motor.isOn = run_feedback
-        motor.save()
-
-        return JsonResponse({"success": True, "isOn": bool(i_motor_on and not i_motor_off)})
-    except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)})
-    finally:
-        if PLC_CLIENT.get_connected():
-            PLC_CLIENT.disconnect()
-
-
-"""
-import random
-from scada.models import MotorMasters, Motor
-from dynamic.models import Buildings
-
-# fetch all existing areas
-areas = list(Buildings.objects.all())
-
-# create motor masters
-master1 = MotorMasters.objects.create(masterType="Siemens S7-1200", ip="192.168.0.101", port=102)
-master2 = MotorMasters.objects.create(masterType="Allen-Bradley PLC", ip="192.168.0.102", port=502)
-
-# motor sample data
-motor_data = [
-    {"motorName": "Conveyor Motor 1", "rpm": 1450, "totalRunHour": 1200, "temperature": 45.2},
-    {"motorName": "Conveyor Motor 2", "rpm": 1475, "totalRunHour": 980, "temperature": 46.7},
-    {"motorName": "Hydraulic Pump Motor", "rpm": 1780, "totalRunHour": 3000, "temperature": 52.5},
-    {"motorName": "Cooling Fan Motor", "rpm": 960, "totalRunHour": 1500, "temperature": 38.3},
-    {"motorName": "Boiler Motor", "rpm": 1200, "totalRunHour": 2100, "temperature": 55.1},
-    {"motorName": "Elevator Motor", "rpm": 1600, "totalRunHour": 500, "temperature": 41.9},
-]
-
-# randomly assign motors to masters and areas
-for data in motor_data:
-    master = random.choice([master1, master2])
-    area = random.choice(areas)
-    Motor.objects.create(
-        motorName=data["motorName"],
-        motorMaster=master,
-        rpm=data["rpm"],
-        totalRunHour=data["totalRunHour"],
-        temperature=data["temperature"],
-        building=area
-    )
-
-
-"""
+    motor.isOn = bool(status.get('isOn'))
+    motor.save(update_fields=['isOn'])
+    return JsonResponse({"success": True, **status})

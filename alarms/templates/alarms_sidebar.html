@@ -1,0 +1,8 @@
+<aside id="sidebar" class="sidebar" aria-label="Alarms">
+  {% include 'sidebar_brand.html' with section="Alarm Management" %}
+  <div class="sidebar-label">Alarms</div>
+  <a href="/alarms/allAlarms?show=active" class="{% if 'allAlarms' in request.path and request.GET.show != 'all' %}active{% endif %}"><i class="fa-solid fa-bell"></i>Active alarms</a>
+  <a href="/alarms/allAlarms?show=all" class="{% if 'allAlarms' in request.path and request.GET.show == 'all' %}active{% endif %}"><i class="fa-solid fa-clock-rotate-left"></i>Alarm history</a>
+  <a href="/alarms/setAlarmRange/" class="{% if 'setAlarmRange' in request.path %}active{% endif %}"><i class="fa-solid fa-sliders"></i>Alarm limits</a>
+</aside>
+<div id="overlay" class="overlay"></div>

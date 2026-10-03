@@ -13,21 +13,24 @@ class Motor(models.Model):
     motorName = models.CharField(max_length=100)
     motorMaster = models.ForeignKey(MotorMasters, on_delete=models.CASCADE, related_name='motors', null=True, blank=True)
     building = models.ForeignKey(Buildings, on_delete=models.CASCADE, related_name='motorBuilding')
-    ip = models.CharField(max_length=100, default=100)
+    ip = models.CharField(max_length=100, default='')
     dbNo = models.IntegerField(default=0)
-    fields = models.JSONField()
+    fields = models.JSONField(default=dict, blank=True)
     isOn = models.BooleanField(default=False)
     rack = models.IntegerField(default=0)
     slot = models.IntegerField(default=0)
     startByte = models.IntegerField(default=0)
     dataSize = models.IntegerField(default=0)
-    motorOnOffset = models.JSONField()
-    motorOffOffset = models.JSONField()
-    runFeedbackOffset = models.JSONField()
-    tripOffset = models.JSONField()
+    motorOnOffset = models.JSONField(default=dict)
+    motorOffOffset = models.JSONField(default=dict)
+    runFeedbackOffset = models.JSONField(default=dict)
+    tripOffset = models.JSONField(default=dict)
+
+    def __str__(self):
+        return self.motorName
 
 class Tank(models.Model):
-    tankName = models.CharField(max_length=100, default=True, null=True, blank=True)
+    tankName = models.CharField(max_length=100, null=True, blank=True)
     motor = models.ForeignKey(Motor, on_delete=models.CASCADE, related_name='tank', null=True, blank=True)
     highByte = models.IntegerField(null=True, blank=True)
     lowByte = models.IntegerField(null=True, blank=True)

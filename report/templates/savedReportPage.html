@@ -1,66 +1,52 @@
 {% extends 'layout.html' %}
+
+{% block title %}Saved Reports - MarksVision{% endblock %}
+
 {% block body %}
+{% include 'reports_sidebar.html' with link_prefix="/reports/viewSavedReports/" %}
 
-
-<!-- Sidebar -->
-<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
-  style="overflow-y: auto;">
-  <div class="d-flex m-3">
-    <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
-    <h3 class="h6">Vision Center</h3>
+<div class="container-xl" id="main-content">
+  <div class="page-header">
+    <div class="page-icon"><i class="fa-solid fa-box-archive"></i></div>
+    <div>
+      <h1 class="page-title">Saved reports</h1>
+      <p class="page-subtitle">Open a report to view its latest generated PDF.</p>
+    </div>
+    <div class="page-actions">
+      <a href="/reports/" class="btn btn-info"><i class="fa-solid fa-plus me-2"></i>New report</a>
+    </div>
   </div>
 
-  <form class="form m-3">
-    <div class="form-group">
-      <input type="text" class="form-control" placeholder="Search...">
+  {% for site in sites %}
+  {% if site.reports.all %}
+  <section class="mb-4">
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <i class="fa-solid fa-industry text-info small"></i>
+      <h2 class="h6 mb-0">{{ site.name }}</h2>
     </div>
-  </form>
-
-  <div class="accordion accordion-flush" id="sidebarAccordion">
-    {% for site in sites %}
-    <!-- Site Accordion -->
-    <div class="accordion-item bg-dark border-0">
-        <h2 class="accordion-header">
-            <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
-                data-bs-target="#siteCollapse{{ forloop.counter }}">
-                <i class="fa-solid fa-folder"></i> 
-                <span class="mx-2">{{ site.name }}</span>
-            </button>
-        </h2>
-        <div id="siteCollapse{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-            <div class="accordion-body pl-3">
-
-                <ul class="list-unstyled">
-                    {% for report in site.reports.all %}
-                    <li>
-                        <a href="/reports/viewSavedReports/{{ report.id }}"
-                            class="text-white text-decoration-none">
-                            <i class="fa-solid fa-file"></i> 
-                            {{ report.title }}
-                        </a>
-                    </li>
-                    {% endfor %}
-                </ul>
-
+    <div class="row g-3">
+      {% for report in site.reports.all %}
+      <div class="col-md-6 col-xl-4">
+        <a href="/reports/viewSavedReports/{{ report.id }}" class="card h-100 text-decoration-none">
+          <div class="card-body d-flex gap-3">
+            <div class="tile-icon mb-0"><i class="fa-solid fa-file-pdf"></i></div>
+            <div class="overflow-hidden">
+              <h3 class="h6 text-white mb-1 text-truncate">{{ report.title }}</h3>
+              <p class="small text-muted mb-0">Created {{ report.created_at|date:"d M Y" }}</p>
             </div>
-        </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
     </div>
-{% endfor %}
-
+  </section>
+  {% endif %}
+  {% empty %}
+  <div class="empty-state mvc-panel">
+    <div class="empty-icon"><i class="fa-solid fa-file"></i></div>
+    <h3>No reports available</h3>
+    <p>Create a report and generate its PDF to see it here.</p>
   </div>
+  {% endfor %}
 </div>
-
-<!-- Overlay -->
-<div id="overlay" class="overlay"></div>
-
-<div class="container">
-  <div id="noDocument">
-    <h1 class="h1 text-center mt-5 pt-5 text-secondary"><i class="fa-solid fa-file fa-2x"></i></h1>
-    <h3 class="text-center mt-5 text-secondary">Select a report to view details</h3>
-    <p class="text-center text-secondary">Click on any report link from the sidebar to see its content here.</p>
-  </div>
-</div>
-
-
-
 {% endblock %}

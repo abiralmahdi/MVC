@@ -1,755 +1,118 @@
-
 {% extends 'layout.html' %}
-{% block body %}
+{% load static %}
 
+{% block title %}{{ individualReport.title }} - Report - MarksVision{% endblock %}
+
+{% block head %}
 <style>
-    /* ✅ General page style for screen */
-    .diagram-section {
-      margin: 2rem 0;
-      page-break-inside: avoid; /* Prevent splitting */
-    }
-  
-    h4 {
-      font-weight: bold;
-      margin-bottom: 1rem;
-    }
-  
-
-
-    @media print {
-    .navbar{
-        display: none;
-    }
-      body {
-        background: #fff !important;
-        color: #000;
-
-      }
-  
-      .diagram-section {
-        page-break-inside: avoid;
-        break-inside: avoid;
-      }
-  
-      .no-print {
-        display: none !important;
-      }
-    }
-
-
-canvas {
-  display: block;  /* removes inline gap */
-  width: 100% !important; 
-  height: 100% !important;
-}
-
-
-.diagram-container {
-  position: relative;
-  border: 1px solid #444;
-  border-radius: 6px;
-  overflow: hidden; /* hides scrollbar gap */
-}
-
-/* Scroll wrapper */
-.table-wrapper {
-  max-height: 500px;
-  overflow-y: auto;
-  display: block;
-}
-
-/* Ensure proper layout */
-.table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  margin-bottom: 0;
-}
-
-/* 🔥 Sticky header fix */
-.table thead th {
-  position: sticky;
-  top: 0;
-  background-color: #1e1e1e !important;
-  color: #fff !important;
-  z-index: 50;
-  text-align: center;
-  vertical-align: middle;
-  padding: 10px;
-  border-bottom: 2px solid #555;
-}
-
-/* Table body styling */
-.table tbody td {
-  background-color: #2a2a2a;
-  color: #ddd;
-  padding: 6px 8px;
-  border-color: #444;
-}
-
-/* ✅ Ensure space between header & first row in screenshots */
-.table tbody tr:first-child td {
-  padding-top: 12px;
-}
-
-/* ✅ Fix during light-mode or export */
-.diagram-container.light-mode .table thead th,
-.diagram-container.light-mode .table tbody td {
-  background: #fff !important;
-  color: #000 !important;
-  border-color: #ccc !important;
-}
+  .report-hero { padding: 1.75rem 2rem; margin-bottom: 1.25rem; position: relative; overflow: hidden; }
+  .report-hero::after { content: ""; position: absolute; right: -80px; top: -80px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(34, 211, 238, 0.12), transparent 70%); pointer-events: none; }
+  .report-hero h2 { font-size: 1.5rem; margin: 0.2rem 0 0.35rem; }
+  .report-meta { display: flex; flex-wrap: wrap; gap: 1.25rem; color: var(--mvc-muted); font-size: 0.8rem; }
+  .report-meta i { color: var(--mvc-accent); margin-right: 0.35rem; }
+  .diagram-section { margin: 0 0 1.25rem; padding: 1.25rem 1.4rem; page-break-inside: avoid; break-inside: avoid; }
+  .diagram-head { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.25rem; }
+  .diagram-index { font-family: var(--mvc-mono); color: var(--mvc-accent); font-size: 0.8rem; }
+  .diagram-section h4 { font-weight: 600; margin: 0; font-size: 1rem; }
+  .diagram-container { position: relative; border-radius: var(--mvc-radius); overflow: hidden; background: var(--mvc-surface-0); border: 1px solid var(--mvc-border); padding: 12px; margin-top: 0.6rem; }
+  .diagram-container.chart { height: 420px; width: 100%; }
+  .diagram-container.pie { height: 400px; width: 60%; }
+  .diagram-container.echarts { height: 460px; width: 100%; }
+  .diagram-status { min-height: 1.2em; }
+  .table-wrapper { max-height: 500px; overflow-y: auto; }
+  .report-table th { text-align: center; }
+  .report-table td { text-align: center; }
+  .diagram-caption { white-space: pre-line; color: var(--mvc-text-2); font-size: 0.86rem; margin: 0.8rem 0 0; padding-left: 0.8rem; border-left: 2px solid var(--mvc-border-strong); }
+  /* Light theme used while capturing images for the PDF */
+  .diagram-container.light-mode { background-color: #fff !important; border-color: #d1d5db; }
+  .diagram-container.light-mode canvas { background-color: #fff !important; box-shadow: none !important; }
+  .diagram-container.light-mode .table-wrapper { max-height: none; overflow: visible; }
+  .diagram-container.light-mode .table { --bs-table-color: #111827; --bs-table-border-color: #d1d5db; }
+  .diagram-container.light-mode .report-table th, .diagram-container.light-mode .report-table td { background: #fff !important; color: #111827 !important; border-color: #d1d5db !important; }
+  @media print {
+    .diagram-section { border: 0 !important; padding: 0 !important; }
+  }
 </style>
+{% endblock %}
 
+{% block body %}
+{% include 'reports_sidebar.html' with link_prefix="/reports/viewReport/" current_report=individualReport %}
 
-
-<!-- Sidebar -->
-<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
-    style="overflow-y: auto;">
-    <div class="d-flex m-3">
-        <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
-        <h3 class="h6">Vision Center</h3>
+<div class="container-xl" id="main-content">
+  <div class="page-header no-print">
+    <div class="page-icon"><i class="fa-solid fa-file-lines"></i></div>
+    <div>
+      <div class="eyebrow">Live report</div>
+      <h1 class="page-title">{{ individualReport.title }}</h1>
     </div>
+    <div class="page-actions">
+      <span class="small text-muted me-1" id="pdf-status"></span>
+      <form method="POST" action="/reports/deleteReport/{{ individualReport.id }}" class="m-0" data-confirm="Delete the report &quot;{{ individualReport.title }}&quot;?">
+        {% csrf_token %}
+        <button class="btn btn-outline-danger" type="submit" title="Delete report"><i class="fa-solid fa-trash-can"></i></button>
+      </form>
+      <a class="btn btn-outline-light" href="/reports/viewSavedReports/{{ individualReport.id }}"><i class="fa-solid fa-box-archive me-2"></i>Saved PDF</a>
+      <button class="btn btn-info" id="reportButton" type="button" data-report-id="{{ individualReport.id }}">
+        <i class="fa-solid fa-file-pdf me-2"></i>Generate PDF
+      </button>
+    </div>
+  </div>
 
-    <form class="form m-3">
-        <div class="form-group">
-            <input type="text" class="form-control" placeholder="Search...">
-        </div>
-    </form>
+  <section class="mvc-panel report-hero">
+    <div class="eyebrow">{{ individualReport.site.name }}</div>
+    <h2>{{ individualReport.title }}</h2>
+    {% if individualReport.description %}<p class="mb-3 text-muted" style="white-space: pre-line; max-width: 820px;">{{ individualReport.description }}</p>{% endif %}
+    <div class="report-meta">
+      <span><i class="fa-regular fa-calendar"></i>Created {{ individualReport.created_at|date:"d M Y H:i" }}</span>
+      <span><i class="fa-solid fa-chart-pie"></i>{{ diagrams|length }} diagram{{ diagrams|length|pluralize }}</span>
+      <span><i class="fa-solid fa-user"></i>{{ individualReport.user.name|default:"—" }}{% if individualReport.user.role %} · {{ individualReport.user.role }}{% endif %}</span>
+    </div>
+  </section>
 
-    <div class="accordion accordion-flush" id="sidebarAccordion">
-      {% for site in sites %}
-      <!-- Site Accordion -->
-      <div class="accordion-item bg-dark border-0">
-          <h2 class="accordion-header">
-              <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
-                  data-bs-target="#siteCollapse{{ forloop.counter }}">
-                  <i class="fa-solid fa-folder"></i> 
-                  <span class="mx-2">{{ site.name }}</span>
-              </button>
-          </h2>
-          <div id="siteCollapse{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-              <div class="accordion-body pl-3">
-  
-                  <ul class="list-unstyled">
-                      {% for report in site.reports.all %}
-                      <li>
-                          <a href="/reports/viewReport/{{ report.id }}"
-                              class="text-white text-decoration-none">
-                              <i class="fa-solid fa-file"></i> 
-                              {{ report.title }}
-                          </a>
-                      </li>
-                      {% endfor %}
-                  </ul>
-  
-              </div>
-          </div>
+  {% for diagram in diagrams %}
+  <section class="mvc-panel diagram-section">
+    <div class="diagram-head">
+      <span class="diagram-index">{{ forloop.counter|stringformat:"02d" }}</span>
+      <h4>
+        {{ diagram.diagram_type|title }} · {{ diagram.measurement_names|join:", " }}
+        {% if diagram.meters.all %}<span class="text-muted fw-normal">— {% for meter in diagram.meters.all %}{{ meter.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% endif %}
+      </h4>
+    </div>
+    <div class="small text-muted diagram-status" id="diagram-status-{{ diagram.id }}">Loading…</div>
+    {% if diagram.diagram_type == 'table' %}
+    <div class="diagram-container" data-diagram-id="{{ diagram.id }}">
+      <div class="table-wrapper">
+        <table class="table table-sm table-dark mb-0 report-table">
+          <thead><tr id="table-head-{{ diagram.id }}"></tr></thead>
+          <tbody id="table-body-{{ diagram.id }}"></tbody>
+        </table>
       </div>
-  {% endfor %}
-  
     </div>
+    {% elif diagram.diagram_type == 'sankey' or diagram.diagram_type == 'heatmap' %}
+    <div class="diagram-container echarts" data-diagram-id="{{ diagram.id }}" id="echarts-{{ diagram.id }}"></div>
+    {% else %}
+    <div class="diagram-container {% if diagram.diagram_type == 'pie' %}pie{% else %}chart{% endif %}" data-diagram-id="{{ diagram.id }}">
+      <canvas id="diagram-{{ diagram.id }}"></canvas>
+    </div>
+    {% endif %}
+    {% if diagram.description %}<p class="diagram-caption">{{ diagram.description }}</p>{% endif %}
+  </section>
+  {% empty %}
+  <div class="empty-state mvc-panel">
+    <div class="empty-icon"><i class="fa-solid fa-chart-pie"></i></div>
+    <h3>No diagrams</h3>
+    <p>This report has no diagrams.</p>
+  </div>
+  {% endfor %}
 </div>
 
-  <!-- Overlay -->
-<div id="overlay" class="overlay"></div>
-<div class="container">
-        <div class="d-flex">
-            <a class="btn btn-info fw-bold mt-5 ms-auto no-print"
-                id="reportButton"
-                href="#"
-                data-report-id="{{ individualReport.id }}"
-                data-report-title="{{ individualReport.title }}">
-                <i class="fa-solid fa-print me-2"></i>
-                Save PDF
-            </a>
-            <script>
-                document.getElementById('reportButton').addEventListener('click', async function(e) {
-                  e.preventDefault(); // stop the default link
-                
-                  const reportId = this.getAttribute('data-report-id');
-                  const reportTitle = this.getAttribute('data-report-title');
-                
-                  // ✅ Find all diagrams
-                  const containers = document.querySelectorAll('.diagram-container');
-                
-                  for (const container of containers) {
-                    const diagramId = container.getAttribute('data-diagram-id');
-                
-                    // Take screenshot
-                    container.classList.add('light-mode');
-                    const canvas = await html2canvas(container);
-                    const imageData = canvas.toDataURL('image/png');
-                    container.classList.remove('light-mode');
-                
-                    // Save image to server
-                    await fetch(`/reports/saveDiagramImage/${diagramId}`, {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}'
-                      },
-                      body: JSON.stringify({ image: imageData })
-                    });
-                  }
-                  
-                  alert("PDF Saved Successfully")
-                  // ✅ After saving, go to the PDF link:
-                  window.location.href = `/reports/generate_pdf/${encodeURIComponent(reportTitle)}.pdf/${reportId}`;
-                });
-                </script>
-                
-        </div>
+{{ diagram_configs|json_script:"diagram-configs" }}
+{% endblock %}
 
-        <div class="container">
-            <h3 class="h3 text-center">
-                {{individualReport.title}}
-            </h3>
-            <p class="mt-3 text-center">
-                {{individualReport.description}}
-            </p>
-        </div>
-  
-    {% for diagram in diagrams %}
-    <div class="diagram-section">
-        {% if diagram.diagram_type != 'table' %}
-        <h4>{{ diagram.diagram_type|title }} Chart on {{diagram.measurements.all.0.name}} of {% for meter in diagram.meters.all %} {{meter.name}}, {% endfor %}</h4>
-        {% else %}
-        <h4>{{ diagram.diagram_type|title }} Chart on {% for measurement in diagram.measurements.all %} {{measurement.name}}, {% endfor %} of {{diagram.meters.all.0.name}}</h4>
-        {% endif %}
-      {% if diagram.diagram_type == 'line' %}
-      <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-      <div class="diagram-container" data-diagram-id="{{ diagram.id }}" style="height: 400px; width: 70%;">
-        <canvas id="diagram-{{ diagram.id }}"></canvas>
-      </div>
-      <script>
-        document.addEventListener('DOMContentLoaded', function () {
-      fetch(`/reports/getLineDiagramData/{{ diagram.id }}`)
-        .then(res => res.json())
-        .then(data => {
-          const ctx = document.getElementById('diagram-{{ diagram.id }}').getContext('2d');
-    
-          const grouped = {};
-          data.data.forEach(item => {
-            if (!grouped[item.timestamp]) grouped[item.timestamp] = {};
-            grouped[item.timestamp][item.meter_id] = item.value;
-          });
-    
-          const labels = Object.keys(grouped).sort();
-    
-          const meterNames = {
-            {% for meter in diagram.meters.all %}
-              {{ meter.id }}: "{{ meter.name }}",
-            {% endfor %}
-          };
-          const meterIds = Object.keys(meterNames);
-    
-          // ⚡️ Build datasets and collect all values for min/max
-          const allValues = [];
-          const datasets = meterIds.map((meterId, i) => {
-            const values = labels.map(ts => grouped[ts][meterId] || 0);
-            allValues.push(...values);
-            return {
-              label: meterNames[meterId],
-              data: values,
-              borderColor: `hsl(${i * 40}, 70%, 50%)`,
-              backgroundColor: `hsl(${i * 40}, 70%, 50%)`,
-              fill: false
-            };
-          });
-    
-          // Compute min/max with buffer
-          const minY = Math.min(...allValues);
-          const maxY = Math.max(...allValues);
-          const range = maxY - minY;
-          const buffer = range * 0.1; // 10% buffer
-    
-          new Chart(ctx, {
-            type: 'line',
-            data: {
-              labels: labels,
-              datasets: datasets
-            },
-            options: {
-              responsive: true,
-              plugins: {
-                legend: { position: 'top' },
-                title: {
-                  display: true,
-                  text: 'Line - {{ diagram.measurements.first.name }}'
-                }
-              },
-              scales: {
-                x: {
-                  type: 'time',
-                  time: {
-                    parser: 'yyyy-MM-dd HH:mm',
-                    tooltipFormat: 'yyyy-MM-dd HH:mm',
-                    unit: 'minute'
-                  },
-                  title: {
-                    display: true,
-                    text: 'Timestamp'
-                  }
-                },
-                y: {
-                  beginAtZero: false,
-                  min: minY - buffer,
-                  max: maxY + buffer
-                }
-              }
-            }
-          });
-        });
-    });
-      </script>
-  
-      {% elif diagram.diagram_type == 'bar' %}
-      <div class="diagram-container" data-diagram-id="{{ diagram.id }}" style="width: 70%; height: 400px;">
-        <canvas id="diagram-{{ diagram.id }}"></canvas>
-      </div>
-      <script>
-        document.addEventListener('DOMContentLoaded', function () {
-          fetch(`/reports/getDiagramData/{{ diagram.id }}`)
-            .then(res => res.json())
-            .then(data => {
-              const ctx = document.getElementById('diagram-{{ diagram.id }}').getContext('2d');
-        
-              const grouped = {};
-              data.data.forEach(item => {
-                const p = item.period;
-                const m = item.meter_id;
-                if (!grouped[p]) grouped[p] = {};
-                grouped[p][m] = (grouped[p][m] || 0) + item.value;
-              });
-        
-              const labels = Object.keys(grouped).sort();
-              const meterNames = {
-                {% for meter in diagram.meters.all %}
-                  {{ meter.id }}: "{{ meter.name }}",
-                {% endfor %}
-              };
-              const meterIds = Object.keys(meterNames);
-        
-              // Flatten all values to compute min & max
-              const allValues = [];
-              meterIds.forEach(meterId => {
-                labels.forEach(p => {
-                  allValues.push(grouped[p][meterId] || 0);
-                });
-              });
-        
-              const minY = Math.min(...allValues);
-              const maxY = Math.max(...allValues);
-        
-              // Add a 10% buffer
-              const range = maxY - minY;
-              const buffer = range * 0.1;
-        
-              const datasets = meterIds.map((meterId, i) => ({
-                label: meterNames[meterId],
-                data: labels.map(p => grouped[p][meterId] || 0),
-                backgroundColor: `hsl(${i * 40}, 70%, 50%)`
-              }));
-        
-              new Chart(ctx, {
-                type: 'bar',
-                data: { labels, datasets },
-                options: {
-                  responsive: true,
-                  plugins: {
-                    legend: { position: 'top' },
-                    title: {
-                      display: true,
-                      text: 'Bar - {{ diagram.measurements.first.name }}'
-                    }
-                  },
-                  scales: {
-                    x: { stacked: false },
-                    y: {
-                      beginAtZero: false,
-                      min: minY - buffer < 0 ? 0 : minY - buffer,
-                      max: maxY + buffer
-                    }
-                  }
-                }
-              });
-            });
-        });
-        </script>
-        
-  
-      {% elif diagram.diagram_type == 'pie' %}
-      <div class="diagram-container" data-diagram-id="{{ diagram.id }}" style="width: 35%; height: 400px;">
-        <canvas id="diagram-{{ diagram.id }}"></canvas>
-      </div>
-      <script>
-        document.addEventListener('DOMContentLoaded', function () {
-    fetch(`/reports/getDiagramData/{{ diagram.id }}`)
-      .then(res => res.json())
-      .then(data => {
-        const ctx = document.getElementById('diagram-{{ diagram.id }}').getContext('2d');
-
-        const grouped = {};
-        data.data.forEach(item => {
-          grouped[item.meter_id] = (grouped[item.meter_id] || 0) + item.value;
-        });
-
-        const meterNames = {
-          {% for meter in diagram.meters.all %}
-            {{ meter.id }}: "{{ meter.name }}",
-          {% endfor %}
-        };
-        const meterIds = Object.keys(grouped);
-
-        const labels = meterIds.map(id => meterNames[id] || `Meter ${id}`);
-        const values = meterIds.map(id => grouped[id]);
-        const colors = meterIds.map((_, i) => `hsl(${i * 40}, 70%, 50%)`);
-
-        new Chart(ctx, {
-          type: 'pie',
-          data: {
-            labels,
-            datasets: [{ data: values, backgroundColor: colors }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { position: 'top' },
-              title: {
-                display: true,
-                text: 'Pie - {{ diagram.measurements.first.name }}'
-              }
-            }
-          }
-        });
-      });
-  });
-      </script>
-  
-  
-  {% elif diagram.diagram_type == 'table' %}
-  <div class="diagram-container" data-diagram-id="{{ diagram.id }}">
-    <div class="table-wrapper">
-      <table id="diagram-{{ diagram.id }}" class="table table-sm table-dark text-light mb-0 text-center">
-        <thead>
-          <tr id="table-head-{{ diagram.id }}"></tr>
-        </thead>
-        <tbody id="table-body-{{ diagram.id }}"></tbody>
-      </table>
-    </div>
-  </div>
-  
-  <style>
-    /* ✅ Center align all text in table headers and cells */
-    #diagram-{{ diagram.id }} th,
-    #diagram-{{ diagram.id }} td {
-      text-align: center;
-      vertical-align: middle; /* optional: vertically center too */
-    }
-  </style>
- <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const diagramId = {{ diagram.id }};
-    const head = document.getElementById('table-head-{{ diagram.id }}');
-    const body = document.getElementById('table-body-{{ diagram.id }}');
-
-    function updateTable(rows) {
-      if (!rows.length) return;
-
-      const fields = Object.keys(rows[0]);
-      head.innerHTML = fields.map(f => `<th>${f}</th>`).join('');
-      body.innerHTML = rows.map(row =>
-        `<tr>${fields.map(f => {
-          let value = row[f];
-          // ✅ Round numeric values to 2 decimal places
-          if (typeof value === 'number') {
-            value = value.toFixed(2);
-          }
-          // ✅ Handle null/undefined
-          if (value === null || value === undefined) {
-            value = '';
-          }
-          return `<td>${value}</td>`;
-        }).join('')}</tr>`
-      ).join('');
-    }
-
-    function fetchTable() {
-      axios.get(`/reports/getTableData/${diagramId}`)
-        .then(res => updateTable(res.data.rows))
-        .catch(console.error);
-    }
-
-    fetchTable();
-  });
-</script>
-
-
-
-  
-      {% elif diagram.diagram_type == 'sankey' %}
-      <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
-      <div class="diagram-container" data-diagram-id="{{ diagram.id }}" id="sankey-container-{{ diagram.id }}" style="width: 80%; height: 300px;"></div>
-      <script>
-        document.addEventListener('DOMContentLoaded', function () {
-  const sankeyContainer = echarts.init(document.getElementById("sankey-container-{{ diagram.id }}"));
-  const measurement = "{{ diagram.measurements.first.name|escapejs }}";
-  const siteName = "Site Total";
-
-  fetch(`/reports/sankey_data/{{ diagram.id }}`)
-    .then(res => res.json())
-    .then(data => {
-      const hierarchy = data.hierarchy;
-
-      const nodes = [];
-      const links = [];
-      const colors = {};
-      const added = new Set();
-      const loadTypeTotals = {};
-
-      function getColor(name) {
-        if (colors[name]) return colors[name];
-        if (name === siteName) colors[name] = '#1f77b4';
-        else if (name.includes('Building')) colors[name] = '#ff7f0e';
-        else if (name.includes('Floor') || name.includes('Area')) colors[name] = '#2ca02c';
-        else if (name.includes('MFM') || name.includes('Meter')) colors[name] = '#d62728';
-        else if (name.includes('Load Type')) colors[name] = '#9467bd';
-        else colors[name] = '#999';
-        return colors[name];
-      }
-
-      // 🌟 Build hierarchy nodes & links
-      for (const [buildingName, buildingData] of Object.entries(hierarchy.buildings)) {
-        links.push({
-          source: siteName,
-          target: buildingName,
-          value: buildingData.building_total[measurement] || 0
-        });
-        added.add(siteName);
-        added.add(buildingName);
-
-        for (const [areaName, areaData] of Object.entries(buildingData.areas)) {
-          let areaSum = 0;
-
-          for (const [meterName, meterData] of Object.entries(areaData.meters)) {
-            const val = meterData.data[measurement] || 0;
-
-            if (val > 0) {
-              links.push({ source: areaName, target: meterName, value: val });
-              added.add(areaName);
-              added.add(meterName);
-              areaSum += val;
-
-              const loadTypeName = "Load Type: " + (meterData.loadType || "Unknown");
-              links.push({ source: meterName, target: loadTypeName, value: val });
-              added.add(loadTypeName);
-
-              if (!loadTypeTotals[loadTypeName]) {
-                loadTypeTotals[loadTypeName] = 0;
-              }
-              loadTypeTotals[loadTypeName] += val;
-            }
-          }
-
-          if (areaSum > 0) {
-            links.push({ source: buildingName, target: areaName, value: areaSum });
-            added.add(areaName);
-          }
-        }
-      }
-
-      for (const name of added) {
-        const node = {
-          name,
-          itemStyle: { color: getColor(name) }
-        };
-        if (loadTypeTotals[name]) {
-          node.loadTypeTotal = loadTypeTotals[name];
-        }
-        nodes.push(node);
-      }
-
-      sankeyContainer.setOption({
-        backgroundColor: 'transparent',
-        tooltip: {
-          trigger: 'item',
-          formatter: function (params) {
-            if (params.dataType === 'edge') {
-              return `${params.data.source} → ${params.data.target}<br/>${measurement}: ${params.data.value}`;
-            } else if (params.dataType === 'node') {
-              if (params.data.loadTypeTotal) {
-                return `${params.data.name}<br/>Total ${measurement}: ${params.data.loadTypeTotal.toFixed(2)}`;
-              }
-              return `${params.data.name}`;
-            }
-          }
-        },
-        series: [{
-          type: 'sankey',
-          data: nodes,
-          links: links,
-          emphasis: { focus: 'adjacency' },
-          lineStyle: { color: 'source', curveness: 0.5 },
-          label: { color: '#4a4949' } // ✅ updated label color
-        }]
-      });
-
-    });
-});
-      </script>
-  
-      {% elif diagram.diagram_type == 'heatmap' %}
-      <div id="heatmap_container_{{ diagram.id }}" data-diagram-id="{{ diagram.id }}" class="diagram-container" style="width: 1000px; height: 500px;"></div>
-      <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
-      <script>
-        const heatmapChart = echarts.init(document.getElementById('heatmap_container_{{ diagram.id }}'));
-  function loadHeatmap() {
-    fetch(`/reports/heatmap/{{ diagram.id }}`)
-      .then(res => res.json())
-      .then(res => {
-        const raw = res.data;
-        const measurement = res.measurement;
-        if (!raw?.length) {
-          heatmapChart.clear();
-          return;
-        }
-        const days = [...new Set(raw.map(d => d.day))].sort();
-        const hours = Array.from({ length: 24 }, (_, i) => i);
-        const heatmapData = raw.map(d => [days.indexOf(d.day), d.hour, d.value]);
-        const allVals = raw.map(d => d.value);
-        const min = Math.min(...allVals);
-        const max = Math.max(...allVals);
-        const option = {
-            backgroundColor: 'transparent',
-            tooltip: {
-                position: 'top',
-                formatter: p => {
-                const d = days[p.data[0]];
-                const h = p.data[1];
-                const v = p.data[2];
-                return `${d} ${h}:00<br>${measurement{{gadget.id}}}: ${v.toFixed(2)}`;
-                }
-            },
-            grid: { height: '70%', top: '10%' },
-            xAxis: {
-                type: 'category',
-                data: days,
-                name: 'Date',
-                nameTextStyle: { color: '#4a4949' },
-                axisLabel: { color: '#4a4949' },
-                splitArea: { show: false },  // Disable gridlines
-                splitLine: { show: false }
-            },
-            yAxis: {
-                type: 'category',
-                data: hours.map(h => `${h}:00`),
-                name: 'Hour',
-                nameTextStyle: { color: '#4a4949' },
-                axisLabel: { color: '#4a4949' },
-                splitArea: { show: false },  // Disable gridlines
-                splitLine: { show: false }
-            },
-            visualMap: {
-                min: min,
-                max: max,
-                calculable: true,
-                orient: 'horizontal',
-                left: 'center',
-                bottom: '5%',
-                textStyle: { color: '#4a4949' },
-                inRange: {
-                color: ['#00FF00', '#FFFF00', '#FF0000']  // Green → Yellow → Red
-                }
-            },
-            series: [{
-                name: measurement{{gadget.id}},
-                type: 'heatmap',
-                data: heatmapData,
-                itemStyle: {
-                borderWidth: 0  // Remove cell borders
-                },
-                emphasis: {
-                itemStyle: {
-                    shadowBlur: 10,
-                    shadowColor: 'rgba(0,0,0,0.5)'
-                }
-                }
-            }],
-            };
-        heatmapChart.setOption(option);
-      });
-  }
-  loadHeatmap();
-      </script>
-  
-      {% endif %}
-      
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <style>
-        /* This makes the dark background light for screenshots */
-        .diagram-container.light-mode {
-          background-color: white !important;
-          color: black !important;
-        }
-        
-        .diagram-container.light-mode canvas {
-          background-color: white !important;
-        }
-        
-        .diagram-container.light-mode * {
-          background-color: transparent !important;
-          color: black !important;
-        }
-        </style>
-        
-    <script>
-        function imageExport(){
-          const containers = document.querySelectorAll('.diagram-container');
-        
-          containers.forEach((container) => {
-            const diagramId = container.getAttribute('data-diagram-id');
-        
-            // ✅ Add a temp class for light mode
-            container.classList.add('light-mode');
-        
-            html2canvas(container).then(canvas => {
-              const imageData = canvas.toDataURL('image/png');
-        
-              // ✅ Remove the temp light mode class after capture
-              container.classList.remove('light-mode');
-        
-              fetch(`/reports/saveDiagramImage/${diagramId}`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({ image: imageData })
-              })
-              .then(res => res.json())
-              .then(data => console.log(`Saved diagram ${diagramId}:`, data))
-              .catch(err => console.error(err));
-            });
-          });
-        }
-        </script>
-        
-
-
-
-    {% endfor %}
-    
-    <div class="d-flex">
-      <p class="my-5 ms-auto h6 fw-light py-5">
-        Report Generated by: <br>{{individualReport.user.name}} - {{individualReport.user.role}}
-      </p>
-    </div>
-    
-  </div>
-
-
-  
-  {% endblock %}
+{% block scripts %}
+{% if uses_echarts %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+{% endif %}
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="{% static 'report/report_view.js' %}?v={{ ASSET_VERSION }}"></script>
+{% endblock %}

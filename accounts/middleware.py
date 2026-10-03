@@ -1,4 +1,11 @@
+from datetime import timedelta
+
 from django.utils import timezone
+
+# Dashboards poll every few seconds; writing last_activity on every request
+# would turn each poll into a database write.
+ACTIVITY_WRITE_INTERVAL = timedelta(seconds=60)
+
 
 class UpdateLastActivityMiddleware:
     def __init__(self, get_response):
@@ -6,14 +13,13 @@ class UpdateLastActivityMiddleware:
 
     def __call__(self, request):
         if request.user.is_authenticated:
-            # Update last_activity on your UserModel instance, assuming one per user
             try:
-                user_model_instance = request.user.userModel.first()  # because related_name='userModel' is a reverse FK manager
-                if user_model_instance:
-                    user_model_instance.last_activity = timezone.now()
-                    user_model_instance.save(update_fields=['last_activity'])
+                profile = request.user.userModel.first()  # reverse FK manager (related_name='userModel')
+                now = timezone.now()
+                if profile and (profile.last_activity is None or now - profile.last_activity > ACTIVITY_WRITE_INTERVAL):
+                    profile.last_activity = now
+                    profile.save(update_fields=['last_activity'])
             except Exception:
-                pass  # Handle missing userModel gracefully
+                pass  # never block a request because of activity tracking
 
-        response = self.get_response(request)
-        return response
+        return self.get_response(request)

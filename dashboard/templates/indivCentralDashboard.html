@@ -1,374 +1,137 @@
 {% extends 'layout.html' %}
-{% load custom_tags %}
+
+{% block title %}Central Dashboard - MarksVision{% endblock %}
+
+{% block head %}
+<style>
+    .central-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(620px, 1fr)); gap: 1.1rem; }
+    .chart-container { padding: 1rem 1.1rem 1.1rem; min-height: 360px; }
+    .chart-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.25rem; }
+    .chart-toolbar .form-select { width: auto; height: 30px; font-size: 0.78rem; padding-top: 0; padding-bottom: 0; }
+    .chart-status { min-height: 1.2em; font-size: 0.76rem; color: var(--mvc-muted); margin-bottom: 0.4rem; }
+    .date-btn { position: relative; }
+    .invisible-picker { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
+</style>
+{% endblock %}
 
 {% block body %}
-<style>
-  .ticker-container {
-    width: 1200px;  /* adjust as needed */
-    height: 1.5em; /* one line high */
-    overflow: hidden;
-    position: relative;
-    background: #333;
-    color: white;
-  }
+{% include 'dashboard_sidebar.html' %}
 
-  .ticker-item {
-    position: absolute;
-    width: 100%;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-  }
-
-  .ticker-item.active {
-    opacity: 1;
-    position: absolute;
-  }
-
-  .ticker-item a {
-    color: white;
-    text-decoration: none;
-  }
-
-
-.invisible-picker {
-        position: absolute;
-        opacity: 0;
-        pointer-events: none;
-        width: 0;
-        height: 0;
-    }
-
-
-
-    a {
-        text-decoration: none;
-    }
-
-
-    ::-webkit-scrollbar {
-        width: 2px !important;
-        /* For vertical scrollbars */
-        height: 2px !important;
-        /* For horizontal scrollbars */
-    }
-
-    /* Track (background of scrollbar) */
-    ::-webkit-scrollbar-track {
-        background: #24252a;
-        /* dark grey */
-    }
-
-    /* Handle (scroll thumb) */
-    ::-webkit-scrollbar-thumb {
-        background: #085f67;
-        /* black */
-        border-radius: 4px;
-    }
-
-    /* Optional: Hide scrollbar arrows */
-    ::-webkit-scrollbar-button {
-        display: none;
-    }
-
-    .deleteIcon{
-        color: white;
-    }
-
-    .deleteIcon:hover{
-        color: rgb(246, 83, 83);
-    }
-    .chart-container {
-    background-color: #212529;
-    box-shadow: 0px 10px 50px rgb(27, 27, 27);
-    width: 775px;
-    height: 340px;
-    padding: 1rem;
-    margin-right: 1rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.chart-container canvas {
-    background-color: #212529 !important;
-    box-shadow: 0px 10px 50px rgb(27, 27, 27) !important;
-    width: 100% !important;
-    height: 100% !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
-}
-
-
-</style>
-<!-- Dashboard generation modal -->
-{% if request.user.is_superuser %}
-<div class="modal fade" id="addDashboardModal" tabindex="-1" aria-labelledby="addDashboardModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <form method="POST" action="/dashboard/newDashboard">
-        {% csrf_token %}
-        <div class="modal-content bg-dark text-white">
-            <div class="modal-header border-dark">
-                <h5 class="modal-title" id="addDashboardModalLabel">Create New Dashboard</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+<div id="main-content">
+    <main>
+        <div class="page-header">
+            <div class="page-icon"><i class="fa-solid fa-building-columns"></i></div>
+            <div>
+                <h1 class="page-title">Central Dashboard</h1>
+                <p class="page-subtitle">Building totals per site from the nightly aggregates. Choose a measurement, period and optional date range per site.</p>
             </div>
-    
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label for="title" class="form-label">Dashboard Title</label>
-                    <input type="text" class="form-control" id="title" name="title" required>
-                </div>
-    
-                <div class="mb-3" id="siteField">
-                    <label for="site" class="form-label">Select Site</label>
-                    <select class="form-select" id="site" name="site">
-                        <option value="">-- Select Site --</option>
-                        {% for site in sites %}
-                            <option value="{{ site.id }}">{{ site.name }}</option>
+        </div>
+
+        <div class="central-grid">
+            {% for site in sites %}
+            <section class="mvc-panel chart-container" id="chart-container-{{ site.id }}" data-site="{{ site.id }}">
+                <div class="chart-toolbar">
+                    <div class="me-auto">
+                        <div class="eyebrow">Site</div>
+                        <div class="fw-semibold">{{ site.name }}</div>
+                    </div>
+                    <select class="form-select form-select-sm measurement-selector" aria-label="Measurement">
+                        {% for option in measurement_options %}
+                        <option value="{{ option }}" {% if option == measurement %}selected{% endif %}>{{ option }}</option>
                         {% endfor %}
                     </select>
+                    <select class="form-select form-select-sm period-selector" aria-label="Period">
+                        <option value="weekly" {% if period_type == 'weekly' %}selected{% endif %}>Weekly</option>
+                        <option value="monthly" {% if period_type == 'monthly' %}selected{% endif %}>Monthly</option>
+                        <option value="yearly" {% if period_type == 'yearly' %}selected{% endif %}>Yearly</option>
+                    </select>
+                    <span class="date-btn">
+                        <button type="button" class="mvc-icon-btn" style="width:30px;height:30px;" data-picker-for="start" title="Start date"><i class="fa-regular fa-calendar"></i></button>
+                        <input type="date" class="invisible-picker start-date-selector">
+                    </span>
+                    <span class="date-btn">
+                        <button type="button" class="mvc-icon-btn" style="width:30px;height:30px;" data-picker-for="end" title="End date"><i class="fa-regular fa-calendar-check"></i></button>
+                        <input type="date" class="invisible-picker end-date-selector">
+                    </span>
                 </div>
+                <div class="chart-status"></div>
+                <canvas id="chart-{{ site.id }}"></canvas>
+            </section>
+            {% empty %}
+            <div class="empty-state mvc-panel">
+                <div class="empty-icon"><i class="fa-solid fa-industry"></i></div>
+                <h3>No sites configured</h3>
+                <p>Add sites in Settings → Plant hierarchy to see them here.</p>
             </div>
-    
-            <div class="modal-footer border-dark">
-                <button type="submit" class="btn btn-primary">Create Dashboard</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            </div>
+            {% endfor %}
         </div>
-    </form>
-    </div>
-  </div>
-  {% endif %}
-
-<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
-    style="overflow-y: auto;">
-    <div class="d-flex m-3">
-        <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
-        <h3 class="h6">Vision Center</h3>
-    </div>
-
-    <form class="form m-3">
-        <div class="form-group">
-            <input type="text" class="form-control" placeholder="Search...">
-        </div>
-    </form>
-
-    <div class="accordion accordion-flush" id="sidebarAccordion">
-      {% if request.user.is_superuser %}
-        <button class="btn btn-block btn-info ms-3 fw-bold" data-bs-toggle="modal" data-bs-target="#addDashboardModal"><i class="fa-solid me-2 fa-plus"></i>Create a new Dashboard</button>
-      {% else %}
-      <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="You are not authorized to create a dashboard">
-        <button class="btn btn-block btn-info ms-3 fw-bold" disabled><i class="fa-solid me-2 fa-plus"></i>Create a new Dashboard</button>
-      </span>
-      {% endif %}
-
-      {% if request.user.is_superuser or request.user.userModel.first.role == "Administrator" %}
-      <ul class="list-unstyled mt-3 ms-2">
-        <li>
-            <a href="/dashboard/centralCommand/industryOverview"
-                class="text-white text-decoration-none">
-                <i class="fa-solid fa-building-columns"></i>
-                Central Dashboard
-            </a>
-        </li>
-      </ul>
-    {% endif %}
-
-
-        {% for site in sites %}
-        <!-- Industry Accordion -->
-        <div class="accordion-item bg-dark border-0">
-          
-            <h2 class="accordion-header">
-                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#industryCollapse{{forloop.counter}}">
-                    <i class="fa-solid fa-folder"></i> 
-                    <span class="mx-2">{{site.name}}</span>
-                </button>
-            </h2>
-            <div id="industryCollapse{{forloop.counter}}" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-                <div class="accordion-body pl-3">
-
-                    <ul class="list-unstyled">
-                        {% for dashboard in site.dashboard.all %}
-                        <li>
-                            <a href="/dashboard/{{dashboard.id}}"
-                                class="text-white text-decoration-none">
-                                {{ dashboard.title }}
-                            </a>
-                        </li>
-                        {% endfor %}
-                    </ul>
-
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-
-
-    </div>
+    </main>
 </div>
+{% endblock %}
 
-
-<!-- Overlay -->
-<div id="overlay" class="overlay"></div>
-
-<div class="" id="main-content">
-    <div class="row">
-        <main class="">
-            
-            <div class="ms-4">
-                    <div class="" style="display: flex; flex-wrap: wrap;">
-                        
-                        {% for site in sites %}
-<div class="chart-container mb-4" id="chart-container-{{ site.id }}">
-    <!-- Toolbar -->
-    <div class="d-flex justify-content-between align-items-center text-light">
-        <div class="">
-            <!-- Measurement Selector -->
-            <select class="form-select form-select-sm d-inline w-auto measurement-selector" data-site="{{ site.id }}" style="background-color: #333; color: white;">
-                <option value="" selected>-- Select a Measurement --</option>
-                <option value="Total Active Power">Total Active Power</option>
-                <option value="Total Reactive Power">Total Reactive Power</option>
-                <option value="Total Gas Volume">Total Gas Volume</option>
-                <option value="Total Fuel">Total Fuel</option>
-                <option value="Total Steam">Total Steam</option>
-                <option value="Total Volume">Total Water Volume</option>
-                <option value="PM2.5">PM2.5</option>
-                <option value="PM10">PM10</option>
-                <option value="CO2 Level">CO2 Level</option>
-                
-
-            </select>
-
-            <!-- Period Selector -->
-            <select class="form-select form-select-sm d-inline w-auto period-selector" data-site="{{ site.id }}" style="background-color: #333; color: white;">
-                <option value="weekly" {% if period_type == 'weekly' %}selected{% endif %}>Weekly</option>
-                <option value="monthly" {% if period_type == 'monthly' %}selected{% endif %}>Monthly</option>
-                <option value="yearly" {% if period_type == 'yearly' %}selected{% endif %}>Yearly</option>
-            </select>
-        </div>
-
-        <!-- Date Pickers -->
-        <div class="d-flex align-items-center gap-2">
-            <!-- Start Date -->
-            <div class="position-relative">
-                <i class="fa fa-calendar-alt text-white" style="cursor: pointer;" onclick="document.getElementById('start-date-{{ site.id }}').showPicker()"></i>
-                <input type="date" id="start-date-{{ site.id }}" class="form-control form-control-sm start-date-selector" data-site="{{ site.id }}" style="background-color: #333; color: white; display:none;">
-            </div>
-
-            <!-- End Date -->
-            <div class="position-relative">
-                <i class="fa fa-calendar-check text-white" style="cursor: pointer;" onclick="document.getElementById('end-date-{{ site.id }}').showPicker()"></i>
-                <input type="date" id="end-date-{{ site.id }}" class="form-control form-control-sm end-date-selector" data-site="{{ site.id }}" style="background-color: #333; color: white; display: none;">
-            </div>
-        </div>
-    </div>
-
-    <!-- Chart -->
-    <canvas id="chart-{{ site.id }}"></canvas>
-</div>
-{% endfor %}
-
+{% block scripts %}
 <script>
-const colors = [
-  '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF',
-  '#8E44AD', '#E67E22', '#2ECC71', '#3498DB', '#E74C3C', '#1ABC9C'
-];
+(function () {
+  const charts = {};
+  const INK = MVC.chartTheme.INK;
 
-const charts = {};  // Hold chart instances by site
+  async function render(container) {
+    const siteId = container.dataset.site;
+    const measurement = container.querySelector('.measurement-selector').value;
+    const period = container.querySelector('.period-selector').value;
+    const start = container.querySelector('.start-date-selector').value;
+    const end = container.querySelector('.end-date-selector').value;
+    const status = container.querySelector('.chart-status');
 
-function fetchAndRenderChart(siteId, measurement, period_type, startDate=null, endDate=null) {
-  let url = `/dashboard/centralCommand/industryOverview/${siteId}/${measurement}/${period_type}`;
-  const params = new URLSearchParams();
-  if (startDate) params.append('start_date', startDate);
-  if (endDate) params.append('end_date', endDate);
-  if ([...params].length) url += `?${params.toString()}`;
+    const params = new URLSearchParams();
+    if (start) params.set('start_date', start);
+    if (end) params.set('end_date', end);
+    const url = `/dashboard/centralCommand/industryOverview/${siteId}/${encodeURIComponent(measurement)}/${period}/${params.toString() ? '?' + params : ''}`;
 
-  fetch(url)
-    .then(res => res.json())
-    .then(data => {
-      const ctx = document.getElementById(`chart-${siteId}`).getContext('2d');
-      
-      // Add colors to datasets
+    status.textContent = 'Loading…';
+    try {
+      const data = await MVC.fetchJSON(url);
       data.datasets.forEach((ds, idx) => {
-        ds.backgroundColor = colors[idx % colors.length];
+        ds.backgroundColor = MVC.seriesColor(idx);
+        ds.borderWidth = 0;
+        ds.maxBarThickness = 36;
       });
-
-      // If chart exists, destroy and recreate
+      const range = [start && `from ${start}`, end && `to ${end}`].filter(Boolean).join(' ');
+      status.textContent = data.labels.length
+        ? `${data.measurement}${data.unit ? ' (' + data.unit + ')' : ''} · ${period}${range ? ' · ' + range : ''}`
+        : `No ${period} aggregates for ${measurement} yet.`;
       if (charts[siteId]) charts[siteId].destroy();
-
-      charts[siteId] = new Chart(ctx, {
+      charts[siteId] = new Chart(document.getElementById(`chart-${siteId}`), {
         type: 'bar',
-        data: data,
+        data: { labels: data.labels, datasets: data.datasets },
         options: {
           responsive: true,
+          aspectRatio: 2,
           plugins: {
-            legend: {
-              position: 'top',
-              labels: { color: '#ccc' }
-            },
-            title: {
-              display: true,
-              text: `${data.site} - ${data.measurement}`,
-              color: '#ccc'
-            }
+            legend: { position: 'bottom', labels: { padding: 12 } },
+            tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.parsed.y).toLocaleString('en-US', { maximumFractionDigits: 2 })} ${data.unit || ''}` } },
           },
           scales: {
-            x: {
-              stacked: true,
-              ticks: { color: '#ccc' }
-            },
-            y: {
-              stacked: true,
-              ticks: { color: '#ccc' }
-            }
-          }
-        }
+            x: { stacked: true, grid: { display: false }, ticks: { color: INK.muted } },
+            y: { stacked: true, beginAtZero: true, border: { display: false }, ticks: { color: INK.muted, maxTicksLimit: 6 } },
+          },
+        },
       });
-    })
-    .catch(err => console.error(`Failed to load data for site ${siteId}:`, err));
-}
+    } catch (error) {
+      status.textContent = error.message;
+    }
+  }
 
-document.addEventListener('DOMContentLoaded', function () {
-  // Initial load
-  {% for site in sites %}
-    fetchAndRenderChart("{{ site.id }}", "{{ measurement }}", "{{ period_type }}");
-  {% endfor %}
-
-  // Event listeners for all selectors
-  const selectorClasses = ['period-selector', 'measurement-selector', 'start-date-selector', 'end-date-selector'];
-  selectorClasses.forEach(cls => {
-    document.querySelectorAll(`.${cls}`).forEach(el => {
-      el.addEventListener('change', function () {
-        const siteId = this.dataset.site;
-        const measurement = document.querySelector(`.measurement-selector[data-site="${siteId}"]`).value;
-        const period_type = document.querySelector(`.period-selector[data-site="${siteId}"]`).value;
-        const startDate = document.querySelector(`.start-date-selector[data-site="${siteId}"]`).value;
-        const endDate = document.querySelector(`.end-date-selector[data-site="${siteId}"]`).value;
-
-        if (!measurement) {
-          console.warn(`Please select a measurement for site ${siteId}`);
-          return;
-        }
-
-        fetchAndRenderChart(siteId, measurement, period_type, startDate, endDate);
+  document.querySelectorAll('.chart-container').forEach(container => {
+    container.querySelectorAll('select, input').forEach(el => el.addEventListener('change', () => render(container)));
+    container.querySelectorAll('[data-picker-for]').forEach(button => {
+      button.addEventListener('click', () => {
+        const input = container.querySelector(button.dataset.pickerFor === 'start' ? '.start-date-selector' : '.end-date-selector');
+        try { input.showPicker(); } catch (e) { input.classList.remove('invisible-picker'); input.focus(); }
       });
     });
+    render(container);
   });
-});
-
+})();
 </script>
-
-                          
-
-                        
-
-                    </div>
-            </div>
-
-        </main>
-    </div>
-</div>
-
-
 {% endblock %}

@@ -1,14 +1,13 @@
 # utils/decorators.py
 from django.shortcuts import redirect
-from django.http import HttpResponse
 from functools import wraps
-from home.models import GlobalConfiguration 
+from home.models import GlobalConfiguration
+
 
 def subscription_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        config = GlobalConfiguration.objects.first()
-        if config and config.subscribed:
+        if GlobalConfiguration.load().subscribed:
             return view_func(request, *args, **kwargs)
         return redirect('/subscription-revoked')
     return _wrapped_view
@@ -17,8 +16,7 @@ def subscription_required(view_func):
 def subscription_revoked(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        config = GlobalConfiguration.objects.first()
-        if config and not config.subscribed:
+        if not GlobalConfiguration.load().subscribed:
             return view_func(request, *args, **kwargs)
-        return redirect('/location')
+        return redirect('/')
     return _wrapped_view

@@ -1,140 +1,116 @@
 {% extends 'layout.html' %}
-{% block body %}
 
+{% block title %}Alarms - MarksVision{% endblock %}
+
+{% block head %}
 <style>
-  td{
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
-    font-size: smaller;
-  }
-        .table-wrapper {
-          max-height: 600px; /* adjust height as needed */
-          overflow-y: auto;
-        }
-        .table-wrapper thead th {
-          position: sticky;
-          top: 0;
-          background: #212529; /* matches Bootstrap dark table header */
-          z-index: 1;
-        }
-
-        @media print {
-  .navbar {
-    display: none;
-  }
-
-  body {
-    background: #fff !important;
-    color: #000 !important;
-  }
-
-  .no-print {
-    display: none !important;
-  }
-
-  .table-wrapper {
-    max-height: 10000px;
-    overflow: visible !important;
-  }
-
-  /* Kill .table-dark background & text color */
-  .table-dark, 
-  .table-dark thead th, 
-  .table-dark tbody td {
-    background-color: #fff !important;
-    color: #000 !important;
-  }
-
-  /* Kill .table-striped odd rows */
-  .table-striped tbody tr:nth-of-type(odd) {
-    --bs-table-accent-bg: transparent !important;
-    background-color: #fff !important;
-  }
-
-  /* Also force cells inside */
-  .table-striped tbody tr:nth-of-type(odd) td {
-    background-color: #fff !important;
-  }
-
-  td, th {
-    background-color: #fff !important;
-    color: #000 !important;
-  }
-}
-
+  .alarm-row.unacked td:first-child { box-shadow: inset 3px 0 0 var(--row-accent, transparent); }
+  .alarm-row.high { --row-accent: #f05252; }
+  .alarm-row.low { --row-accent: #f5b83d; }
+  .alarm-row.acked td { color: var(--mvc-text-2); }
+  .alarm-source .small { color: var(--mvc-muted); }
+  .segmented { display: inline-flex; padding: 3px; border-radius: 8px; background: var(--mvc-surface-1); border: 1px solid var(--mvc-border); }
+  .segmented a { padding: 0.3rem 0.8rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; color: var(--mvc-text-2); }
+  .segmented a.active { background: var(--mvc-accent-soft); color: var(--mvc-accent); }
+  .segmented a:hover:not(.active) { color: var(--mvc-text); }
+  .stat-chip { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.75rem; border-radius: 999px; border: 1px solid var(--mvc-border); background: var(--mvc-surface-1); font-size: 0.8rem; }
+  .stat-chip strong { font-variant-numeric: tabular-nums; }
 </style>
+{% endblock %}
 
+{% block body %}
+{% include 'alarms_sidebar.html' %}
 
-<!-- Sidebar -->
-<div id="sidebar" class="sidebar position-fixed d-flex flex-column">
-    <div class="d-flex mt-5">
-        <h3 class="h5 text-info fw-bold mx-2">MARKS</h3>
-        <h3 class="h5"> Vision Center</h3>
+<div class="container-xxl" id="main-content">
+  <div class="page-header">
+    <div class="page-icon"><i class="fa-solid fa-bell"></i></div>
+    <div>
+      <h1 class="page-title">{% if show == 'active' %}Active alarms{% else %}Alarm history{% endif %}</h1>
+      <p class="page-subtitle">Limit violations raised by the meters. Acknowledge an alarm once it has been handled.</p>
     </div>
-    <form action="" class="form p-3">
-        <div class="form-group mb-1">
-            <input type="text" class="form-control" placeholder="Search...">
-        </div>
-    </form>
-    <a href="/alarms/allAlarms" class="text-white">All Alarms</a>
-    <a href="/alarms/setAlarmRange" class="text-white">Set Alarm Range</a>
-    
-    
+    <div class="page-actions no-print">
+      <span class="stat-chip">{% if active_count %}<span class="live-dot bad"></span>{% else %}<span class="live-dot"></span>{% endif %}<strong>{{ active_count }}</strong> unacknowledged</span>
+      <div class="segmented" role="group" aria-label="Filter">
+        <a href="?show=active" class="{% if show == 'active' %}active{% endif %}">Active</a>
+        <a href="?show=all" class="{% if show != 'active' %}active{% endif %}">All</a>
+      </div>
+      {% if active_count %}
+      <form method="POST" action="/alarms/ackAllAlarms/" class="m-0" data-confirm="Acknowledge all {{ active_count }} unacknowledged alarms?">
+        {% csrf_token %}
+        <button class="btn btn-outline-warning" type="submit"><i class="fa-solid fa-check-double me-2"></i>Acknowledge all</button>
+      </form>
+      {% endif %}
+      <button class="btn btn-outline-light" onclick="window.print()" type="button" title="Print"><i class="fa-solid fa-print"></i></button>
+    </div>
+  </div>
 
+  {% if alarms %}
+  <div class="mvc-table-wrap table-wrapper" style="max-height: 72vh;">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th scope="col">Raised</th>
+          <th scope="col">Severity</th>
+          <th scope="col">Source</th>
+          <th scope="col">Measurement</th>
+          <th scope="col" class="text-end">Value</th>
+          <th scope="col">Description</th>
+          <th scope="col">Acknowledgement</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for alarm in alarms %}
+        <tr class="alarm-row {% if alarm.acknowledged %}acked{% else %}unacked{% endif %} {% if 'high' in alarm.alarmType|lower %}high{% else %}low{% endif %}">
+          <td class="mvc-num text-nowrap">{{ alarm.date|date:"d M Y" }}<div class="small text-muted">{{ alarm.date|date:"H:i:s" }}</div></td>
+          <td>
+            {% if alarm.acknowledged %}
+            <span class="status-pill neutral">{{ alarm.alarmType }}</span>
+            {% elif 'high' in alarm.alarmType|lower %}
+            <span class="status-pill bad"><i class="fa-solid fa-arrow-up" style="font-size: .6rem"></i>{{ alarm.alarmType }}</span>
+            {% else %}
+            <span class="status-pill warn"><i class="fa-solid fa-arrow-down" style="font-size: .6rem"></i>{{ alarm.alarmType }}</span>
+            {% endif %}
+          </td>
+          <td class="alarm-source">
+            <div class="fw-semibold">{{ alarm.meter.name }}</div>
+            <div class="small">{{ alarm.meter.area.building.site.name }} / {{ alarm.meter.area.building.name }} / {{ alarm.meter.area.name }}</div>
+          </td>
+          <td>{{ alarm.measurement.name }}</td>
+          <td class="text-end mvc-num fw-semibold">{{ alarm.value|floatformat:3 }}</td>
+          <td style="max-width: 320px;">{{ alarm.desc|default:"—" }}</td>
+          <td>
+            {% if alarm.acknowledged %}
+              <span class="small text-success" title="{{ alarm.acknowledgedAt|date:'d M Y H:i' }}"><i class="fa-solid fa-circle-check me-1"></i>{{ alarm.acknowledgedBy.username|default:"acknowledged" }}</span>
+              {% if alarm.acknowledgedAt %}<div class="small text-muted">{{ alarm.acknowledgedAt|date:"d M H:i" }}</div>{% endif %}
+            {% else %}
+              <form method="POST" action="/alarms/ackAlarm/{{ alarm.id }}/" class="m-0">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button type="submit" class="btn btn-sm btn-outline-info" title="Acknowledge"><i class="fa-solid fa-check me-1"></i>Acknowledge</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state mvc-panel">
+    <div class="empty-icon"><i class="fa-solid fa-circle-check"></i></div>
+    <h3>{% if show == 'active' %}All clear{% else %}No alarms recorded{% endif %}</h3>
+    <p>{% if show == 'active' %}There are no unacknowledged alarms on your sites.{% else %}No alarm has been raised yet.{% endif %}</p>
+  </div>
+  {% endif %}
+
+  {% if page.has_other_pages %}
+  <nav class="no-print mt-3 d-flex justify-content-end">
+    <ul class="pagination pagination-sm mb-0">
+      {% if page.has_previous %}<li class="page-item"><a class="page-link" href="?show={{ show }}&page={{ page.previous_page_number }}"><i class="fa-solid fa-chevron-left"></i></a></li>{% endif %}
+      <li class="page-item disabled"><span class="page-link">Page {{ page.number }} of {{ page.paginator.num_pages }}</span></li>
+      {% if page.has_next %}<li class="page-item"><a class="page-link" href="?show={{ show }}&page={{ page.next_page_number }}"><i class="fa-solid fa-chevron-right"></i></a></li>{% endif %}
+    </ul>
+  </nav>
+  {% endif %}
 </div>
-
-<!-- Overlay -->
-<div id="overlay" class="overlay"></div>
-
-<div class="container">
-    <div class="container mt-4">
-      <div class="d-flex">
-        <h4 class="mb-3">Active Alarms</h4>
-        <button class="btn btn-info fw-bold mb-3 ms-auto no-print" onclick="window.print()">
-          <i class="fa-solid fa-print me-2"></i>
-          Print
-        </button>
-      </div>
-      
-      
-      <div class="table-responsive-sm">
-        <div class="table-wrapper">
-          <table class="table table-dark text-light table-hover align-middle">
-            <thead class="">
-              <tr>
-                <th scope="col">Date & Time</th>
-                <th scope="col">Source</th>
-                <th scope="col">Measurement</th>
-                <th scope="col">Value</th>
-                <th scope="col">Description</th>
-                <th scope="col">Acknowledgement</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for alarm in alarms %}
-                <tr>
-                  <td><p style="color: {{ alarm.color }}">{{ alarm.date }}</p></td>
-                  <td><p style="color: {{ alarm.color }}">{{ alarm.meter.name }} - {{ alarm.meter.area.name }} - {{ alarm.meter.area.building.name }} - {{alarm.meter.area.building.site.name}}</p></td>
-                  <td><p style="color: {{ alarm.color }}">{{ alarm.measurement.name }}</p></td>
-                  <td><p style="color: {{ alarm.color }}">{{ alarm.value }}</p></td>
-                  <td><p style="color: {{ alarm.color }}">{{ alarm.alarmType }}</p></td>
-                  <td>
-                    {% if alarm.acknowledged %}
-                      <a aria-disabled="true"><i class="fa-solid fa-circle-check" style="color: {{alarm.color}}"></i></a>
-                    {% else %}
-                      <a href="/alarms/ackAlarm/{{alarm.id}}"><i class="fa-solid fa-circle-exclamation" style="color: {{alarm.color}}"></i></a>
-                    {% endif %}
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
-      </div>
-</div>
-
-
-
 {% endblock %}

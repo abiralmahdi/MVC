@@ -1,44 +1,164 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import *
-from dynamic.models import *
-from datetime import datetime
-from django.http import JsonResponse, HttpResponse
-from pprint import pprint
-from datetime import timedelta
+import calendar
+import logging
+from collections import defaultdict
+from datetime import date as date_cls, datetime, timedelta
+
+import requests
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
+from django.db.models import Min, Prefetch
+from django.http import Http404, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.db.models.functions import TruncHour, TruncDate
-from django.contrib.auth.decorators import login_required, user_passes_test
-from alarms.models import *
+from django.views.decorators.http import require_POST
+
+from alarms.models import Alarms
+from utils.access import (
+    ROLES,
+    admin_required,
+    can_access_site,
+    get_role,
+    is_admin,
+    json_login_required,
+    superuser_required,
+    visible_sites,
+)
 from utils.decorators import subscription_required
+from utils.timeutils import ensure_aware, local_day_bounds, local_str, period_end, period_start
 
-GADGET_TYPES = ["pie", "bar", "line", "table", "tool", "sankey", "heatmap"]
-ACCESS_CONSTROL = ["Administrator", "Operator", "Quality Manager", "Shift Manager", "Maintenance Personnel", "Setup Technician"]
-sites = Site.objects.prefetch_related(
-        'buildings__areas__meters'
-    ).all()
+from .aggregation import fold_readings, hourly_profile, meter_rows, summarize_meter_period
+from .measurements import is_cumulative, is_intensive, order_measurements, to_number
+from .models import (
+    Areas,
+    Buildings,
+    Dashboard,
+    Gadgets,
+    GlobalConfiguration,
+    HierarchyDataAggregate,
+    LatestMeterReading,
+    LoadType,
+    Measurements,
+    MeterReading,
+    MeterReadingAggregate,
+    Meters,
+    Site,
+)
+
+logger = logging.getLogger('dashboard')
+
+GADGET_TYPES = ["pie", "bar", "line", "table", "tool", "sankey", "heatmap", "picturemap", "multiple-meter-table", "valueCard", "machineHealth"]
+PERIOD_TYPES = ["daily", "weekly", "monthly", "3monthly", "6monthly", "yearly"]
+# Kept for templates that still refer to it.
+ACCESS_CONSTROL = ROLES
 
 
-# Create your views here.
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def json_error(message, status=400):
+    return JsonResponse({'error': message}, status=status)
+
+
+def can_view_gadget(user, gadget):
+    if user.is_superuser:
+        return True
+    return get_role(user) in (gadget.access or [])
+
+
+def get_dashboard_for(request, dashboard_id):
+    dashboard_ = get_object_or_404(Dashboard.objects.select_related('site'), id=dashboard_id)
+    if not can_access_site(request.user, dashboard_.site):
+        raise Http404("Dashboard not found")
+    return dashboard_
+
+
+def get_gadget_for(request, dashboard_id, gadget_id):
+    """Gadget of a dashboard the user may see (prevents reading other sites' data by id)."""
+    dashboard_ = get_dashboard_for(request, dashboard_id)
+    gadget = get_object_or_404(
+        Gadgets.objects.prefetch_related('meters', 'measurement'), id=gadget_id, dashboard=dashboard_
+    )
+    if not can_view_gadget(request.user, gadget):
+        raise Http404("Gadget not found")
+    return dashboard_, gadget
+
+
+def gadget_endpoint(view_func):
+    """JSON endpoint: login + subscription + dashboard/gadget authorisation, errors as JSON."""
+    def _wrapped(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return json_error('Authentication required', 401)
+        if not GlobalConfiguration.load().subscribed:
+            return json_error('Subscription revoked', 403)
+        try:
+            return view_func(request, *args, **kwargs)
+        except Http404 as exc:
+            return json_error(str(exc) or 'Not found', 404)
+    _wrapped.__name__ = view_func.__name__
+    _wrapped.__doc__ = view_func.__doc__
+    return _wrapped
+
+
+def parse_iso_date(value):
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except (TypeError, ValueError):
+        return None
+
+
+def measurement_units(names):
+    units = {}
+    for measurement in Measurements.objects.filter(name__in=names).prefetch_related('units'):
+        unit = next((u.name for u in measurement.units.all() if u.name), None)
+        if unit and measurement.name not in units:
+            units[measurement.name] = unit
+    return units
+
+
+def reading_points(meter, limit):
+    """Latest ``limit`` readings of a meter, oldest first."""
+    rows = list(
+        MeterReading.objects.filter(meter=meter).order_by('-timestamp').values_list('timestamp', 'data')[:limit]
+    )
+    rows.reverse()
+    return rows
+
+
+def serialize_point(meter_id, timestamp, data, names=None):
+    return {
+        'meter_id': meter_id,
+        'timestamp': local_str(timestamp, '%H:%M:%S'),
+        'ts': int(timestamp.timestamp() * 1000),
+        'data': {k: v for k, v in (data or {}).items() if names is None or k in names},
+    }
+
+
+def format_custom_date(date_obj):
+    day = date_obj.day
+    suffix = 'th' if 11 <= day <= 13 else {1: 'st', 2: 'nd', 3: 'rd'}.get(day % 10, 'th')
+    return date_obj.strftime(f"%A - {day}{suffix} %B, %Y")
+
+
+def measurement_choices():
+    """One Measurements row per distinct name, in display order."""
+    first_ids = Measurements.objects.values('name').annotate(first_id=Min('id'))
+    by_name = {row['name']: row['first_id'] for row in first_ids}
+    return [{'id': by_name[name], 'name': name} for name in order_measurements(by_name.keys())]
+
+
+# ---------------------------------------------------------------------------
+# Pages
+# ---------------------------------------------------------------------------
+
 @login_required
 @subscription_required
 def dashboard(request):
-    config = GlobalConfiguration.objects.first()
-    sites = Site.objects.prefetch_related(
-        'buildings__areas__meters'
-    ).all()
-    if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
-        pass
-    else:
-        sites = [request.user.userModel.first().site]
-    dashboards = Dashboard.objects.all()
-    gadgets = Gadgets.objects.all()
-    meters = Meters.objects.all()
+    sites = visible_sites(request.user).prefetch_related('dashboard__gadgets')
     context = {
         'sites': sites,
-        'dashboards': dashboards,
-        'gadgets': gadgets,
-        'meters': meters,
-        'config':config,
     }
     return render(request, 'dashboard.html', context)
 
@@ -46,986 +166,732 @@ def dashboard(request):
 @login_required
 @subscription_required
 def siteDashbaord(request, siteID):
-    site = Site.objects.get(id=siteID)
-    try:
-        dashboard = Dashboard.objects.filter(site=site).first()
-        return redirect('/dashboard/'+str(dashboard.id))
-    except:
-        # If no dashboard exists for this site, redirect to create a new one
+    site = get_object_or_404(Site, id=siteID)
+    if not can_access_site(request.user, site):
         return redirect('/dashboard')
-    
+    dashboard_ = Dashboard.objects.filter(site=site).order_by('id').first()
+    if dashboard_ is None:
+        messages.info(request, f"No dashboard has been created for {site.name} yet.")
+        return redirect('/dashboard')
+    return redirect(f'/dashboard/{dashboard_.id}')
 
-def get_day_suffix(day):
-    if 11 <= day <= 13:
-        return 'th'
-    last_digit = day % 10
-    if last_digit == 1:
-        return 'st'
-    elif last_digit == 2:
-        return 'nd'
-    elif last_digit == 3:
-        return 'rd'
-    else:
-        return 'th'
-
-def format_custom_date(date_obj):
-    day = date_obj.day
-    suffix = get_day_suffix(day)
-    formatted = date_obj.strftime(f"%A - {day}{suffix} %B, %Y")
-    return formatted
 
 @login_required
 @subscription_required
 def indivDashboard(request, dashboardID):
-    globalConfig = GlobalConfiguration.objects.first()
-    dateNow = format_custom_date(datetime.now())
-    config = GlobalConfiguration.objects.first()
-    dashboard_ = get_object_or_404(Dashboard, id=dashboardID)
-
-    # Load sites depending on role
-    sites = Site.objects.prefetch_related(
-        'buildings__areas__meters', 'buildings'
-    ).all()
-    if not (request.user.is_superuser or request.user.userModel.first().role == 'Administrator'):
-        sites = [request.user.userModel.first().site]
-
-    # Only allow access to site admins/superusers
-    if not (
-        request.user.is_superuser
-        or request.user.userModel.first().site.id == dashboard_.site.id
-        or request.user.userModel.first().role == 'Administrator'
-    ):
+    if not str(dashboardID).isdigit():
+        raise Http404("Dashboard not found")
+    dashboard_ = get_object_or_404(Dashboard.objects.select_related('site'), id=dashboardID)
+    if not can_access_site(request.user, dashboard_.site):
+        messages.error(request, "You are not authorized to view that dashboard.")
         return redirect('/dashboard')
 
-    # --- Master measurement order ---
-    ORDERED_MEASUREMENTS = [
-        "Voltage L1N", "Voltage L2N", "Voltage L3N",
-        "Voltage L1-L2", "Voltage L2-L3", "Voltage L3-L1",
-        "3-Phase Average Voltage L-N", "3-Phase Average Voltage L-L",
-
-        "Current L1", "Current L2", "Current L3",
-        "3-Phase Average Current L-L",
-
-        "Line Frequency",
-
-        "Power Factor L1", "Power Factor L2", "Power Factor L3",
-        "Power Factor",
-
-        "Active Power L1", "Active Power L2", "Active Power L3",
-        "Total Active Power",
-
-        "Reactive Power L1", "Reactive Power L2", "Reactive Power L3",
-        "Total Reactive Power",
-
-        "Apparent Power L1", "Apparent Power L2", "Apparent Power L3",
-        "Total Apparent Power",
-
-        "THD Voltage L1-L2", "THD Voltage L2-L3", "THD Voltage L3-L1",
-
-        "Energy",
-
-        # 💧 Water Meter
-        "Flow Rate", "Total Volume",
-
-        # 🔥 Gas Meter
-        "Gas Flow Rate", "Gas Pressure", "Total Gas Volume",
-
-        # 🌡️ Steam Meter
-        "Steam Flow Rate", "Steam Pressure", "Total Steam",
-
-        # ⛽ Fuel Meter
-        "Fuel Consumption Rate", "Total Fuel Used",
-
-        # 🌡️ Temperature & Humidity
-        "Temperature", "Humidity", "Pressure",
-
-        # 🌬️ Air Quality
-        "CO2 Level", "PM2.5", "PM10",
-    ]
-
-    # --- Gadgets ---
-    gadgets = Gadgets.objects.filter(dashboard=dashboard_).prefetch_related('meters', 'measurement')
-    for g in gadgets:
-        measurement_names = [m.name for m in g.measurement.all()]
-        g.ordered_measurements = [m for m in ORDERED_MEASUREMENTS if m in measurement_names]
-
+    config = GlobalConfiguration.load()
     site = dashboard_.site
-    areas = Areas.objects.filter(building__site=site).prefetch_related('meters')
-    meters = Meters.objects.filter(area__in=areas).select_related('loadType')
-    measurements = Measurements.objects.all()
+    sites = visible_sites(request.user).prefetch_related('dashboard', 'buildings__areas__meters')
 
-    # --- Alarms ---
-    alarms = Alarms.objects.filter(acknowledged=False, meter__in=meters)
+    areas = Areas.objects.filter(building__site=site).select_related('building').prefetch_related('meters')
+    meters = Meters.objects.filter(area__building__site=site).select_related('loadType', 'area__building')
+    choices = measurement_choices()
+
+    all_gadgets = Gadgets.objects.filter(dashboard=dashboard_).select_related('building').prefetch_related(
+        'meters', 'measurement__units'
+    ).order_by('id')
+    gadgets = [g for g in all_gadgets if can_view_gadget(request.user, g)]
+
+    gadget_configs = []
+    for g in gadgets:
+        names = order_measurements(m.name for m in g.measurement.all())
+        g.ordered_measurements = names
+        g.measurement_names = names
+        g.meter_ids = [m.id for m in g.meters.all()]
+        units = {}
+        for m in g.measurement.all():
+            unit = next((u.name for u in m.units.all() if u.name), None)
+            if unit:
+                units.setdefault(m.name, unit)
+        gadget_configs.append({
+            'id': g.id,
+            'name': g.name,
+            'type': g.gadget_type,
+            'dashboardId': dashboard_.id,
+            'siteId': site.id,
+            'buildingId': g.building_id,
+            'meters': [{'id': m.id, 'name': m.name, 'type': m.meterType} for m in g.meters.all()],
+            'measurements': [{'id': m.id, 'name': m.name} for m in sorted(g.measurement.all(), key=lambda m: names.index(m.name))],
+            'units': units,
+        })
+
+    alarms = Alarms.objects.filter(acknowledged=False, meter__in=meters).select_related(
+        'meter__area__building', 'measurement'
+    ).order_by('-date')[:50]
     for alarm in alarms:
-        if alarm.acknowledged:
-            alarm.color = "green"
-        elif "high" in alarm.alarmType.lower():
+        if "high" in alarm.alarmType.lower():
             alarm.color = "red"
         elif "low" in alarm.alarmType.lower():
-            alarm.color = "rgb(179, 179, 21)"
+            alarm.color = "rgb(230, 200, 40)"
         else:
             alarm.color = "white"
 
-    # --- Latest Readings ---
-    meter_readings = LatestMeterReading.objects.filter(meter__in=meters)
-    readingArray = [
-        {
-            'meter_id': r.meter.id,
-            'timestamp': r.timestamp.strftime('%H:%M'),
-            'data': r.data,
-        }
-        for r in meter_readings
-    ]
-
-    # --- Load Types & Meter Types for new trees ---
-    loadTypes = LoadType.objects.prefetch_related('meters').all()
-    meterTypes = sorted(list(set(m.meterType for m in meters)))
+    load_types = LoadType.objects.prefetch_related(
+        Prefetch('meters', queryset=Meters.objects.filter(area__building__site=site))
+    )
+    meter_types = sorted({m.meterType for m in meters if m.meterType})
 
     context = {
         'dashboard': dashboard_,
         'sites': sites,
         'gadgets': gadgets,
+        'gadget_configs': gadget_configs,
         'areas': areas,
         'meters': meters,
-        'measurements': measurements,
-        'readingData': readingArray,
+        'measurements': choices,
         'gadgetTypes': GADGET_TYPES,
-        'accessControl': ACCESS_CONSTROL,
+        'accessControl': ROLES,
         'alarms': alarms,
         'config': config,
-        'dateNow': dateNow,
-        'globalConfig':globalConfig,
-        # new:
-        'loadTypes': loadTypes,
-        'meterTypes': meterTypes,
+        'globalConfig': config,
+        'dateNow': format_custom_date(timezone.localdate()),
+        'loadTypes': load_types,
+        'meterTypes': meter_types,
+        'today': timezone.localdate().isoformat(),
+        'time_zone': settings.TIME_ZONE,
+        'uses_echarts': any(g.gadget_type in ('sankey', 'heatmap') for g in gadgets),
     }
-
     return render(request, 'indivDashboard2.html', context)
 
-    
-
-from django.shortcuts import render
-from django.http import JsonResponse
-from collections import defaultdict
-from .models import HierarchyDataAggregate, Site
 
 @login_required
 @subscription_required
+@admin_required
 def indivCentralDashboard(request):
-    if request.user.is_superuser or request.user.userModel.first().role == 'Administrator':
-        # You can customize which sites to show
-        config = GlobalConfiguration.objects.first()
-        sites = Site.objects.all()
-        measurement = "CO2 Level"  # or pass via GET param
-        period_type = "monthly"  # or weekly/yearly
-
-        context = {
-            "sites": sites,
-            "measurement": measurement,
-            "period_type": period_type,
-            'config':config
-        }
-        return render(request, "indivCentralDashboard.html", context)
-    else:
-        return HttpResponse("You are not authorized to enter this page.")
+    context = {
+        "sites": Site.objects.all(),
+        "measurement": "Total Active Power",
+        "period_type": "monthly",
+        "measurement_options": [
+            "Energy", "Total Active Power", "Total Reactive Power", "Total Apparent Power",
+            "Total Volume", "Total Gas Volume", "Total Steam", "Total Fuel Used",
+            "CO2 Level", "PM2.5", "PM10",
+        ],
+    }
+    return render(request, "indivCentralDashboard.html", context)
 
 
+# ---------------------------------------------------------------------------
+# JSON endpoints
+# ---------------------------------------------------------------------------
 
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from .models import Dashboard, Site, HierarchyDataAggregate
-from django.utils.dateparse import parse_date
-
+@gadget_endpoint
+@admin_required
 def grouped_chart_data_for_site(request, site_id, measurement, period_type):
-    if not (request.user.is_superuser or request.user.userModel.first().role == 'Administrator'):
-        return JsonResponse({"error": "Unauthorized"}, status=403)
-
     site = get_object_or_404(Site, id=site_id)
 
-    # Parse date filters from GET params
-    start_date_str = request.GET.get('start_date')
-    end_date_str = request.GET.get('end_date')
-    start_date = parse_date(start_date_str) if start_date_str else None
-    end_date = parse_date(end_date_str) if end_date_str else None
+    start_date = parse_iso_date(request.GET.get('start_date'))
+    end_date = parse_iso_date(request.GET.get('end_date'))
 
-    aggregates = HierarchyDataAggregate.objects.filter(
-        site=site, period_type=period_type
-    ).order_by("start_date")
-
-    # Apply date range filtering if provided
+    aggregates = HierarchyDataAggregate.objects.filter(site=site, period_type=period_type).order_by("start_date")
     if start_date:
-        aggregates = aggregates.filter(start_date__gte=start_date)
+        aggregates = aggregates.filter(start_date__gte=period_start(start_date, period_type))
     if end_date:
         aggregates = aggregates.filter(start_date__lte=end_date)
 
-    # Collect all unique building names
-    building_set = set()
+    aggregates = list(aggregates)
+    buildings = sorted({b for agg in aggregates for b in (agg.data or {}).get("buildings", {})})
+    labels = [str(agg.start_date) for agg in aggregates]
+    building_data = {b: [] for b in buildings}
     for agg in aggregates:
-        data = agg.data
-        for b in data.get("buildings", {}):
-            building_set.add(b)
-    buildings = sorted(list(building_set))
-
-    # Initialize data holders
-    labels = []  # X-axis (start_date of each period)
-    building_data = {b: [] for b in buildings}  # Y values per building
-
-    for agg in aggregates:
-        labels.append(str(agg.start_date))  # X-axis label
-        data = agg.data
-        buildings_json = data.get("buildings", {})
-
+        buildings_json = (agg.data or {}).get("buildings", {})
         for b in buildings:
-            # Safely get building_total[measurement], default to 0
-            val = buildings_json.get(b, {}).get("building_total", {}).get(measurement, 0)
-            building_data[b].append(val)
+            value = to_number(buildings_json.get(b, {}).get("building_total", {}).get(measurement))
+            building_data[b].append(round(value, 3) if value is not None else 0)
 
-    # Define distinct colors
     color_palette = [
-        "rgba(255, 99, 132, 0.8)",
-        "rgba(54, 162, 235, 0.8)",
-        "rgba(255, 206, 86, 0.8)",
-        "rgba(75, 192, 192, 0.8)",
-        "rgba(153, 102, 255, 0.8)",
-        "rgba(255, 159, 64, 0.8)",
-        "rgba(199, 199, 199, 0.8)",
-        "rgba(83, 102, 255, 0.8)",
+        "rgba(255, 99, 132, 0.8)", "rgba(54, 162, 235, 0.8)", "rgba(255, 206, 86, 0.8)",
+        "rgba(75, 192, 192, 0.8)", "rgba(153, 102, 255, 0.8)", "rgba(255, 159, 64, 0.8)",
+        "rgba(199, 199, 199, 0.8)", "rgba(83, 102, 255, 0.8)",
     ]
-
-    # Build dataset list for Chart.js
-    datasets = []
-    for i, b in enumerate(buildings):
-        datasets.append({
-            "label": b,
-            "data": building_data[b],
-            "backgroundColor": color_palette[i % len(color_palette)],
-            "stack": 'stack1'
-        })
-
+    datasets = [
+        {"label": b, "data": building_data[b], "backgroundColor": color_palette[i % len(color_palette)], "stack": 'stack1'}
+        for i, b in enumerate(buildings)
+    ]
     return JsonResponse({
         "labels": labels,
         "datasets": datasets,
         "site": site.name,
-        "measurement": measurement
+        "measurement": measurement,
+        "unit": measurement_units([measurement]).get(measurement, ''),
     })
 
 
-
-
-
-@login_required
+@gadget_endpoint
 def fetchLatestReadings(request, dashboardID, gadget_id):
-    dashboard_ = get_object_or_404(Dashboard, id=dashboardID)
-    if request.user.is_superuser or request.user.userModel.first().site.id == dashboard_.site.id or request.user.userModel.first().role == 'Administrator':
-        try:
-            gadget = Gadgets.objects.prefetch_related('meters', 'measurement').get(id=gadget_id)
-            meters = gadget.meters.all()
-            measurements = gadget.measurement.all()
-            measurement_names = [m.name for m in measurements]
-            
-            readings = LatestMeterReading.objects.filter(meter__in=meters).order_by('timestamp')
-            data = []
-            for reading in readings:
-                entry = {
-                    'meter_id': reading.meter.id,
-                    'timestamp': reading.timestamp.strftime('%H:%M'),
-                    'data': {k: v for k, v in reading.data.items() if k in measurement_names}
-                }
-                data.append(entry)
-                
+    """Recent history of every meter of a trend gadget (``?points=`` per meter, default 10)."""
+    _, gadget = get_gadget_for(request, dashboardID, gadget_id)
+    try:
+        limit = max(2, min(int(request.GET.get('points', settings.LIVE_TREND_POINTS)), 500))
+    except ValueError:
+        limit = settings.LIVE_TREND_POINTS
+    names = {m.name for m in gadget.measurement.all()}
+    data = []
+    for meter in gadget.meters.all():
+        for timestamp, values in reading_points(meter, limit):
+            data.append(serialize_point(meter.id, timestamp, values, names))
+    return JsonResponse({'readingData': data})
 
-            return JsonResponse({'readingData': data})
 
-        except Gadgets.DoesNotExist:
-            return JsonResponse({'error': 'Gadget not found'}, status=404)
-    else:
-        return redirect('/dashboard')
-    
-    
-from django.utils import timezone
-from django.http import JsonResponse
-from datetime import datetime, timedelta
-from .models import MeterReading, Gadgets
-@login_required
+@gadget_endpoint
 def fetchDateTimeWindow(request, dashboard_id, gadget_id, datetime_str):
-    dashboard_ = get_object_or_404(Dashboard, id=dashboard_id)
-    if request.user.is_superuser or request.user.userModel.first().site.id == dashboard_.site.id or request.user.userModel.first().role == 'Administrator':
-        try:
-            dt = timezone.make_aware(datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M"))
-        except ValueError:
-            return JsonResponse({"error": "Invalid datetime format"}, status=400)
+    """Readings in a +/- ``?minutes=`` window (default 30) around a local date-time."""
+    _, gadget = get_gadget_for(request, dashboard_id, gadget_id)
+    try:
+        dt = timezone.make_aware(datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M"))
+    except ValueError:
+        return json_error("Invalid datetime format")
+    try:
+        minutes = max(1, min(int(request.GET.get('minutes', 30)), 24 * 60))
+    except ValueError:
+        minutes = 30
 
-        try:
-            gadget = Gadgets.objects.get(id=gadget_id)
-        except Gadgets.DoesNotExist:
-            return JsonResponse({"error": "Gadget not found"}, status=404)
-
-        meters = gadget.meters.all()
-        readingData = []
-
-        for meter in meters:
-            # Filter readings for this meter around the datetime
-            readings = MeterReading.objects.filter(
-                meter=meter,
-                timestamp__range=(dt - timedelta(minutes=15), dt + timedelta(minutes=15))
-            ).order_by("timestamp")
-
-            # Find index of closest timestamp
-            surrounding = list(readings)
-            idx = next(
-                (i for i, r in enumerate(surrounding) if abs((r.timestamp - dt).total_seconds()) < 60),
-                None
-            )
-
-            if idx is None:
-                continue  # Skip this meter if no close match
-
-            start = max(idx - 5, 0)
-            end = idx + 5
-
-            selected_readings = surrounding[start:end]
-
-            for r in selected_readings:
-                readingData.append({
-                    'meter_id': r.meter.id,
-                    'timestamp': r.timestamp.strftime('%H:%M'),
-                    'data': r.data
-                })
-
-        if not readingData:
-            return JsonResponse({"error": "No readings found for any meter"}, status=404)
-
-        return JsonResponse({"readingData": readingData})
-    else:
-        return redirect('/dashboard')
+    names = {m.name for m in gadget.measurement.all()}
+    window = (dt - timedelta(minutes=minutes), dt + timedelta(minutes=minutes))
+    data = []
+    for meter in gadget.meters.all():
+        rows = MeterReading.objects.filter(meter=meter, timestamp__range=window).order_by('timestamp')
+        for timestamp, values in rows.values_list('timestamp', 'data')[:2000]:
+            data.append(serialize_point(meter.id, timestamp, values, names))
+    return JsonResponse({"readingData": data, "window": [local_str(window[0], '%Y-%m-%d %H:%M'), local_str(window[1], '%Y-%m-%d %H:%M')]})
 
 
-def get_period_start(date, period_type):
-    from datetime import date as dt
+def period_values(meter, measurement, selected_date, period_type):
+    """Value of one measurement for one meter and period.
 
-    if period_type == "weekly":
-        return date - timedelta(days=date.weekday())  # Monday
-    elif period_type == "monthly":
-        return date.replace(day=1)
-    elif period_type == "3monthly":
-        month = ((date.month - 1) // 3) * 3 + 1
-        return date.replace(month=month, day=1)
-    elif period_type == "6monthly":
-        month = 1 if date.month <= 6 else 7
-        return date.replace(month=month, day=1)
-    elif period_type == "yearly":
-        return date.replace(month=1, day=1)
-    else:
-        return date
+    * daily, and weekly/monthly periods that are still running, are computed
+      from the raw readings so today's data is included;
+    * closed periods use the nightly aggregates;
+    * if an aggregate is missing (aggregation not run yet) the value is
+      computed from raw readings and cached for 10 minutes.
+    """
+    if period_type == 'daily':
+        return to_number(summarize_meter_period(meter, selected_date, 'daily', fields={measurement}).get(measurement))
+
+    start = period_start(selected_date, period_type)
+    today = timezone.localdate()
+    period_is_open = start <= today < period_end(start, period_type)
+    if not (period_is_open and period_type in ('weekly', 'monthly')):
+        agg = MeterReadingAggregate.objects.filter(meter=meter, period_type=period_type, start_date=start).first()
+        if agg and measurement in (agg.aggregateData or {}):
+            return to_number(agg.aggregateData[measurement])
+
+    cache_key = f"period-value:{meter.id}:{period_type}:{start}:{measurement}"
+    value = cache.get(cache_key, 'missing')
+    if value == 'missing':
+        value = to_number(summarize_meter_period(meter, start, period_type, fields={measurement}).get(measurement))
+        cache.set(cache_key, value, 60 if period_is_open else 600)
+    return value
 
 
-@login_required
+@gadget_endpoint
 def getData(request, dashboard_id, gadget_id, measurement, date, period):
-    dashboard_ = get_object_or_404(Dashboard, id=dashboard_id)
-    if request.user.is_superuser or request.user.userModel.first().site.id == dashboard_.site.id or request.user.userModel.first().role == 'Administrator':
-        period_type = period  # optional query param: daily, weekly, monthly, etc.
+    _, gadget = get_gadget_for(request, dashboard_id, gadget_id)
+    selected_date = parse_iso_date(date)
+    if selected_date is None:
+        return json_error('Invalid date format. Use YYYY-MM-DD')
+    if period not in PERIOD_TYPES:
+        return json_error('Invalid period')
 
-        try:
-            selected_date = datetime.strptime(date, "%Y-%m-%d").date()
-        except (ValueError, TypeError):
-            return JsonResponse({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=400)
-
-        try:
-            gadget = Gadgets.objects.get(id=gadget_id)
-        except Gadgets.DoesNotExist:
-            return JsonResponse({'error': 'Gadget not found'}, status=404)
-
-        meters = gadget.meters.all()
-        meter_data = []
-
-        if period_type and period_type != "daily":
-            selected_date = get_period_start(selected_date, period_type)
-            for meter in meters:
-                agg = MeterReadingAggregate.objects.filter(
-                    meter=meter,
-                    period_type=period_type,
-                    start_date=selected_date
-                ).first()
-                print(agg)
-
-                if agg and measurement in agg.aggregateData:
-                    meter_data.append({
-                        "meter": meter.name,
-                        "value": round(agg.aggregateData[measurement], 2)
-                    })
-        else:
-            # Daily average mode
-            start_datetime = datetime.combine(selected_date, datetime.min.time())
-            end_datetime = datetime.combine(selected_date, datetime.max.time())
-
-            for meter in meters:
-                readings = MeterReading.objects.filter(
-                    meter=meter,
-                    timestamp__range=(start_datetime, end_datetime)
-                )
-
-                values = [r.data.get(measurement) for r in readings if r.data.get(measurement) is not None]
-                if values:
-                    avg = sum(values) / len(values)
-                    meter_data.append({
-                        "meter": meter.name,
-                        "value": round(avg, 2)
-                    })
-
-        return JsonResponse({"data": meter_data})
-    else:
-        return redirect('/dashboard')
+    meter_data = []
+    for meter in gadget.meters.all():
+        value = period_values(meter, measurement, selected_date, period)
+        if value is not None:
+            meter_data.append({"meter": meter.name, "value": round(value, 2)})
+    return JsonResponse({
+        "data": meter_data,
+        "unit": measurement_units([measurement]).get(measurement, ''),
+        "cumulative": is_cumulative(measurement),
+        "period_start": str(period_start(selected_date, period) if period != 'daily' else selected_date),
+    })
 
 
-
-from collections import defaultdict
-
-@login_required
+@gadget_endpoint
 def getMultiYearBarData(request, dashboard_id, gadget_id, measurement, date, period):
-    
-    dashboard_ = get_object_or_404(Dashboard, id=dashboard_id)
-    if request.user.is_superuser or request.user.userModel.first().site.id == dashboard_.site.id or request.user.userModel.first().role == 'Administrator':
+    _, gadget = get_gadget_for(request, dashboard_id, gadget_id)
+    selected_date = parse_iso_date(date)
+    if selected_date is None:
+        return json_error('Invalid date format')
+    if period not in PERIOD_TYPES:
+        return json_error('Invalid period')
+    selected_year = selected_date.year
+
+    if period == "monthly":
+        labels = [calendar.month_abbr[m] for m in range(1, 13)]
+    elif period == "yearly":
+        labels = [str(selected_year)]
+    elif period == "weekly":
+        labels = [f"W{i}" for i in range(1, 54)]
+    elif period == "3monthly":
+        labels = ["Jan-Mar", "Apr-Jun", "Jul-Sep", "Oct-Dec"]
+    elif period == "6monthly":
+        labels = ["Jan-Jun", "Jul-Dec"]
+    else:
+        days_in_month = calendar.monthrange(selected_year, selected_date.month)[1]
+        labels = [str(day) for day in range(1, days_in_month + 1)]
+
+    def parse_period_value(value):
+        if not value:
+            return None
         try:
-            selected_date = datetime.strptime(date, "%Y-%m-%d").date()
-        except Exception:
-            return JsonResponse({'error': 'Invalid date format'}, status=400)
-
-        selected_year = selected_date.year
-
-        try:
-            gadget = Gadgets.objects.get(id=gadget_id)
-        except Gadgets.DoesNotExist:
-            return JsonResponse({'error': 'Gadget not found'}, status=404)
-
-        meters = gadget.meters.all()
-
-        def get_period_labels(year, period):
-            import calendar
-            labels = []
-            if period == "monthly":
-                labels = [calendar.month_abbr[m] for m in range(1,13)]
-            elif period == "yearly":
-                labels = [str(year)]
-            elif period == "weekly":
-                labels = [f"W{i}" for i in range(1,53)]
-            elif period == "3monthly":
-                labels = ["Jan-Mar","Apr-Jun","Jul-Sep","Oct-Dec"]
-            elif period == "6monthly":
-                labels = ["Jan-Jun","Jul-Dec"]
-            elif period == "daily":
-                days_in_month = calendar.monthrange(year, selected_date.month)[1]
-                labels = [str(day) for day in range(1, days_in_month+1)]
-            return labels
-
-        labels = get_period_labels(selected_year, period)
-
-        # Parse optional start/end parameters from query params
-        start_param = request.GET.get('start', None)
-        end_param = request.GET.get('end', None)
-
-        # Helper function to convert start/end strings to dates or weeks or months
-        # For daily: parse date strings
-        # For weekly: parse ISO week strings "YYYY-Www"
-        # For monthly: parse "YYYY-MM"
-
-        def parse_period_value(value, period):
-            if not value:
-                return None
             if period == 'daily':
-                try:
-                    return datetime.strptime(value, "%Y-%m-%d").date()
-                except:
-                    return None
-            elif period == 'weekly':
-                # value format: "YYYY-Www"
-                try:
-                    year_str, week_str = value.split("-W")
-                    year_i = int(year_str)
-                    week_i = int(week_str)
-                    # Get Monday date of the week
-                    from isoweek import Week
-                    return Week(year_i, week_i).monday()
-                except:
-                    return None
-            elif period == 'monthly':
-                try:
-                    return datetime.strptime(value, "%Y-%m").date().replace(day=1)
-                except:
-                    return None
+                return datetime.strptime(value, "%Y-%m-%d").date()
+            if period == 'weekly':
+                year_str, week_str = value.split("-W")
+                return date_cls.fromisocalendar(int(year_str), int(week_str), 1)
+            if period == 'monthly':
+                return datetime.strptime(value, "%Y-%m").date().replace(day=1)
+        except (ValueError, TypeError):
+            return None
+        return None
+
+    start_val = parse_period_value(request.GET.get('start'))
+    end_val = parse_period_value(request.GET.get('end'))
+
+    years_to_fetch = [selected_year - 1, selected_year]
+    if period == 'yearly':
+        labels = ["Year"]
+
+    def label_index(dt):
+        if period == "monthly":
+            return dt.month - 1
+        if period == "weekly":
+            return dt.isocalendar()[1] - 1
+        if period == "3monthly":
+            return (dt.month - 1) // 3
+        if period == "6monthly":
+            return 0 if dt.month <= 6 else 1
+        if period == "daily":
+            return dt.day - 1
+        return 0
+
+    data = []
+    for meter in gadget.meters.all():
+        year_values = {}
+        for year in years_to_fetch:
+            values = [0] * len(labels)
+            if period == 'daily':
+                month_start = selected_date.replace(year=year, day=1)
+                days = calendar.monthrange(year, month_start.month)[1]
+                start, end = local_day_bounds(month_start)[0], local_day_bounds(month_start.replace(day=days))[1]
+                rows, previous = meter_rows(meter, start, end)
+                for day, bucket in fold_readings(rows, previous, {measurement}).items():
+                    value = bucket.values().get(measurement)
+                    if value is not None and 0 <= day.day - 1 < len(values):
+                        values[day.day - 1] = round(value, 2)
             else:
-                return None
-
-        start_val = parse_period_value(start_param, period)
-        end_val = parse_period_value(end_param, period)
-
-        # Filter years to fetch - always current year and previous year
-        years_to_fetch = [selected_year-1, selected_year]
-
-        meter_year_values = defaultdict(lambda: defaultdict(lambda: [None]*len(labels)))
-
-        def get_label_index(dt, period, labels):
-            if period == "monthly":
-                return dt.month - 1
-            elif period == "yearly":
-                return 0
-            elif period == "weekly":
-                return dt.isocalendar()[1] - 1  # zero-based week number
-            elif period == "3monthly":
-                return (dt.month - 1) // 3
-            elif period == "6monthly":
-                return 0 if dt.month <= 6 else 1
-            elif period == "daily":
-                return dt.day - 1
-            else:
-                return 0
-
-        for meter in meters:
-            for year in years_to_fetch:
-                aggs = MeterReadingAggregate.objects.filter(
-                    meter=meter,
-                    period_type=period,
-                    start_date__year=year
-                )
-
-                # If start_val and end_val are set, filter aggs accordingly
-                if start_val and end_val:
-                    aggs = aggs.filter(start_date__gte=start_val, start_date__lte=end_val)
-
-                for agg in aggs:
-                    idx = get_label_index(agg.start_date, period, labels)
-                    if 0 <= idx < len(labels) and measurement in agg.aggregateData:
-                        meter_year_values[meter.name][year][idx] = round(agg.aggregateData[measurement], 2)
-
-        data = []
-        for meter_name, year_dict in meter_year_values.items():
-            for y in years_to_fetch:
-                year_values = year_dict[y]
-                year_dict[y] = [v if v is not None else 0 for v in year_values]
-            data.append({
-                "meter": meter_name,
-                "values": {
-                    str(y): year_dict[y] for y in years_to_fetch
-                }
-            })
-
-        return JsonResponse({
-            "labels": labels,
-            "data": data,
-            "years": [str(y) for y in years_to_fetch]
-        })
-    else:
-        return redirect('/dashboard')
-
-
-
-
-@login_required
-def fetchLatestToolData(request, dashboard_id, gadget_id):
-    dashboard_ = get_object_or_404(Dashboard, id=dashboard_id)
-    if request.user.is_superuser or request.user.userModel.first().site.id == dashboard_.site.id or request.user.userModel.first().role == 'Administrator':
-        try:
-            gadget = Gadgets.objects.prefetch_related('meters', 'measurement').get(id=gadget_id)
-            meter = gadget.meters.first()
-            measurements = gadget.measurement.all()
-            latest_reading = LatestMeterReading.objects.filter(meter=meter).order_by('-timestamp').first()
-
-            if not latest_reading:
-                return JsonResponse({'error': 'No reading found'}, status=404)
-
-            data = {
-                'meter_id': meter.id,
-                'timestamp': latest_reading.timestamp.strftime('%H:%M'),
-                'data': latest_reading.data,
-            }
-
-            return JsonResponse({'reading': data})
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    else:
-        return redirect('/dashboard')
-
-
-@login_required
-def fetchLatestMultipleMeterTableData(request, dashboard_id, gadget_id):
-    dashboard_ = get_object_or_404(Dashboard, id=dashboard_id)
-
-    if (
-        request.user.is_superuser
-        or request.user.userModel.first().site.id == dashboard_.site.id
-        or request.user.userModel.first().role == "Administrator"
-    ):
-        try:
-            gadget = Gadgets.objects.prefetch_related("meters", "measurement").get(id=gadget_id)
-            meters = gadget.meters.all()
-            measurements = gadget.measurement.all()
-
-            # ✅ Define the master measurement order
-            ordered_measurements = [
-                # 🔌 Electricity Meter
-                "Voltage L1N", "Voltage L2N", "Voltage L3N",
-                "Voltage L1-L2", "Voltage L2-L3", "Voltage L3-L1",
-                "3-Phase Average Voltage L-N", "3-Phase Average Voltage L-L",
-
-                "Current L1", "Current L2", "Current L3",
-                "3-Phase Average Current L-L",
-                
-                "Line Frequency",
-                
-                "Power Factor L1", "Power Factor L2", "Power Factor L3",
-                "Power Factor",
-
-                "Active Power L1", "Active Power L2", "Active Power L3",
-                "Total Active Power",
-                
-                "Reactive Power L1", "Reactive Power L2", "Reactive Power L3",
-                "Total Reactive Power",
-                
-                "Apparent Power L1", "Apparent Power L2", "Apparent Power L3",
-                "Total Apparent Power",
-
-                "THD Voltage L1-L2", "THD Voltage L2-L3", "THD Voltage L3-L1",
-                
-                "Energy",
-
-                # 💧 Water Meter
-                "Flow Rate", "Total Volume",
-
-                # 🔥 Gas Meter
-                "Gas Flow Rate", "Gas Pressure", "Total Gas Volume",
-
-                # 🌡️ Steam Meter
-                "Steam Flow Rate", "Steam Pressure", "Total Steam",
-
-                # ⛽ Fuel Meter
-                "Fuel Consumption Rate", "Total Fuel Used",
-
-                # 🌡️ Temperature & Humidity
-                "Temperature", "Humidity", "Pressure",
-
-                # 🌬️ Air Quality
-                "CO2 Level", "PM2.5", "PM10",
-            ]
-
-            # ✅ Keep only the gadget’s measurements but ordered
-            measurement_names = [m.name for m in measurements]
-            sorted_measurements = [m for m in ordered_measurements if m in measurement_names]
-
-            readings = []
-            for meter in meters:
-                if not LatestMeterReading.objects.filter(meter=meter):
-                    continue
-                latest_reading = (
-                    LatestMeterReading.objects.filter(meter=meter)
-                    .order_by("-timestamp")
-                    .first()
-                )
-                if latest_reading:
-                    readings.append(
-                        {
-                            "meter_id": meter.id,
-                            "meter_name": meter.name,
-                            "timestamp": latest_reading.timestamp.strftime("%H:%M"),
-                            "data": latest_reading.data,
-                        }
+                if period == 'weekly':
+                    # ISO weeks: the Monday of week 1 can fall in the previous calendar year.
+                    aggs = MeterReadingAggregate.objects.filter(
+                        meter=meter, period_type=period,
+                        start_date__gte=date_cls(year, 1, 1) - timedelta(days=6), start_date__lte=date_cls(year, 12, 31),
                     )
-            pprint(LatestMeterReading.objects.filter(meter=meter).order_by("-timestamp").first().data)
-            if not readings:
-                return JsonResponse({"error": "No readings found"}, status=404)
+                else:
+                    aggs = MeterReadingAggregate.objects.filter(meter=meter, period_type=period, start_date__year=year)
+                for agg in aggs:
+                    if period == 'weekly' and agg.start_date.isocalendar()[0] != year:
+                        continue
+                    idx = label_index(agg.start_date)
+                    value = to_number((agg.aggregateData or {}).get(measurement))
+                    if 0 <= idx < len(values) and value is not None:
+                        values[idx] = round(value, 2)
+                # The running period is not aggregated until tonight: compute it live.
+                today = timezone.localdate()
+                if year == today.year and period in ('weekly', 'monthly'):
+                    current = period_start(today, period)
+                    live = period_values(meter, measurement, current, period)
+                    idx = label_index(current)
+                    if live is not None and 0 <= idx < len(values):
+                        values[idx] = round(live, 2)
+            year_values[str(year)] = values
+        data.append({"meter": meter.name, "values": year_values})
 
-            return JsonResponse(
-                {
-                    "readings": readings,
-                    "measurements": sorted_measurements,  # ✅ Always ordered
-                }
-            )
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
-    else:
-        return redirect("/dashboard")
+    # Optional range filter (?start=&end=): keep only the selected slice of labels.
+    if start_val and end_val and period in ('daily', 'weekly', 'monthly'):
+        lo, hi = sorted((label_index(start_val), label_index(end_val)))
+        labels = labels[lo:hi + 1]
+        for entry in data:
+            entry["values"] = {year: values[lo:hi + 1] for year, values in entry["values"].items()}
+
+    return JsonResponse({
+        "labels": labels,
+        "data": data,
+        "years": [str(y) for y in years_to_fetch],
+        "unit": measurement_units([measurement]).get(measurement, ''),
+    })
 
 
+@gadget_endpoint
+def fetchLatestToolData(request, dashboard_id, gadget_id):
+    _, gadget = get_gadget_for(request, dashboard_id, gadget_id)
+    meter = gadget.meters.first()
+    if meter is None:
+        return json_error('No meter configured for this gadget', 404)
+    latest = LatestMeterReading.objects.filter(meter=meter).first()
+    if not latest:
+        return json_error('No reading received from this meter yet', 404)
+    return JsonResponse({'reading': {
+        'meter_id': meter.id,
+        'meter_name': meter.name,
+        'timestamp': local_str(latest.timestamp, '%Y-%m-%d %H:%M:%S'),
+        'data': latest.data,
+    }})
 
 
+@gadget_endpoint
+def fetchLatestMultipleMeterTableData(request, dashboard_id, gadget_id):
+    _, gadget = get_gadget_for(request, dashboard_id, gadget_id)
+    meters = list(gadget.meters.all())
+    latest_by_meter = {r.meter_id: r for r in LatestMeterReading.objects.filter(meter__in=meters)}
+    readings = []
+    for meter in meters:
+        latest = latest_by_meter.get(meter.id)
+        readings.append({
+            "meter_id": meter.id,
+            "meter_name": meter.name,
+            "meter_type": meter.meterType,
+            "timestamp": local_str(latest.timestamp, '%Y-%m-%d %H:%M:%S') if latest else None,
+            "data": latest.data if latest else {},
+        })
+    return JsonResponse({
+        "readings": readings,
+        "measurements": order_measurements(m.name for m in gadget.measurement.all()),
+    })
+
+
+@gadget_endpoint
 def fetchValueCardData(request, dashboard_id, site_id, measurement_id):
-    """
-    Returns the latest total value (site_total) of a given measurement for the specified site.
-    Example: latest total Voltage L1N for site_id=1
-    """
-    # Authorization check
-    if not (request.user.is_superuser or request.user.userModel.first().role == 'Administrator'):
-        return JsonResponse({"error": "Unauthorized"}, status=403)
-
-    # Get site object
+    """Site total of a measurement: current period aggregate, or the sum of the latest readings."""
+    dashboard_ = get_dashboard_for(request, dashboard_id)
     site = get_object_or_404(Site, id=site_id)
+    if site.id != dashboard_.site_id:
+        return json_error('Site does not belong to this dashboard', 404)
+    measurement = get_object_or_404(Measurements, id=measurement_id).name
+    unit = measurement_units([measurement]).get(measurement, '')
+    period = request.GET.get('period', 'monthly')
 
-    # Fetch the most recent aggregate record for this site (any period type)
-    latest_agg = (
-        HierarchyDataAggregate.objects.filter(site=site)
-        .order_by("-start_date")
-        .first()
-    )
-    measurement = Measurements.objects.get(id=measurement_id).name
-
-    if not latest_agg:
+    agg = HierarchyDataAggregate.objects.filter(site=site, period_type=period).order_by("-start_date").first()
+    if agg and measurement in (agg.data or {}).get("site_total", {}):
         return JsonResponse({
             "site": site.name,
             "measurement": measurement,
-            "value": None,
-            "message": "No data available"
+            "unit": unit,
+            "latest_date": str(agg.start_date),
+            "source": f"{period} total",
+            "value": to_number(agg.data["site_total"][measurement]),
         })
 
-    # Access the measurement value safely
-    site_total = latest_agg.data.get("site_total", {})
-    latest_value = site_total.get(measurement, 0)
-
-    # Return JSON response
+    values = [
+        to_number((r.data or {}).get(measurement))
+        for r in LatestMeterReading.objects.filter(meter__area__building__site=site)
+    ]
+    values = [v for v in values if v is not None]
+    value = None
+    if values:
+        value = sum(values) / len(values) if is_intensive(measurement) else sum(values)
     return JsonResponse({
         "site": site.name,
         "measurement": measurement,
-        "latest_date": str(latest_agg.start_date),
-        "value": latest_value
+        "unit": unit,
+        "latest_date": str(timezone.localdate()),
+        "source": "live",
+        "value": value,
+        "message": None if values else "No data available",
     })
 
 
-
-
-@login_required
+@gadget_endpoint
 def fetchTableData(request, dashboard_id, gadget_id):
-    dashboard_ = get_object_or_404(Dashboard, id=dashboard_id)
-    if request.user.is_superuser or request.user.userModel.first().site.id == dashboard_.site.id or request.user.userModel.first().role == 'Administrator':
-        gadget = Gadgets.objects.get(id=gadget_id)
-        meter = gadget.meters.first()
-        data = LatestMeterReading.objects.filter(meter=meter).order_by('-timestamp')[:20]  # Get last 20 rows for example
-
-        rows = []
-        for instance in data:
-            row = {'Timestamp': instance.timestamp.strftime("%H:%M")}
-            row.update(instance.data)
-            rows.append(row)
-
-        return JsonResponse({"rows": rows})
-    else:
-        return redirect('/dashboard')
+    _, gadget = get_gadget_for(request, dashboard_id, gadget_id)
+    meter = gadget.meters.first()
+    if meter is None:
+        return JsonResponse({"rows": []})
+    rows = []
+    for timestamp, values in MeterReading.objects.filter(meter=meter).order_by('-timestamp').values_list('timestamp', 'data')[:20]:
+        row = {'Timestamp': local_str(timestamp, "%H:%M:%S")}
+        for key in order_measurements((values or {}).keys()):
+            row[key] = values[key]
+        rows.append(row)
+    return JsonResponse({"rows": rows, "meter": meter.name})
 
 
-@login_required
+@gadget_endpoint
 def hierarchyAggView(request, dashboard_id, site_id, measurement, period_type, start_date):
-    dashboard_ = get_object_or_404(Dashboard, id=dashboard_id)
-    if request.user.is_superuser or request.user.userModel.first().site.id == dashboard_.site.id or request.user.userModel.first().role == 'Administrator':
-        site = get_object_or_404(Site, id=site_id)
-        aggregate = get_object_or_404(
-            HierarchyDataAggregate,
-            site=site,
-            period_type=period_type,
-            start_date=start_date
-        )
-        context = {
-            "site": site.id,
-            "period_type": period_type,
-            "start_date": start_date,
-            "data": aggregate.data,
-            "hierarchy_data": aggregate.data,
-            "measurement": measurement
-        }
-        return JsonResponse(context)
-    else:
-        return redirect('/dashboard')
+    dashboard_ = get_dashboard_for(request, dashboard_id)
+    site = get_object_or_404(Site, id=site_id)
+    if site.id != dashboard_.site_id:
+        return json_error('Site does not belong to this dashboard', 404)
+    requested = parse_iso_date(start_date) or timezone.localdate()
+    requested = period_start(requested, period_type)
 
-@login_required
+    queryset = HierarchyDataAggregate.objects.filter(site=site, period_type=period_type)
+    aggregate = queryset.filter(start_date=requested).first()
+    exact = aggregate is not None
+    if aggregate is None:
+        aggregate = queryset.filter(start_date__lte=requested).order_by('-start_date').first() or queryset.order_by('-start_date').first()
+    if aggregate is None:
+        return json_error(f'No {period_type} aggregate has been calculated for {site.name} yet.', 404)
+
+    return JsonResponse({
+        "site": {"id": site.id, "name": site.name},
+        "period_type": period_type,
+        "start_date": str(aggregate.start_date),
+        "requested_date": str(requested),
+        "exact": exact,
+        "hierarchy_data": aggregate.data,
+        "measurement": measurement,
+        "unit": measurement_units([measurement]).get(measurement, ''),
+    })
+
+
+@gadget_endpoint
 def heatmap_data(request, dashboard_id, meter_id, start_date, end_date, measurement):
-    dashboard_ = get_object_or_404(Dashboard, id=dashboard_id)
-    if request.user.is_superuser or request.user.userModel.first().site.id == dashboard_.site.id or request.user.userModel.first().role == 'Administrator':
-        try:
-            start_dt = datetime.strptime(start_date, '%Y-%m-%d')
-            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-        except:
-            return JsonResponse({'error': 'Invalid dates'}, status=400)
+    """Hourly profile: consumption for counters, average for everything else."""
+    dashboard_ = get_dashboard_for(request, dashboard_id)
+    meter = get_object_or_404(Meters, id=meter_id, area__building__site=dashboard_.site)
+    start_day, end_day = parse_iso_date(start_date), parse_iso_date(end_date)
+    if not start_day or not end_day:
+        return json_error('Invalid dates')
+    if end_day < start_day:
+        start_day, end_day = end_day, start_day
+    if (end_day - start_day).days > 366:
+        return json_error('Please select at most one year')
 
-        readings = (
-            MeterReading.objects
-            .filter(
-                meter_id=meter_id,
-                timestamp__date__gte=start_dt,
-                timestamp__date__lte=end_dt
-            )
-            .annotate(day=TruncDate('timestamp'), hour=TruncHour('timestamp'))
-        )
-
-        hourly_totals = {}
-        for r in readings:
-            key = (r.timestamp.date().isoformat(), r.timestamp.hour)
-            val = r.data.get(measurement, 0)
-            hourly_totals[key] = hourly_totals.get(key, 0) + val
-
-        data = [
-            {'day': day, 'hour': hour, 'value': round(total, 2)}
-            for (day, hour), total in hourly_totals.items()
-        ]
-
-        return JsonResponse({
-            'measurement': measurement,
-            'data': data
-        })
-    else:
-        return redirect('/dashboard')
+    data, mode = hourly_profile(meter, start_day, end_day, measurement)
+    return JsonResponse({
+        'measurement': measurement,
+        'meter': meter.name,
+        'mode': mode,
+        'unit': measurement_units([measurement]).get(measurement, ''),
+        'start': start_day.isoformat(),
+        'end': end_day.isoformat(),
+        'data': data,
+    })
 
 
-
-from pprint import pprint
-from django.db.models import Prefetch
-@login_required
+@gadget_endpoint
 def building_heatmap(request, dashboard_id, buildingID, measurement):
-    building = get_object_or_404(Buildings.objects.select_related('site'), id=buildingID)
-    site = building.site
+    dashboard_ = get_dashboard_for(request, dashboard_id)
+    building = get_object_or_404(Buildings.objects.select_related('site'), id=buildingID, site=dashboard_.site)
+    areas = building.areas.prefetch_related(Prefetch('meters', to_attr='prefetched_meters')).order_by('id')
 
-    # Prefetch only necessary related objects (areas + meters)
-    areas = (
-        building.areas.prefetch_related(
-            Prefetch('meters', to_attr='prefetched_meters')
-        )
-    )
-
-    # Fetch the latest aggregate record in a single query
     agg = (
-        HierarchyDataAggregate.objects
-        .filter(site=site, period_type='monthly')
-        .only('data')  # fetch only JSON field
-        .order_by('-start_date')
-        .first()
+        HierarchyDataAggregate.objects.filter(site=building.site, period_type='monthly')
+        .order_by('-start_date').first()
     )
+    area_json = {}
+    if agg:
+        building_json = (agg.data or {}).get('buildings', {})
+        # Names may have been disambiguated with " (#id)" when duplicated.
+        area_json = (building_json.get(building.name) or building_json.get(f"{building.name} (#{building.id})") or {}).get('areas', {})
 
-    if not agg:
-        return JsonResponse({'error': 'No aggregate data found'}, status=404)
-
-    data = agg.data.get('buildings', {}).get(building.name, {}).get('areas', {})
-    area_values = {}
-
-    # Loop through all areas once
+    result_areas = []
     for area in areas:
-        area_data = data.get(area.name, {})
-        area_total = float(
-            area_data.get('area_total', {}).get(measurement, 0) or 0
-        )
+        area_data = area_json.get(area.name) or area_json.get(f"{area.name} (#{area.id})") or {}
         meters_data = area_data.get('meters', {})
+        meters_list = []
+        for meter in area.prefetched_meters:
+            meter_json = meters_data.get(meter.name) or meters_data.get(f"{meter.name} (#{meter.id})")
+            if meter_json is None:
+                continue
+            value = to_number(meter_json.get('data', {}).get(measurement))
+            meters_list.append({"name": meter.name, "value": round(value or 0, 2)})
+        area_total = to_number(area_data.get('area_total', {}).get(measurement))
+        result_areas.append({"name": area.name, "value": round(area_total or 0, 2), "meters": meters_list})
 
-        # Precompute all meter values quickly using list comprehension
-        meters_list = [
-            {
-                "name": meter.name,
-                "value": round(
-                    float(meters_data.get(meter.name, {})
-                          .get('data', {})
-                          .get(measurement, 0) or 0),
-                    2
-                )
-            }
-            for meter in area.prefetched_meters
-            if meter.name in meters_data  # Skip non-existent meters
-        ]
-
-        area_values[area.name] = {
-            "value": round(area_total, 2),
-            "meters": meters_list
-        }
-
-    if not area_values:
-        return JsonResponse({'error': 'No data for this building'}, status=404)
+    if not result_areas:
+        return json_error('This building has no areas configured', 404)
 
     return JsonResponse({
         "building": building.name,
-        "areas": [
-            {"name": k, "value": v["value"], "meters": v["meters"]}
-            for k, v in area_values.items()
-        ]
+        "period": str(agg.start_date) if agg else None,
+        "unit": measurement_units([measurement]).get(measurement, ''),
+        "areas": result_areas,
+        "message": None if agg else "No monthly aggregate available yet",
     })
 
 
+@gadget_endpoint
+def weather(request, dashboard_id):
+    """Server-side proxy for weatherapi.com so the API key never reaches the browser."""
+    dashboard_ = get_dashboard_for(request, dashboard_id)
+    site = dashboard_.site
+    api_key = getattr(settings, 'WEATHER_API_KEY', '')
+    if not api_key:
+        return json_error('Weather service is not configured', 503)
+    location = f"{site.latitude},{site.longitude}" if site.latitude and site.longitude else "Dhaka"
+    cache_key = f"weather:{location}"
+    payload = cache.get(cache_key)
+    if payload is None:
+        try:
+            response = requests.get(
+                "https://api.weatherapi.com/v1/forecast.json",
+                params={"key": api_key, "q": location, "days": 7, "aqi": "no", "alerts": "no"},
+                timeout=8,
+            )
+            response.raise_for_status()
+            raw = response.json()
+        except (requests.RequestException, ValueError) as exc:
+            logger.warning("Weather lookup failed: %s", exc)
+            return json_error('Weather unavailable', 502)
+        payload = {
+            "location": raw.get("location", {}).get("name", ""),
+            "current": {
+                "temp_c": raw.get("current", {}).get("temp_c"),
+                "text": raw.get("current", {}).get("condition", {}).get("text", ""),
+                "icon": raw.get("current", {}).get("condition", {}).get("icon", ""),
+            },
+            "forecast": [
+                {
+                    "date": day.get("date"),
+                    "avgtemp_c": day.get("day", {}).get("avgtemp_c"),
+                    "text": day.get("day", {}).get("condition", {}).get("text", ""),
+                    "icon": day.get("day", {}).get("condition", {}).get("icon", ""),
+                }
+                for day in raw.get("forecast", {}).get("forecastday", [])
+            ],
+        }
+        cache.set(cache_key, payload, 15 * 60)
+    return JsonResponse(payload)
+
+
+# ---------------------------------------------------------------------------
+# Dashboard / gadget management
+# ---------------------------------------------------------------------------
+
 @login_required
-@user_passes_test(lambda u: u.is_superuser)
+@superuser_required
+@require_POST
 def newDashboard(request):
-    if request.method == 'POST':
-        title = request.POST['title']
-        siteID = request.POST['site']
-        site = get_object_or_404(Site, id=siteID)
-        Dashboard.objects.create(title=title, site=site)
+    title = (request.POST.get('title') or '').strip()
+    site = Site.objects.filter(id=request.POST.get('site') or 0).first()
+    if not title or site is None:
+        messages.error(request, "A dashboard needs a title and a site.")
+        return redirect("/dashboard")
+    dashboard_ = Dashboard.objects.create(title=title, site=site)
+    return redirect(f"/dashboard/{dashboard_.id}")
 
-    return redirect("/dashboard")
+
+@gadget_endpoint
+def machineHealthData(request, dashboard_id, gadget_id):
+    """Machines of this dashboard's site that the ML model flags as close to needing maintenance."""
+    from django.db.models import Q
+
+    from ml.models import DeviceHealth
+
+    dashboard_ = get_dashboard_for(request, dashboard_id)
+    get_object_or_404(Gadgets, id=gadget_id, dashboard=dashboard_)
+    site = dashboard_.site
+
+    scored = (DeviceHealth.objects.filter(status=DeviceHealth.OK)
+              .filter(Q(meter__area__building__site=site) | Q(motor__building__site=site))
+              .select_related('meter__area__building', 'motor__building'))
+    rank = {'high': 0, 'medium': 1}
+    machines = []
+    for h in scored:
+        if h.risk not in rank:
+            continue
+        if h.meter_id:
+            area = h.meter.area
+            location = f"{area.building.name} / {area.name}" if area else ''
+            name, kind = (h.meter.name or 'Meter'), 'meter'
+        else:
+            location = h.motor.building.name if h.motor.building_id else ''
+            name, kind = h.motor.motorName, 'motor'
+        lifespan = max(0, min(100, 100 - h.health_score)) if h.health_score is not None else None
+        days = None
+        if h.days_to_maintenance is not None:
+            days = 30 if h.days_to_maintenance >= 30 else round(h.days_to_maintenance)
+        machines.append({
+            'name': name, 'kind': kind, 'location': location, 'risk': h.risk,
+            'lifespan': lifespan, 'days': days, 'failure_mode': h.failure_mode,
+            'probability': round((h.failure_probability or 0) * 100),
+            'drivers': [d.get('label') for d in (h.drivers or [])[:2] if d.get('label')],
+        })
+    machines.sort(key=lambda m: (rank.get(m['risk'], 9), -(m['lifespan'] or 0)))
+    return JsonResponse({
+        'machines': machines,
+        'at_risk': len(machines),
+        'scored': scored.count(),
+    })
+
+
+def _save_gadget_from_post(request, dashboard_, gadget=None):
+    name = (request.POST.get('name') or '').strip()
+    gadget_type = request.POST.get('gadget_type')
+    if not name or gadget_type not in GADGET_TYPES:
+        messages.error(request, "Please provide a gadget name and a valid gadget type.")
+        return None
+
+    site = dashboard_.site
+    meters = Meters.objects.filter(id__in=request.POST.getlist('meters'), area__building__site=site)
+    measurements = Measurements.objects.filter(id__in=request.POST.getlist('measurement'))
+    building = Buildings.objects.filter(id=request.POST.get('building') or 0, site=site).first()
+    access = [role for role in request.POST.getlist('access') if role in ROLES]
+
+    if gadget_type in ('picturemap',) and building is None:
+        messages.error(request, "Select the building to show in the picture map.")
+        return None
+    if gadget_type in ('valueCard', 'picturemap', 'sankey', 'machineHealth'):
+        meters = Meters.objects.none()
+    elif not meters.exists():
+        messages.error(request, "Select at least one meter of this site.")
+        return None
+    if gadget_type in ('table', 'machineHealth'):
+        measurements = Measurements.objects.none()
+    elif not measurements.exists():
+        messages.error(request, "Select at least one measurement.")
+        return None
+    if gadget_type in ('tool', 'table', 'heatmap') and meters.count() > 1:
+        meters = meters.order_by('id')[:1]
+        meters = Meters.objects.filter(id__in=[m.id for m in meters])
+    if gadget_type in ('pie', 'bar', 'sankey', 'heatmap', 'picturemap', 'valueCard') and measurements.count() > 1:
+        measurements = Measurements.objects.filter(id=measurements.order_by('id').first().id)
+
+    if gadget is None:
+        gadget = Gadgets(dashboard=dashboard_)
+    gadget.name = name
+    gadget.gadget_type = gadget_type
+    gadget.access = access
+    gadget.building = building
+    gadget.save()
+    gadget.meters.set(meters)
+    gadget.measurement.set(measurements)
+    return gadget
+
 
 @login_required
-@user_passes_test(lambda u: u.is_superuser)
+@superuser_required
+@require_POST
 def newGadget(request, dashboardID):
-    if request.method == 'POST':
-        name = request.POST['name']
-        gadget_type = request.POST['gadget_type']
-        dashboard_ = get_object_or_404(Dashboard, id=dashboardID)
-
-        # Get selected meters
-        meters_ids = request.POST.getlist('meters')
-        meters = Meters.objects.filter(id__in=meters_ids)
-
-        building = request.POST['building']
-
-        # Get measurements based on gadget type
-        measurement_ids = request.POST.getlist('measurement')
-        if not measurement_ids:
-            # Fallback in case no measurement is selected
-            measurement_ids = [Measurements.objects.first().id]
-
-        measurements = Measurements.objects.filter(id__in=measurement_ids)
-
-        access = request.POST.getlist('access')
-
-        # Create the gadget
-        gadget = Gadgets.objects.create(
-            name=name,
-            gadget_type=gadget_type,
-            dashboard=dashboard_,
-            access=access,
-            building=Buildings.objects.get(id=int(building))
-        )
-        gadget.meters.set(meters)
-        gadget.measurement.set(measurements)
-        gadget.save()
-
+    dashboard_ = get_object_or_404(Dashboard, id=dashboardID)
+    if _save_gadget_from_post(request, dashboard_):
+        messages.success(request, "Gadget created.")
     return redirect(f'/dashboard/{dashboardID}')
 
-# NO URLs YET
+
 @login_required
-@user_passes_test(lambda u: u.is_superuser)
+@superuser_required
+@require_POST
 def deleteGadget(request, dashboardID, gadgetID):
-    gadget = Gadgets.objects.get(id=gadgetID)
+    gadget = get_object_or_404(Gadgets, id=gadgetID, dashboard_id=dashboardID)
     gadget.delete()
-    return redirect('/dashboard/'+str(dashboardID))
+    messages.success(request, "Gadget deleted.")
+    return redirect('/dashboard/' + str(dashboardID))
 
 
 @login_required
-@user_passes_test(lambda u: u.is_superuser)
+@superuser_required
+@require_POST
 def editGadget(request, dashboardID, gadgetID):
     gadget = get_object_or_404(Gadgets, id=gadgetID, dashboard_id=dashboardID)
-
-    if request.method == 'POST':
-        name = request.POST.get('name')
-        gadget_type = request.POST.get('gadget_type')
-
-        # Multiple select fields
-        meters = request.POST.getlist('meters')
-        measurements = request.POST.getlist('measurement')
-        access = request.POST.getlist('access')
-
-        building = request.POST['building']
-
-        # Update gadget fields
-        gadget.name = name
-        gadget.gadget_type = gadget_type
-        gadget.access = access  # JSONField will store list as JSON
-        gadget.building = Buildings.objects.get(id=int(building))
-
-        # Update M2M relationships
-        gadget.meters.set(meters)
-        gadget.measurement.set(measurements)
-
-        gadget.save()
-
-        return redirect(f'/dashboard/{dashboardID}')  # Adjust redirect as needed
-
+    if _save_gadget_from_post(request, gadget.dashboard, gadget):
+        messages.success(request, "Gadget updated.")
     return redirect(f'/dashboard/{dashboardID}')

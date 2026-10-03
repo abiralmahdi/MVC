@@ -10,21 +10,13 @@ urlpatterns = [
     path('hierarchy/addBuilding', views.addBuilding, name='addBuilding'),
     path('hierarchy/addArea', views.addArea, name='addArea'),
     path('hierarchy/addMeter', views.addMeter, name='addMeter'),
+    path('hierarchy/editMeter/<int:meterID>', views.editMeter, name='editMeter'),
+    path('hierarchy/testMeter/<int:meterID>', views.testMeter, name='testMeter'),
     path('hierarchy/addLoadType', views.addLoadType, name='addLoadType'),
     path('hierarchy/deleteSite/<str:siteID>', views.deleteSite, name='deleteSite'),
     path('hierarchy/deleteArea/<str:siteID>', views.deleteArea, name='deleteArea'),
     path('hierarchy/deleteBuilding/<str:siteID>', views.deleteBuilding, name='deleteBuilding'),
     path('hierarchy/deleteMeter/<str:siteID>', views.deleteMeter, name='deleteMeter'),
+    path('hierarchy/deleteLoadType/<int:loadID>', views.deleteLoadType, name='deleteLoadType'),
     path('configurations', views.configurations, name='configurations'),
-
-    
 ]
-
-
-
-
-
-'''
-
-
-'''

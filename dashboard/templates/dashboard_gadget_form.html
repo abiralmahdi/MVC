@@ -1,0 +1,66 @@
+{# Shared fields of the "add gadget" and "edit gadget" forms. Expects: gadget (or None), areas, dashboard, measurements, accessControl #}
+<div class="mb-3">
+    <label class="form-label">Gadget Name</label>
+    <input type="text" class="form-control" name="name" value="{{ gadget.name|default:'' }}" maxlength="100" required>
+</div>
+
+<div class="mb-3">
+    <label class="form-label">Gadget Type</label>
+    <select class="form-select js-gadget-type" name="gadget_type" required>
+        <option value="">Select a type</option>
+        <option value="pie" {% if gadget.gadget_type == 'pie' %}selected{% endif %}>Pie Chart</option>
+        <option value="bar" {% if gadget.gadget_type == 'bar' %}selected{% endif %}>Bar Chart</option>
+        <option value="line" {% if gadget.gadget_type == 'line' %}selected{% endif %}>Trend Graph</option>
+        <option value="table" {% if gadget.gadget_type == 'table' %}selected{% endif %}>Table</option>
+        <option value="tool" {% if gadget.gadget_type == 'tool' %}selected{% endif %}>Tool</option>
+        <option value="sankey" {% if gadget.gadget_type == 'sankey' %}selected{% endif %}>Sankey</option>
+        <option value="heatmap" {% if gadget.gadget_type == 'heatmap' %}selected{% endif %}>Heat Map</option>
+        <option value="picturemap" {% if gadget.gadget_type == 'picturemap' %}selected{% endif %}>Picture Map</option>
+        <option value="multiple-meter-table" {% if gadget.gadget_type == 'multiple-meter-table' %}selected{% endif %}>Multiple Meter Table</option>
+        <option value="valueCard" {% if gadget.gadget_type == 'valueCard' %}selected{% endif %}>Value Card</option>
+        <option value="machineHealth" {% if gadget.gadget_type == 'machineHealth' %}selected{% endif %}>Machine Health Alert</option>
+    </select>
+    <div class="form-text js-type-help"></div>
+</div>
+
+<div class="mb-3 js-meters-section">
+    <label class="form-label">Meters</label>
+    <select class="form-select js-meters" name="meters" multiple size="6">
+        {% for area in areas %}
+        <optgroup label="{{ area.building.name }} / {{ area.name }}">
+            {% for meter in area.meters.all %}
+            <option value="{{ meter.id }}" {% if gadget and meter.id in gadget.meter_ids %}selected{% endif %}>{{ meter.name }}</option>
+            {% endfor %}
+        </optgroup>
+        {% endfor %}
+    </select>
+    <div class="form-text js-meters-help">Hold Ctrl (Windows) or Cmd (Mac) to select multiple meters.</div>
+</div>
+
+<div class="mb-3 js-building-section d-none">
+    <label class="form-label">Building</label>
+    <select class="form-select js-building" name="building">
+        {% for building in dashboard.site.buildings.all %}
+        <option value="{{ building.id }}" {% if gadget.building_id == building.id %}selected{% endif %}>{{ building.name }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+<div class="mb-3 js-measurement-section">
+    <label class="form-label">Measurements</label>
+    <select class="form-select js-measurements" name="measurement" size="6" multiple>
+        {% for measurement in measurements %}
+        <option value="{{ measurement.id }}" {% if gadget and measurement.name in gadget.measurement_names %}selected{% endif %}>{{ measurement.name }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+<div class="mb-3">
+    <label class="form-label">Access Control</label>
+    <select class="form-select" name="access" multiple required size="6">
+        {% for option in accessControl %}
+        <option value="{{ option }}" {% if not gadget or option in gadget.access %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+    </select>
+    <div class="form-text">Roles that can see this gadget. Superusers always can.</div>
+</div>

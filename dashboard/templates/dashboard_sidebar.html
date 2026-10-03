@@ -1,0 +1,73 @@
+{# Sidebar + "create dashboard" modal shared by the dashboard pages. Expects: sites; optional: dashboard #}
+{% if request.user.is_superuser %}
+<div class="modal fade" id="addDashboardModal" tabindex="-1" aria-labelledby="addDashboardModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="POST" action="/dashboard/newDashboard" class="modal-content">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title" id="addDashboardModalLabel"><i class="fa-solid fa-table-cells-large me-2 text-info"></i>New dashboard</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="newDashboardTitle" class="form-label">Title</label>
+          <input type="text" class="form-control" id="newDashboardTitle" name="title" maxlength="100" placeholder="e.g. Utilities overview" required>
+        </div>
+        <div>
+          <label for="newDashboardSite" class="form-label">Site</label>
+          <select class="form-select" id="newDashboardSite" name="site" required>
+            <option value="">Select a site</option>
+            {% for site in sites %}
+            <option value="{{ site.id }}" {% if dashboard and site.id == dashboard.site_id %}selected{% endif %}>{{ site.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-info">Create dashboard</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<aside id="sidebar" class="sidebar" aria-label="Dashboards">
+  {% include 'sidebar_brand.html' with section="Dashboards" %}
+
+  {% if request.user.is_superuser %}
+  <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#addDashboardModal" type="button"><i class="fa-solid fa-plus me-2"></i>New dashboard</button>
+  {% endif %}
+
+  <a href="/dashboard/" class="{% if request.path == '/dashboard/' %}active{% endif %}"><i class="fa-solid fa-table-cells-large"></i>All dashboards</a>
+  {% if request.user.is_superuser or request.user.userModel.first.role == "Administrator" %}
+  <a href="/dashboard/centralCommand/industryOverview" class="{% if 'centralCommand' in request.path %}active{% endif %}"><i class="fa-solid fa-building-columns"></i>Central dashboard</a>
+  {% endif %}
+
+  <div class="sidebar-label">Sites</div>
+  <div class="accordion accordion-flush" id="sidebarAccordion">
+    {% for site in sites %}
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button {% if not dashboard or site.id != dashboard.site_id %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#siteCollapse{{ site.id }}">
+          <i class="fa-solid fa-industry me-2"></i>{{ site.name }}
+        </button>
+      </h2>
+      <div id="siteCollapse{{ site.id }}" class="accordion-collapse collapse {% if dashboard and site.id == dashboard.site_id %}show{% endif %}" data-bs-parent="#sidebarAccordion">
+        <div class="accordion-body">
+          <ul class="list-unstyled">
+            {% for item in site.dashboard.all %}
+            <li><a href="/dashboard/{{ item.id }}" class="{% if dashboard and item.id == dashboard.id %}text-info{% endif %}"><i class="fa-solid fa-chart-simple"></i>{{ item.title }}</a></li>
+            {% empty %}
+            <li class="small text-muted py-1">No dashboards yet</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <p class="small text-muted mx-3">No sites are assigned to your account.</p>
+    {% endfor %}
+  </div>
+</aside>
+<div id="overlay" class="overlay"></div>

@@ -1,0 +1,17 @@
+{# Sidebar shared by the settings and account-management pages. #}
+<aside id="sidebar" class="sidebar" aria-label="Settings">
+  {% include 'sidebar_brand.html' with section="Administration" %}
+  {% if request.user.is_superuser %}
+  <div class="sidebar-label">System</div>
+  <a href="/settings/" class="{% if request.path == '/settings/' %}active{% endif %}"><i class="fa-solid fa-house"></i>Overview</a>
+  <a href="/settings/configurations" class="{% if '/settings/configurations' in request.path %}active{% endif %}"><i class="fa-solid fa-sliders"></i>Configurations</a>
+  <a href="/settings/hierarchy" class="{% if '/settings/hierarchy' in request.path %}active{% endif %}"><i class="fa-solid fa-sitemap"></i>Plant hierarchy</a>
+  {% if config.machineLearning %}
+  <a href="/ml/" class="{% if request.path|slice:':3' == '/ml' %}active{% endif %}"><i class="fa-solid fa-brain"></i>Machine learning</a>
+  {% endif %}
+  {% endif %}
+  <div class="sidebar-label">People</div>
+  <a href="/accounts/accountSettings" class="{% if 'accountSettings' in request.path or 'register' in request.path %}active{% endif %}"><i class="fa-solid fa-users"></i>User accounts</a>
+  <a href="/accounts/loginHistory" class="{% if 'loginHistory' in request.path %}active{% endif %}"><i class="fa-solid fa-clock-rotate-left"></i>Login history</a>
+</aside>
+<div id="overlay" class="overlay"></div>

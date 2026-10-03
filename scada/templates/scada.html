@@ -1,668 +1,430 @@
 {% extends 'layout.html' %}
+
+{% block title %}SCADA{% if building %} - {{ building.name }}{% endif %} - MarksVision{% endblock %}
+
+{% block head %}
+<style>
+    .blink { animation: blinker 1s step-start infinite; }
+    @keyframes blinker { 50% { opacity: 0.35; } }
+    @media (prefers-reduced-motion: reduce) { .blink { animation: none; } }
+    .equipment-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.1rem; }
+    .motor-card { display: flex; flex-direction: column; overflow: hidden; transition: opacity 0.2s, border-color 0.2s; }
+    .motor-card.stale { opacity: 0.72; }
+    .motor-card.running { border-color: rgba(34, 197, 94, 0.35) !important; }
+    .motor-card.tripped { border-color: rgba(240, 82, 82, 0.5) !important; }
+    .motor-head { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.1rem 0.8rem; border-bottom: 1px solid var(--mvc-border); }
+    .motor-icon { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--mvc-surface-3); color: var(--mvc-muted); flex-shrink: 0; }
+    .motor-card.running .motor-icon { background: rgba(34, 197, 94, 0.12); color: #4ade80; }
+    .motor-card.running .motor-icon i { animation: spin 2.4s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .motor-card.running .motor-icon i { animation: none; } }
+    .motor-card.tripped .motor-icon { background: rgba(240, 82, 82, 0.12); color: #f87171; }
+    .motor-body { padding: 0.9rem 1.1rem; flex: 1; }
+    .field-row { display: flex; justify-content: space-between; align-items: baseline; padding: 0.35rem 0; border-bottom: 1px dashed var(--mvc-border); font-size: 0.84rem; }
+    .field-row:last-child { border-bottom: 0; }
+    .field-row .field-value { font-family: var(--mvc-mono); color: var(--mvc-accent); }
+    .motor-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; padding: 0.8rem 1.1rem 1rem; border-top: 1px solid var(--mvc-border); background: rgba(0, 0, 0, 0.15); }
+    .motor-foot .btn { height: 40px; }
+    .tank-card { padding: 1.1rem; }
+    .tank-visual { display: flex; justify-content: center; align-items: stretch; gap: 1rem; height: 220px; margin: 0.75rem 0; }
+    .tank-vessel { position: relative; width: 84px; border-radius: 14px; border: 1px solid var(--mvc-border-strong); background: var(--mvc-surface-0); overflow: hidden; box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.6); }
+    .tank-fill { position: absolute; left: 0; right: 0; bottom: 0; height: 0%; background: linear-gradient(180deg, rgba(34, 211, 238, 0.85), rgba(57, 135, 229, 0.9)); box-shadow: 0 0 24px rgba(34, 211, 238, 0.45); transition: height 0.6s ease; }
+    .tank-fill::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: rgba(255, 255, 255, 0.7); }
+    .tank-scale { display: flex; flex-direction: column; justify-content: space-between; font-size: 0.68rem; color: var(--mvc-muted); font-family: var(--mvc-mono); }
+    .tank-indicators { display: flex; flex-direction: column; justify-content: space-between; }
+    .tank-indicator { min-width: 64px; text-align: center; padding: 0.3rem 0.5rem; border-radius: 6px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid var(--mvc-border); color: var(--mvc-muted); background: var(--mvc-surface-2); }
+    .tank-indicator.active-high { background: rgba(240, 82, 82, 0.15); border-color: rgba(240, 82, 82, 0.5); color: #f87171 !important; box-shadow: 0 0 14px rgba(240, 82, 82, 0.35); }
+    .tank-indicator.active-low { background: rgba(245, 184, 61, 0.15); border-color: rgba(245, 184, 61, 0.5); color: #fbbf24 !important; box-shadow: 0 0 14px rgba(245, 184, 61, 0.3); }
+    .tank-level { font-family: var(--mvc-mono); font-size: 1.1rem; text-align: center; background: transparent !important; border: 0 !important; color: var(--mvc-text) !important; padding: 0; }
+</style>
+{% endblock %}
+
 {% block body %}
 
-<style>
-    .accordion-button::after {
-      display: none !important;
-    }
-    .scale-annotations span {
-      line-height: 1;
-    }
-
-    .dark-shadow {
-      box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.9) !important; /* darker shadow */
-    }
-    .blink {
-      animation: blinker 1s step-start infinite;
-    }
-
-    @keyframes blinker {
-      50% {
-        opacity: 0;
-      }
-    }
-  </style>
-
-<!-- Sidebar -->
-<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
-    style="overflow-y: auto;">
-    <div class="d-flex m-3">
-        <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
-        <h3 class="h6">Vision Center</h3>
-    </div>
-
-    <form class="form m-3">
-        <div class="form-group">
-            <input type="text" class="form-control" placeholder="Search...">
-        </div>
-    </form>
-
+<aside id="sidebar" class="sidebar" aria-label="SCADA">
+    {% include 'sidebar_brand.html' with section="SCADA" %}
+    <a href="/scada/" class="{% if not building %}active{% endif %}"><i class="fa-solid fa-layer-group"></i>All buildings</a>
+    <div class="sidebar-label">Buildings by site</div>
     <div class="accordion accordion-flush" id="sidebarAccordion">
         {% for site in sites %}
-        <!-- Site Accordion -->
-        <div class="accordion-item bg-dark border-0">
+        <div class="accordion-item">
           <h2 class="accordion-header">
-            <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
-              data-bs-target="#siteCollapse{{ forloop.counter }}">
-              <i class="fa-solid fa-folder"></i>
-              <span class="mx-2">{{ site.name }}</span>
+            <button class="accordion-button {% if not building or building.site_id != site.id %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#siteCollapse{{ site.id }}">
+              <i class="fa-solid fa-industry me-2"></i>{{ site.name }}
             </button>
           </h2>
-          <div id="siteCollapse{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-            <div class="accordion-body pl-3">
+          <div id="siteCollapse{{ site.id }}" class="accordion-collapse collapse {% if building and building.site_id == site.id %}show{% endif %}" data-bs-parent="#sidebarAccordion">
+            <div class="accordion-body">
               <ul class="list-unstyled">
-                {% for building in site.buildings.all %}
-                <li class="mb-1">
-                  <a href="/scada/building/{{ building.id }}" class="text-white text-decoration-none">
-                    <i class="fa-solid fa-building me-2"></i> {{ building.name }}
-                  </a>
-                </li>
+                {% for item in site.buildings.all %}
+                <li><a href="/scada/building/{{ item.id }}" class="{% if building and item.id == building.id %}text-info{% endif %}"><i class="fa-solid fa-building"></i>{{ item.name }}</a></li>
                 {% empty %}
-                <li class="text-muted">No buildings</li>
+                <li class="small text-muted py-1">No buildings</li>
                 {% endfor %}
               </ul>
             </div>
           </div>
         </div>
         {% endfor %}
-      </div>
-      
-      
-</div>
-
-
-<!-- Add/Edit Motor Modal -->
-<div class="modal fade" id="motorModal" tabindex="-1" aria-labelledby="motorModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content bg-dark text-white">
-        <div class="modal-header">
-          <h5 class="modal-title" id="motorModalLabel">Add/Edit Motor</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-  
-        <div class="modal-body">
-          <!-- Motor Form -->
-          <form id="motorForm" method="POST" action="/scada/saveMotor" class="flex-fill me-3">
-            {% csrf_token %}
-            <div class="d-flex">
-        
-              <!-- Motor Fields -->
-              <div>
-              <div class="mb-3">
-                <label class="form-label">Motor Name</label>
-                <input type="text" class="form-control" name="motorName" required>
-              </div>
-        
-              <div class="mb-3">
-                <label class="form-label">Building</label>
-                <select name="building" class="form-select" required>
-                  {% for site in sites %}
-                    {% for building in site.buildings.all %}
-                      <option value="{{ building.id }}">{{ building.name }}</option>
-                    {% endfor %}
-                  {% endfor %}
-                </select>
-              </div>
-        
-              <div class="mb-3">
-                <label class="form-label">IP</label>
-                <input type="text" class="form-control" name="ip" placeholder="192.168.0.10" required>
-              </div>
-        
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">DB Number</label>
-                  <input type="number" class="form-control" name="dbNo" required>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Rack</label>
-                  <input type="number" class="form-control" name="rack" value="0" required>
-                </div>
-              </div>
-        
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Slot</label>
-                  <input type="number" class="form-control" name="slot" value="1" required>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Start Byte</label>
-                  <input type="number" class="form-control" name="startByte" value="0" required>
-                </div>
-              </div>
-        
-              <div class="mb-3">
-                <label class="form-label">Data Size</label>
-                <input type="number" class="form-control" name="dataSize" value="6" required>
-              </div>
-        
-              <!-- Motor ON Offset -->
-              <hr class="border-secondary">
-              <h6>Motor ON Offset</h6>
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Byte</label>
-                  <input type="number" class="form-control" name="motorOnByte" value="0" required>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Bit</label>
-                  <input type="number" class="form-control" name="motorOnBit" value="0" required>
-                </div>
-              </div>
-        
-              <!-- Motor OFF Offset -->
-              <h6>Motor OFF Offset</h6>
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Byte</label>
-                  <input type="number" class="form-control" name="motorOffByte" value="0" required>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Bit</label>
-                  <input type="number" class="form-control" name="motorOffBit" value="1" required>
-                </div>
-              </div>
-
-              <!-- Run Feedback Offset -->
-              <h6>Run Feedback Offset</h6>
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Byte</label>
-                  <input type="number" class="form-control" name="runFeedbackByte" value="0" required>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Bit</label>
-                  <input type="number" class="form-control" name="runFeedbackBit" value="1" required>
-                </div>
-              </div>
-
-              <!-- Trip Offset -->
-              <h6>Trip Offset</h6>
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Byte</label>
-                  <input type="number" class="form-control" name="tripByte" value="0" required>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Bit</label>
-                  <input type="number" class="form-control" name="tripBit" value="1" required>
-                </div>
-              </div>
-        
-              <!-- Custom Fields -->
-              <hr class="border-secondary">
-              <h6>Custom Fields</h6>
-              <div id="customFieldsContainer"></div>
-              <button type="button" class="btn btn-outline-info btn-sm mt-2" id="addFieldBtn">
-                <i class="fa-solid fa-plus"></i> Add Field
-              </button>
-        
-              <hr class="border-secondary">
-              <!-- Add Tank Button -->
-              <button type="button" class="btn btn-outline-primary mt-2" id="addTankBtn">
-                <i class="fa-solid fa-water"></i> Add Tank
-              </button>
-              </div>
-        
-
-        
-          <!-- Tank Form (hidden initially) -->
-          <div id="tankForm" class="border-dark bg-dark p-3 d-none">
-            <h6>Add Tank</h6>
-            <div class="row">
-              <div class="col-md-12 mb-3">
-                <label class="form-label">Tank Name</label>
-                <input type="text" class="form-control" name="tankName">
-              </div>
-            </div>
-            <!-- High Byte + High Bit -->
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label">High Byte</label>
-                <input type="number" class="form-control" name="highByte">
-              </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label">High Bit</label>
-                <input type="number" class="form-control" name="highBit">
-              </div>
-            </div>
-          
-            <!-- Low Byte + Low Bit -->
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Low Byte</label>
-                <input type="number" class="form-control" name="lowByte">
-              </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Low Bit</label>
-                <input type="number" class="form-control" name="lowBit">
-              </div>
-            </div>
-          
-            <!-- Value Byte + Value Bit -->
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Value Byte</label>
-                <input type="number" class="form-control" name="valueByte">
-              </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Value Bit</label>
-                <input type="number" class="form-control" name="valueBit">
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Volume</label>
-                <input type="number" class="form-control" name="tankVolume">
-              </div>
-            </div>
-          </div>
-          </div>
-            <div class="modal-footer">
-              <button type="submit" class="btn btn-success">Save</button>
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            </div>
-          </form>
-          
-        </div>
-        
-        <script>
-          document.getElementById("addTankBtn").addEventListener("click", function () {
-            document.getElementById("tankForm").classList.remove("d-none");
-          });
-        </script>
-        
-          
-          
-      </div>
     </div>
-  </div>
-  
-
-<!-- Overlay -->
+</aside>
 <div id="overlay" class="overlay"></div>
-<div class="d-flex">
 
+{% if request.user.is_superuser %}
+<!-- Add Motor Modal -->
+<div class="modal fade" id="motorModal" tabindex="-1" aria-labelledby="motorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <form id="motorForm" method="POST" action="/scada/saveMotor">
+          {% csrf_token %}
+          <input type="hidden" name="fields" id="motorFieldsJson" value="{}">
+          <div class="modal-header">
+            <h5 class="modal-title" id="motorModalLabel"><i class="fa-solid fa-gear me-2 text-info"></i>Add motor</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Motor Name</label>
+                  <input type="text" class="form-control" name="motorName" maxlength="100" required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Building</label>
+                  <select name="building" class="form-select" required>
+                    {% for site in sites %}
+                    <optgroup label="{{ site.name }}">
+                      {% for item in site.buildings.all %}
+                      <option value="{{ item.id }}" {% if building and item.id == building.id %}selected{% endif %}>{{ item.name }}</option>
+                      {% endfor %}
+                    </optgroup>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">PLC IP</label>
+                  <input type="text" class="form-control" name="ip" placeholder="e.g. 192.168.0.66" pattern="^[0-9A-Za-z.\-]+$" required>
+                </div>
+                <div class="row">
+                  <div class="col-4 mb-3"><label class="form-label">DB No.</label><input type="number" class="form-control" name="dbNo" min="1" required></div>
+                  <div class="col-4 mb-3"><label class="form-label">Rack</label><input type="number" class="form-control" name="rack" value="0" min="0" required></div>
+                  <div class="col-4 mb-3"><label class="form-label">Slot</label><input type="number" class="form-control" name="slot" value="1" min="0" required></div>
+                </div>
+                <div class="row">
+                  <div class="col-6 mb-3"><label class="form-label">Start Byte</label><input type="number" class="form-control" name="startByte" value="0" min="0" required></div>
+                  <div class="col-6 mb-3"><label class="form-label">Data Size (bytes)</label><input type="number" class="form-control" name="dataSize" value="16" min="1" required></div>
+                </div>
+                <p class="small text-muted">Byte offsets are relative to the start byte.</p>
+              </div>
+              <div class="col-md-6">
+                <div class="eyebrow mb-1 mt-2">Motor ON command</div>
+                <div class="row">
+                  <div class="col-6 mb-2"><label class="form-label small">Byte</label><input type="number" class="form-control" name="motorOnByte" value="0" min="0" required></div>
+                  <div class="col-6 mb-2"><label class="form-label small">Bit (0-7)</label><input type="number" class="form-control" name="motorOnBit" value="0" min="0" max="7" required></div>
+                </div>
+                <div class="eyebrow mb-1 mt-2">Motor OFF command</div>
+                <div class="row">
+                  <div class="col-6 mb-2"><label class="form-label small">Byte</label><input type="number" class="form-control" name="motorOffByte" value="0" min="0" required></div>
+                  <div class="col-6 mb-2"><label class="form-label small">Bit (0-7)</label><input type="number" class="form-control" name="motorOffBit" value="1" min="0" max="7" required></div>
+                </div>
+                <div class="eyebrow mb-1 mt-2">Run feedback</div>
+                <div class="row">
+                  <div class="col-6 mb-2"><label class="form-label small">Byte</label><input type="number" class="form-control" name="runFeedbackByte" value="0" min="0" required></div>
+                  <div class="col-6 mb-2"><label class="form-label small">Bit (0-7)</label><input type="number" class="form-control" name="runFeedbackBit" value="2" min="0" max="7" required></div>
+                </div>
+                <div class="eyebrow mb-1 mt-2">Trip</div>
+                <div class="row">
+                  <div class="col-6 mb-2"><label class="form-label small">Byte</label><input type="number" class="form-control" name="tripByte" value="0" min="0" required></div>
+                  <div class="col-6 mb-2"><label class="form-label small">Bit (0-7)</label><input type="number" class="form-control" name="tripBit" value="3" min="0" max="7" required></div>
+                </div>
+              </div>
+            </div>
 
+            <hr>
+            <div class="d-flex align-items-center mb-2"><div class="eyebrow">Custom fields</div></div>
+            <div id="customFieldsContainer"></div>
+            <button type="button" class="btn btn-outline-info btn-sm mt-2" id="addFieldBtn"><i class="fa-solid fa-plus"></i> Add Field</button>
 
-
-    {% if request.user.is_superuser %}
-    <button type="button" class="btn btn-info fw-bold ms-auto me-5 mt-3" data-bs-toggle="modal" data-bs-target="#motorModal">
-      <i class="fa-solid fa-plus me-1"></i> Add Motor
-  </button>    
-    {% else %}
-  <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="You are not authorized to create a dashboard">
-    <button class="btn btn-block btn-info ms-3 fw-bold" disabled><i class="fa-solid me-2 fa-plus"></i>Add Motor</button>
-  </span>
-  {% endif %}
-
-
-</div>
-{% if motors or tanks %}
- <!-- ========== MOTORS SECTION ========== -->
-<div id="motor-section" class="d-flex flex-wrap justify-content-center mt-2">
-  {% for motor in motors %}
-  <div class="d-flex align-items-stretch m-3">
-    <div class="card text-white bg-dark dark-shadow border-0 flex-fill" style="width: 22rem;">
-      
-      <!-- Header -->
-      <div class="card-header d-flex align-items-center bg-black">
-        <h6 class="mb-0">
-          <i class="fa-solid fa-microchip me-2"></i> {{ motor.motorName }}
-        </h6>
-        <div id="motorTitle{{motor.id}}" class="ms-2">
-          {% if motor.isOn %}
-            <span class='badge bg-success'>Running</span>
-          {% else %}
-            <span class='badge bg-warning text-dark'>Off</span>
-          {% endif %}
-        </div>
-        <div id="motorTrip{{motor.id}}"></div>
-      </div>
-
-      <!-- Body -->
-      <div class="card-body">
-        <div id="motor-fields-{{ motor.id }}">
-          <p class="text-muted">Loading...</p>
-        </div>
-        <hr class="border-secondary">
-
-        <!-- Control buttons -->
-        <div class="d-flex flex-wrap gap-2 justify-content-between">
-          <button class="btn btn-success btn-sm flex-fill control-button"
-                  data-motor-id="{{ motor.id }}" data-action="start" id="startBtn{{motor.id}}">
-            <i class="fa-solid fa-play me-1"></i> Start
-          </button>
-          <button class="btn btn-danger btn-sm flex-fill control-button"
-                  data-motor-id="{{ motor.id }}" data-action="stop" id="stopBtn{{motor.id}}">
-            <i class="fa-solid fa-stop me-1"></i> Stop
-          </button>
-        </div>
+            <hr>
+            <button type="button" class="btn btn-outline-info btn-sm" id="addTankBtn"><i class="fa-solid fa-water"></i> Add Tank</button>
+            <div id="tankForm" class="pt-3 d-none">
+              <div class="row">
+                <div class="col-md-6 mb-3"><label class="form-label">Tank Name</label><input type="text" class="form-control" name="tankName" maxlength="100"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Volume (full scale)</label><input type="number" class="form-control" name="tankVolume" min="1"></div>
+              </div>
+              <div class="row">
+                <div class="col-3 mb-3"><label class="form-label small">High Byte</label><input type="number" class="form-control" name="highByte" min="0"></div>
+                <div class="col-3 mb-3"><label class="form-label small">High Bit</label><input type="number" class="form-control" name="highBit" min="0" max="7"></div>
+                <div class="col-3 mb-3"><label class="form-label small">Low Byte</label><input type="number" class="form-control" name="lowByte" min="0"></div>
+                <div class="col-3 mb-3"><label class="form-label small">Low Bit</label><input type="number" class="form-control" name="lowBit" min="0" max="7"></div>
+              </div>
+              <div class="row">
+                <div class="col-3 mb-3"><label class="form-label small">Level Byte (INT)</label><input type="number" class="form-control" name="valueByte" min="0"></div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-info">Save motor</button>
+          </div>
+        </form>
       </div>
     </div>
-  </div>
-  {% endfor %}
-</div>
-
-
-<!-- ========== TANKS SECTION ========== -->
-<div id="tank-section" class="d-flex flex-wrap justify-content-center mt-5">
-  {% for tank in tanks %}
-  <div class="d-flex align-items-stretch m-3">
-    <div class="card text-white bg-dark dark-shadow border-0 flex-fill" style="width: 18rem;">
-  
-      <!-- Header -->
-      <div class="card-header bg-black">
-        <h6 class="mb-0">
-          <i class="fa-solid fa-water me-2"></i>{{ tank.tankName }}
-        </h6>
-      </div>
-  
-      <!-- Body -->
-      <div class="card-body text-center">
-  
-        <div class="d-flex justify-content-center align-items-center gap-3">
-  
-          <!-- High/Low Indicators -->
-          <div class="d-flex flex-column justify-content-between align-items-center" style="height: 200px;">
-            <p class="mb-0 mt-3">
-              <i class="fa-solid fa-arrow-up text-danger me-1"></i>
-              <span id="highText{{tank.motor.id}}" class="fw-bold text-danger border border-danger p-2">High</span>
-            </p>
-            <input type="text"
-                 class="form-control form-control-sm text-center"
-                 style="width: 80px;"
-                 id="tank-value-{{ tank.motor.id }}"
-                 readonly>
-  
-            <p class="mb-3">
-              <i class="fa-solid fa-arrow-down text-success me-1"></i>
-              <span id="lowText{{tank.motor.id}}" class="fw-bold text-success border border-success p-2">Low</span>
-            </p>
-          </div>
-  
-          <!-- Scale -->
-          <div class="d-flex justify-content-center align-items-end" style="height: 200px; gap: 5px;">
-
-            <!-- Scale Bar -->
-            <div class="scale-container border border-secondary rounded bg-dark position-relative"
-                 style="height: 100%; width: 30px; overflow: hidden;">
-              <div id="scale-fill-{{ tank.motor.id }}"
-                   class="bg-primary position-absolute bottom-0 start-0 w-100"
-                   style="height: 0%; transition: height 0.5s ease;"></div>
-            </div>
-          
-            <!-- Scale Labels -->
-            <div class="d-flex flex-column justify-content-between" style="height: 100%; font-size: 0.7rem; text-align: left;">
-              <span id="scale-max-{{ tank.motor.id }}">100%</span>
-              <span>75%</span>
-              <span>50%</span>
-              <span>25%</span>
-              <span id="scale-min-{{ tank.motor.id }}">0%</span>
-            </div>
-          
-          </div>
-          
-  
-        </div>
-  
-
-      </div>
-    </div>
-  </div>
-    
-  {% endfor %}
-</div>
-{% else %}
-<div class="container-fluid" id="main-content">
-        
-  <div class="row">
-      <main class="mt-3">
-          <div id="noDocument">
-              <h1 class="h1 text-center mt-5 pt-5 text-secondary"><i class="fa-solid fa-microchip fa-2x"></i></h1>
-              <h3 class="text-center mt-5 text-secondary">No Motors or Tanks Configured</h3>
-          </div>
-
-      </main>
-  </div>
 </div>
 {% endif %}
 
+<div id="main-content" class="container-fluid">
+  <div class="page-header">
+    <div class="page-icon"><i class="fa-solid fa-gears"></i></div>
+    <div>
+      <div class="eyebrow">{% if building %}{{ building.site.name }}{% else %}All buildings{% endif %}</div>
+      <h1 class="page-title">SCADA{% if building %} · {{ building.name }}{% endif %}</h1>
+    </div>
+    <div class="page-actions">
+      <span class="small text-muted d-flex align-items-center gap-2"><span class="live-dot" id="scada-dot"></span><span id="scada-updated">Connecting…</span></span>
+      {% if request.user.is_superuser %}
+      <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#motorModal">
+        <i class="fa-solid fa-plus me-2"></i>Add motor
+      </button>
+      {% endif %}
+    </div>
+  </div>
+  {% if not can_control %}
+  <div class="alert alert-secondary py-2 small"><i class="fa-solid fa-lock me-2"></i>Read-only view: your role cannot operate equipment.</div>
+  {% endif %}
 
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    
-    function fetchMotorAndTank(motorId) {
-      fetch(`/scada/fetchMotorAndTankData/${motorId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.error) {
-            document.getElementById(`motor-fields-${motorId}`).innerHTML =
-              `<p class="text-danger">Error: ${data.error}</p>`;
-            return;
-          }
-  
-          // --- Motor fields ---
-          let container = document.getElementById(`motor-fields-${motorId}`);
-          container.innerHTML = "";
-          for (let [key, value] of Object.entries(data.motor)) {
-            container.innerHTML += `
-              <p class="card-text mb-1">
-                <i class="fa-solid fa-circle me-2 text-info"></i>
-                <strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${value}
-              </p>`;
-          }
-
-          const fieldsDiv = document.getElementById(`motorTitle${motorId}`);
-          const tripDiv = document.getElementById(`motorTrip${motorId}`);
-          if (data.isOn) {
-            fieldsDiv.innerHTML = `<span class='badge bg-success'>Running</span>`;
-          } else {
-            fieldsDiv.innerHTML = `<span class='badge bg-warning text-dark'>Off</span>`;
-          }
-
-          if (data.trip){
-            tripDiv.innerHTML = `<span class='badge bg-danger blink ms-2'>Trip</span>`;
-          } else {
-            tripDiv.innerHTML = ``;
-          }
-  
-          // --- Tank section (if exists) ---
-          if (data.tank && Object.keys(data.tank).length > 0) {
-            // Always append % after the value
-            document.getElementById(`tank-value-${motorId}`).value = data.tank.value;
-            
-            // Icons logic (unchanged) ...
-            let tankCard = document.getElementById(`tank-card-${motorId}`);
-            if (tankCard) {
-                if (data.tank.high === true || data.tank.high === 1) {
-                    document.getElementById('highText' + motorId).classList.add("text-light", "bg-danger");
-                    document.getElementById('highText' + motorId).classList.remove("text-danger");
-                    document.getElementById('lowText' + motorId).classList.remove("text-light", "bg-success");
-                    document.getElementById('lowText' + motorId).classList.add("text-success");
-                } else {
-                    document.getElementById('highText' + motorId).classList.remove("text-light", "bg-danger");
-                    document.getElementById('highText' + motorId).classList.add("text-danger");
-                    document.getElementById('lowText' + motorId).classList.add("text-light", "bg-success");
-                    document.getElementById('lowText' + motorId).classList.remove("text-success");
-                }
-
-                if (data.tank.low === true || data.tank.low === 1) {
-                    document.getElementById('highText' + motorId).classList.remove("text-light", "bg-danger");
-                    document.getElementById('highText' + motorId).classList.add("text-danger");
-                    document.getElementById('lowText' + motorId).classList.add("text-light", "bg-success");
-                    document.getElementById('lowText' + motorId).classList.remove("text-success");
-                } else {
-                    document.getElementById('highText' + motorId).classList.add("text-light", "bg-danger");
-                    document.getElementById('highText' + motorId).classList.remove("text-danger");
-                    document.getElementById('lowText' + motorId).classList.remove("text-light", "bg-success");
-                    document.getElementById('lowText' + motorId).classList.add("text-success");
-                }
-            }
-
-            // Scale update
-            updateMotorScale(motorId, data.tank.value, data.tank.tankVolume);
-        }
-
-        })
-        .catch(() => {
-          document.getElementById(`motor-fields-${motorId}`).innerHTML =
-            `<p class="text-danger">Error fetching data</p>`;
-        });
-    }
-  
-    // Refresh every 3 seconds
+  {% if motors %}
+  <div class="eyebrow mb-2">Motors</div>
+  <div id="motor-section" class="equipment-grid">
     {% for motor in motors %}
-      setInterval(() => fetchMotorAndTank({{ motor.id }}), 3000);
-      fetchMotorAndTank({{ motor.id }});
+    <div class="mvc-panel motor-card" id="motor-card-{{ motor.id }}">
+      <div class="motor-head">
+        <span class="motor-icon"><i class="fa-solid fa-fan"></i></span>
+        <div class="overflow-hidden me-auto">
+          <div class="fw-semibold text-truncate">{{ motor.motorName }}</div>
+          <div class="small text-muted text-truncate">{{ motor.building.name }} · PLC <span class="mvc-mono">{{ motor.ip }}</span> · DB{{ motor.dbNo }}</div>
+        </div>
+        <span id="motorTitle{{ motor.id }}"><span class="status-pill neutral">…</span></span>
+        <span id="motorTrip{{ motor.id }}"></span>
+        {% if request.user.is_superuser %}
+        <form method="POST" action="/scada/deleteMotor/{{ motor.id }}" class="m-0" data-confirm="Delete motor &quot;{{ motor.motorName }}&quot; and its tanks?">
+          {% csrf_token %}
+          <button class="mvc-icon-btn" style="width:30px;height:30px;" type="submit" title="Delete motor"><i class="fa-solid fa-trash-can"></i></button>
+        </form>
+        {% endif %}
+      </div>
+      <div class="motor-body">
+        <div id="motor-fields-{{ motor.id }}"><p class="text-muted small mb-0">Connecting to PLC…</p></div>
+        <p class="small mb-0 mt-2 text-muted" id="motor-command-{{ motor.id }}"></p>
+      </div>
+      <div class="motor-foot">
+        <button type="button" class="btn btn-outline-success control-button" data-motor-id="{{ motor.id }}" data-motor-name="{{ motor.motorName }}" data-action="start" {% if not can_control %}disabled{% endif %}>
+          <i class="fa-solid fa-play me-2"></i>Start
+        </button>
+        <button type="button" class="btn btn-outline-danger control-button" data-motor-id="{{ motor.id }}" data-motor-name="{{ motor.motorName }}" data-action="stop" {% if not can_control %}disabled{% endif %}>
+          <i class="fa-solid fa-stop me-2"></i>Stop
+        </button>
+      </div>
+    </div>
     {% endfor %}
-  });
-  
-  function updateMotorScale(motorId, value, tankVolume) {
-  const scaleFill = document.getElementById(`scale-fill-${motorId}`);
-  if (scaleFill && tankVolume > 0) {
-    // Normalize value with respect to tankVolume
-    let percent = (value / tankVolume) * 100;
-    percent = Math.max(0, Math.min(100, percent)); // Clamp between 0–100
-    scaleFill.style.height = percent + "%";
+  </div>
 
-    // Update annotation labels dynamically
-    document.getElementById(`scale-max-${motorId}`).innerText = tankVolume + "%";
-    document.getElementById(`scale-min-${motorId}`).innerText = "0" + "%";
+  {% if tanks %}
+  <div class="eyebrow mb-2 mt-4">Tanks</div>
+  <div id="tank-section" class="equipment-grid">
+    {% for tank in tanks %}
+    <div class="mvc-panel tank-card" data-tank-id="{{ tank.id }}">
+      <div class="d-flex align-items-center gap-2">
+        <span class="motor-icon" style="width:34px;height:34px;"><i class="fa-solid fa-water text-info"></i></span>
+        <div class="overflow-hidden">
+          <div class="fw-semibold text-truncate">{{ tank.tankName|default:"Tank" }}</div>
+          <div class="small text-muted text-truncate">Filled by {{ tank.motor.motorName }}</div>
+        </div>
+      </div>
+      <div class="tank-visual">
+        <div class="tank-indicators">
+          <span id="tank-high-{{ tank.id }}" class="tank-indicator">High</span>
+          <input type="text" class="form-control form-control-sm tank-level" id="tank-value-{{ tank.id }}" readonly aria-label="Tank level">
+          <span id="tank-low-{{ tank.id }}" class="tank-indicator">Low</span>
+        </div>
+        <div class="tank-vessel"><div id="scale-fill-{{ tank.id }}" class="tank-fill"></div></div>
+        <div class="tank-scale" id="scale-labels-{{ tank.id }}">
+          <span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="empty-state mvc-panel">
+    <div class="empty-icon"><i class="fa-solid fa-microchip"></i></div>
+    <h3>No motors or tanks configured</h3>
+    <p>{% if request.user.is_superuser %}Add a motor with its PLC data block to monitor and control it here.{% else %}Ask an administrator to configure equipment for this building.{% endif %}</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
 
-    // (Optional) show 75%, 50%, 25% as actual values
-    const annots = scaleFill.parentElement.nextElementSibling.querySelectorAll("span");
-    if (annots.length === 5) {
-      annots[1].innerText = Math.round((0.75 * tankVolume)) + "%";
-      annots[2].innerText = Math.round((0.50 * tankVolume)) + "%";
-      annots[3].innerText = Math.round((0.25 * tankVolume)) + "%";
+{% block scripts %}
+{{ field_types|json_script:"scada-field-types" }}
+<script>
+(function () {
+  const POLL_MS = 3000;
+  const buildingId = "{{ building.id|default:'' }}";
+  const byId = (id) => document.getElementById(id);
+
+  function badge(text, cls) {
+    const span = document.createElement('span');
+    span.className = `status-pill ${cls}`;
+    span.textContent = text;
+    return span;
+  }
+
+  function renderMotor(motorId, status) {
+    const fields = byId(`motor-fields-${motorId}`);
+    const title = byId(`motorTitle${motorId}`);
+    const trip = byId(`motorTrip${motorId}`);
+    const command = byId(`motor-command-${motorId}`);
+    const card = byId(`motor-card-${motorId}`);
+    if (!fields) return;
+
+    fields.replaceChildren();
+    title.replaceChildren();
+    trip.replaceChildren();
+
+    if (status.error) {
+      card.classList.add('stale');
+      card.classList.remove('running', 'tripped');
+      title.appendChild(badge('Offline', 'neutral'));
+      const p = document.createElement('p');
+      p.className = 'text-danger small mb-0';
+      p.textContent = status.error;
+      fields.appendChild(p);
+      command.textContent = '';
+      return;
+    }
+    card.classList.remove('stale');
+
+    const entries = Object.entries(status.motor || {});
+    if (!entries.length) {
+      fields.appendChild(Object.assign(document.createElement('p'), { className: 'text-secondary small mb-0', textContent: 'No custom fields configured.' }));
+    }
+    entries.forEach(([key, value]) => {
+      const row = document.createElement('div');
+      row.className = 'field-row';
+      const label = document.createElement('span');
+      label.className = 'text-muted';
+      label.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+      const val = document.createElement('span');
+      val.className = 'field-value';
+      val.textContent = value === null || value === undefined ? 'N/A' : value;
+      row.append(label, val);
+      fields.appendChild(row);
+    });
+
+    title.appendChild(status.isOn ? badge('Running', 'good') : badge('Stopped', 'neutral'));
+    card.classList.toggle('running', !!status.isOn && !status.trip);
+    card.classList.toggle('tripped', !!status.trip);
+    if (status.trip) trip.appendChild(badge('Trip', 'bad blink'));
+    const parts = [];
+    if (status.commandOn !== null && status.commandOn !== undefined) parts.push(`Start cmd: ${status.commandOn ? 'ON' : 'off'}`);
+    if (status.commandOff !== null && status.commandOff !== undefined) parts.push(`Stop cmd: ${status.commandOff ? 'ON' : 'off'}`);
+    if ((status.errors || []).length) parts.push(`⚠ ${status.errors.join('; ')}`);
+    command.textContent = parts.join(' · ');
+
+    (status.tanks || []).forEach(renderTank);
+  }
+
+  function renderTank(tank) {
+    const value = byId(`tank-value-${tank.id}`);
+    if (!value) return;
+    value.value = tank.value === null || tank.value === undefined ? 'N/A' : tank.value;
+    byId(`tank-high-${tank.id}`).classList.toggle('active-high', tank.high === true);
+    byId(`tank-low-${tank.id}`).classList.toggle('active-low', tank.low === true);
+
+    const volume = Number(tank.tankVolume) || 0;
+    const fill = byId(`scale-fill-${tank.id}`);
+    if (volume > 0 && tank.value !== null && tank.value !== undefined) {
+      const percent = Math.max(0, Math.min(100, (Number(tank.value) / volume) * 100));
+      fill.style.height = `${percent}%`;
+      const labels = byId(`scale-labels-${tank.id}`).querySelectorAll('span');
+      [1, 0.75, 0.5, 0.25, 0].forEach((ratio, i) => { labels[i].textContent = Math.round(volume * ratio); });
     }
   }
-}
 
-  </script>
-  
-  
+  let polling = false;
+  let loadedOnce = false;
+  async function poll() {
+    if (!document.querySelector('.motor-card')) return;
+    if (polling || (document.hidden && loadedOnce)) return;
+    polling = true;
+    loadedOnce = true;
+    try {
+      const data = await MVC.fetchJSON(`/scada/status${buildingId ? '?building=' + buildingId : ''}`);
+      Object.entries(data.motors || {}).forEach(([id, status]) => renderMotor(id, status));
+      byId('scada-updated').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+      byId('scada-dot').className = 'live-dot';
+    } catch (error) {
+      byId('scada-updated').textContent = `Update failed: ${error.message}`;
+      byId('scada-dot').className = 'live-dot bad';
+    } finally {
+      polling = false;
+    }
+  }
 
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-      const addFieldBtn = document.getElementById("addFieldBtn");
-      const container = document.getElementById("customFieldsContainer");
-    
-      addFieldBtn.addEventListener("click", function() {
-        const row = document.createElement("div");
-        row.classList.add("row", "mb-2");
-    
-        row.innerHTML = `
-          <div class="col-md-4">
-            <select name="datatype[]" class="form-select">
-              <option value="INT">INT</option>
-              <option value="FLOAT">FLOAT</option>
-              <option value="BOOL">BOOL</option>
-              <option value="STRING">STRING</option>
-            </select>
-          </div>
-          <div class="col-md-4">
-            <input type="text" name="fieldName[]" class="form-control" placeholder="Field Name" required>
-          </div>
-          <div class="col-md-4">
-            <div class="d-flex gap-2">
-              <input type="number" name="offset1[]" class="form-control" placeholder="Offset Byte" required>
-              <input type="number" name="offset2[]" class="form-control" placeholder="Offset Bit">
-            </div>
-          </div>
-        `;
-    
-        container.appendChild(row);
+  // Start / Stop commands (event delegation: works for every motor card).
+  document.addEventListener('click', async (event) => {
+    const button = event.target.closest('.control-button');
+    if (!button || button.disabled) return;
+    const { motorId, motorName, action } = button.dataset;
+    if (!window.confirm(`${action === 'start' ? 'START' : 'STOP'} motor "${motorName}"?`)) return;
+
+    const buttons = document.querySelectorAll(`.control-button[data-motor-id="${motorId}"]`);
+    buttons.forEach(b => { b.disabled = true; });
+    try {
+      const data = await MVC.fetchJSON('/scada/controlMotor/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ motor_id: motorId, action }),
       });
-    
-      // Convert dynamic inputs into JSON before submit
-      const motorForm = document.getElementById("motorForm");
-      motorForm.addEventListener("submit", function(e) {
-        e.preventDefault();
-    
-        const datatypes = document.getElementsByName("datatype[]");
-        const fieldNames = document.getElementsByName("fieldName[]");
-        const offsets1 = document.getElementsByName("offset1[]");
-        const offsets2 = document.getElementsByName("offset2[]");
-    
-        let fieldsJSON = {};
-        for (let i = 0; i < fieldNames.length; i++) {
-          let fname = fieldNames[i].value;
-          let dtype = datatypes[i].value;
-          let off1 = offsets1[i].value;
-          let off2 = offsets2[i].value;
-          if(fname) {
-            fieldsJSON[fname] = [dtype, parseInt(off1), parseInt(off2)];
-          }
-        }
-    
-        // Create hidden input to submit JSON
-        let hiddenInput = document.createElement("input");
-        hiddenInput.type = "hidden";
-        hiddenInput.name = "fields";
-        hiddenInput.value = JSON.stringify(fieldsJSON);
-    
-        motorForm.appendChild(hiddenInput);
-        motorForm.submit();
-      });
+      renderMotor(motorId, data);
+    } catch (error) {
+      window.alert(`Command failed: ${error.message}`);
+    } finally {
+      buttons.forEach(b => { b.disabled = false; });
+    }
+  });
+
+  {% if request.user.is_superuser %}
+  // Add-motor form: custom fields and tank section.
+  const FIELD_TYPES = JSON.parse(document.getElementById('scada-field-types').textContent);
+  byId('addTankBtn').addEventListener('click', () => byId('tankForm').classList.toggle('d-none'));
+  byId('addFieldBtn').addEventListener('click', () => {
+    const row = document.createElement('div');
+    row.className = 'row g-2 mb-2 custom-field-row';
+    row.innerHTML = `
+      <div class="col-md-3"><select class="form-select field-type">${FIELD_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}</select></div>
+      <div class="col-md-4"><input type="text" class="form-control field-name" placeholder="Field name" required maxlength="60"></div>
+      <div class="col-md-2"><input type="number" class="form-control field-byte" placeholder="Byte" min="0" required></div>
+      <div class="col-md-2"><input type="number" class="form-control field-bit" placeholder="Bit" min="0" max="7" value="0"></div>
+      <div class="col-md-1"><button type="button" class="btn btn-outline-danger remove-field w-100 px-0" title="Remove"><i class="fa-solid fa-xmark"></i></button></div>`;
+    row.querySelector('.remove-field').addEventListener('click', () => row.remove());
+    byId('customFieldsContainer').appendChild(row);
+  });
+  byId('motorForm').addEventListener('submit', () => {
+    const fields = {};
+    document.querySelectorAll('.custom-field-row').forEach(row => {
+      const name = row.querySelector('.field-name').value.trim();
+      if (!name) return;
+      fields[name] = [row.querySelector('.field-type').value, parseInt(row.querySelector('.field-byte').value, 10) || 0, parseInt(row.querySelector('.field-bit').value, 10) || 0];
     });
-    </script>
-    
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-          const startBtn = document.getElementById("startBtn");
-          const stopBtn = document.getElementById("stopBtn");
-        
-          function controlMotor(motorId, action) {
-            fetch("/scada/controlMotor/", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-CSRFToken": "{{ csrf_token }}"
-              },
-              body: new URLSearchParams({
-                motor_id: motorId,
-                action: action
-              })
-            })
-            .then(res => res.json())
-            .then(data => {
-              if (data.success) {
-                const fieldsDiv = document.getElementById(`motorTitle${motorId}`);
-                const tripDiv = document.getElementById(`motorTrip${motorId}`);
-                if (data.isOn) {
-                  fieldsDiv.innerHTML = `<span class='badge bg-success'>Running</span>`;
-                } else {
-                  fieldsDiv.innerHTML = `<span class='badge bg-warning text-dark'>Off</span>`;
-                }
-                if (data.trip){
-                  tripDiv.innerHTML = `<span class='badge bg-danger blink ms-2'>Trip</span>`;
-                } else {
-                  tripDiv.innerHTML = ``;
-                } 
-              } else {
-                alert("Error: " + data.error);
-              }
-            });
-          }
-        
-          if (startBtn) {
-            startBtn.addEventListener("click", function () {
-              const motorId = this.dataset.motorId;
-              controlMotor(motorId, "start");
-            });
-          }
-        
-          if (stopBtn) {
-            stopBtn.addEventListener("click", function () {
-              const motorId = this.dataset.motorId;
-              controlMotor(motorId, "stop");
-            });
-          }
-        });
-        </script>
-        
-        
+    byId('motorFieldsJson').value = JSON.stringify(fields);
+  });
+  {% endif %}
 
+  poll();
+  setInterval(poll, POLL_MS);
+})();
+</script>
 {% endblock %}

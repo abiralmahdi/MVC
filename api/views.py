@@ -1,94 +1,93 @@
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-import json
+"""Machine-to-machine API used only by the MVC_Master vendor console.
+
+Every endpoint requires the shared secret in the ``X-API-Key`` header
+(see ``api.permissions.HasMasterApiKey`` and ``settings.MVC_MASTER_API_KEY``).
+"""
+import logging
+
 from django.contrib.auth.models import User
-from accounts.models import UserModel
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from django.db import transaction
 from rest_framework import status
+from rest_framework.generics import ListAPIView
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from accounts.models import UserModel
+from dynamic.models import Site
 from home.models import GlobalConfiguration
 
+from .serializers import (
+    GlobalConfigurationSerializer,
+    RegisterUserSerializer,
+    SubscriptionUpdateSerializer,
+    UserModelSerializer,
+)
+
+logger = logging.getLogger('api')
+
+
 class RegisterUser(APIView):
-    authentication_classes = []  # Open: no token auth for now
-    permission_classes = []      # No permission checks for now
-
     def post(self, request):
-        # DRF auto-parses JSON:
-        data = request.data
-        role = data.get('role')
-        username = data.get('username')
-        password1 = data.get('password')
-        superuser = data.get('superuser')
+        serializer = RegisterUserSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({"status": "invalid", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        data = serializer.validated_data
 
+        username = data['username'].strip()
         if User.objects.filter(username=username).exists():
             return Response({"status": "user exists"}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = User.objects.create_user(username=username, email=username, password=password1, first_name='')
-        user.is_superuser = superuser
-        user.is_staff = superuser
-        user.save()
-        print('USER CREATED')
-        # ⚠️ Never store raw password in a separate model — maybe just omit it?
-        usermodel = UserModel.objects.create(
-            user=user,
-            name='',
-            role=role,
-            email=username,
-            password=password1,   # Consider removing this line!
-            profilePic=''
-        )
-        print('USER MODEL CREATED')
+        site = Site.objects.filter(pk=data['site']).first() if data.get('site') else None
 
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=username,
+                email=username,
+                password=data['password'],
+                first_name=data.get('name', ''),
+            )
+            user.is_superuser = data['superuser']
+            user.is_staff = data['superuser']
+            user.save(update_fields=['is_superuser', 'is_staff'])
+            UserModel.objects.create(
+                user=user,
+                name=data.get('name', ''),
+                role=data.get('role', ''),
+                email=username,
+                site=site,
+                password=data['password'],
+            )
+
+        logger.info("User %s created through the master API (superuser=%s)", username, data['superuser'])
         return Response({"status": "saved"}, status=status.HTTP_201_CREATED)
 
-    def get(self, request):
-        return Response({"status": "not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-
-
-from .serializers import GlobalConfigurationSerializer
 
 class GlobalConfigurationView(APIView):
     def get(self, request):
-        config = GlobalConfiguration.objects.first()
-        if not config:
-            return Response({"error": "No configuration found."}, status=status.HTTP_404_NOT_FOUND)
-        serializer = GlobalConfigurationSerializer(config)
+        serializer = GlobalConfigurationSerializer(GlobalConfiguration.load())
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class UpdateSubscription(APIView):
+    def post(self, request):
+        serializer = SubscriptionUpdateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-
-@csrf_exempt
-def updateSubscription(request):
-    if request.method == 'POST':
-        # Use request.body for JSON payloads:
-        data = json.loads(request.body.decode('utf-8'))
-        status = data.get('subscribed')
-        print('Raw status:', status)
-
-        # Cast safely
-        status_bool = str(status).lower() in ['true', '1']
-
-        config = GlobalConfiguration.objects.first()
-        config.subscribed = status_bool
-        config.report = status_bool
-        config.dashboard = status_bool
-        config.alarm = status_bool
-        config.siteLocations = status_bool
+        subscribed = serializer.validated_data['subscribed']
+        config = GlobalConfiguration.load()
+        config.subscribed = subscribed
+        config.report = subscribed
+        config.dashboard = subscribed
+        config.alarm = subscribed
+        config.siteLocations = subscribed
+        config.billing = subscribed
         config.save()
 
-        return JsonResponse({'status': 'done'})
+        logger.warning("Subscription set to %s by the master console", subscribed)
+        return Response({'status': 'done', 'subscribed': subscribed})
 
-    return JsonResponse({'error': 'Invalid method'}, status=405)
-
-
-
-from rest_framework.generics import ListAPIView
-from .serializers import UserModelSerializer
 
 class UserModelListView(ListAPIView):
-    queryset = UserModel.objects.all()
+    queryset = UserModel.objects.select_related('user', 'site').order_by('id')
     serializer_class = UserModelSerializer

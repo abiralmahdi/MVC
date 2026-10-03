@@ -8,7 +8,7 @@ class ReportFormat(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
+    user = models.ForeignKey(UserModel, on_delete=models.SET_NULL, null=True, blank=True)
     logo = models.ImageField(upload_to='media/reportImages')
     site = models.ForeignKey(Site, on_delete=models.CASCADE, null=True, blank=True, related_name='reports')
 
@@ -42,15 +42,15 @@ class ReportDiagram(models.Model):
     def __str__(self):
         return f"{self.diagram_type} for {self.report_format.title} and ID: {self.id}"
 
-from django.conf import settings
-from django.db import models
 
 def get_default_user():
-    # Returns the first user as default, or None if no users exist
-    return UserModel.objects.first().pk if UserModel.objects.exists() else None
+    """Kept only because migration report.0001_initial references it."""
+    first = UserModel.objects.first()
+    return first.pk if first else None
+
 
 class Billing(models.Model):
-    meter = models.ForeignKey(Meters, on_delete=models.DO_NOTHING)
+    meter = models.ForeignKey(Meters, on_delete=models.PROTECT)
     rate = models.DecimalField(max_digits=10, decimal_places=4)
     fixed_charge = models.DecimalField(max_digits=10, decimal_places=4, default=0.0, null=True, blank=True)
     tax = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)  # Percentage
@@ -61,12 +61,14 @@ class Billing(models.Model):
     remarks = models.CharField(max_length=1000, default='', null=True, blank=True)
     total_consumption = models.DecimalField(max_digits=10, decimal_places=2, default=0.0) 
     penalty = models.DecimalField(max_digits=10, decimal_places=2, default=0.0) 
-    extra_fields = models.JSONField()
+    extra_fields = models.JSONField(default=dict, blank=True)
     authority = models.CharField(max_length=100, default="")
     generatedBy = models.ForeignKey(
-        UserModel, 
-        on_delete=models.DO_NOTHING, 
-        default=get_default_user,
-        null=True,  # Allow null if no user exists
+        UserModel,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True
     )
+
+    def __str__(self):
+        return f"Bill #{self.pk} - {self.meter.name} ({self.date_range_start} to {self.date_range_end})"

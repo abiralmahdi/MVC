@@ -1,246 +1,151 @@
 {% extends 'layout.html' %}
-{% block body %}
 
+{% block title %}Billing - MarksVision{% endblock %}
+
+{% block head %}
 <style>
-    .accordion-button::after {
-    display: none !important;
-}
+  .extra-field-row .btn { height: 36px; width: 36px; }
 </style>
+{% endblock %}
 
+{% block body %}
+{% include 'billing_sidebar.html' %}
 
-<!-- Sidebar -->
-<div id="sidebar" class="sidebar position-fixed d-flex flex-column bg-dark text-white vh-100 "
-    style="overflow-y: auto;">
-    <div class="d-flex m-3">
-        <h3 class="h6 text-info fw-bold mx-2">MARKS</h3>
-        <h3 class="h6">Vision Center</h3>
+<div class="container-xl" id="main-content">
+  <div class="page-header">
+    <div class="page-icon"><i class="fa-solid fa-receipt"></i></div>
+    <div>
+      <h1 class="page-title">New electricity bill</h1>
+      <p class="page-subtitle">Consumption is calculated from the meter's Energy (kWh) counter for the reading period.</p>
     </div>
-
-    <form class="form m-3">
-        <div class="form-group">
-            <input type="text" class="form-control" placeholder="Search...">
-        </div>
-    </form>
-
-    <div class="accordion accordion-flush" id="sidebarAccordion">
-      {% for site in sites %}
-      <!-- Site Accordion -->
-      <div class="accordion-item bg-dark border-0">
-          <h2 class="accordion-header">
-              <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse"
-                  data-bs-target="#siteCollapse{{ forloop.counter }}">
-                  <i class="fa-solid fa-folder"></i> 
-                  <span class="mx-2">{{ site.name }}</span>
-              </button>
-          </h2>
-          <div id="siteCollapse{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-              <div class="accordion-body pl-3">
-  
-                  <ul class="list-unstyled">
-                      {% for billing in billings %}
-                      <li>
-                          <a href="/billing/{{ billing.id }}"
-                              class="text-white text-decoration-none">
-                              <i class="fa-solid fa-file"></i> 
-                              {{ billing.meter.name }}, {{ billing.meter.area.name }}, {{ billing.meter.area.building.name }} - ({{billing.date_range_start}}-{{billing.date_range_end}})
-                          </a>
-                      </li>
-                      {% endfor %}
-                  </ul>
-  
-              </div>
-          </div>
-      </div>
-  {% endfor %}
-  
-    </div>
-</div>
-
-
-<!-- Overlay -->
-<div id="overlay" class="overlay"></div>
-<div class="container mt-4 d-flex justify-content-center align-items-center">
-    
-        
-    <div class="w-100">
-        <form method="post" action="/billing/create_billing" id="billing-form">
-          {% csrf_token %}
-      
-          <div class="card shadow bg-dark text-light border-0 rounded-3">
-            <div class="card-header bg-black text-white">
-              <h5 class="mb-0">Billing Information</h5>
-            </div>
-            <div class="card-body p-4">
-
-              <div class="row">
-                <!-- Billing Authority -->
-                <div class="col-md-12 mb-3">
-                  <label class="form-label fw-bold">Billing Authority</label>
-                  <input type="text" name="authority" class="form-control" placeholder="Enter billing authority" required>
-                </div>
-              </div>
-      
-              <div class="row">
-                <!-- Meter -->
-                <div class="col-md-12 mb-3">
-                  <label class="form-label fw-bold">Meter</label>
-                  <select name="meter" class="form-select" id="meter">
-                    {% for meter in meters %}
-                      <option value="{{ meter.id }}">{{ meter.name }}, {{ meter.area.name }}, {{ meter.area.building.name }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-              </div>
-              <input type="hidden" name="meter" id="meter_hidden" disabled>
-              <script>
-                document.addEventListener("DOMContentLoaded", function () {
-                  const urlParams = new URLSearchParams(window.location.search);
-                  const meterId = urlParams.get("meter");
-
-                  if (meterId) {
-                    const meterSelect = document.getElementById("meter");
-                    meterSelect.value = meterId;
-                    document.getElementById("meter_hidden").disabled = false;
-                    meterSelect.disabled = true
-                    document.getElementById("meter_hidden").value = meterId; // ensures POST
-                  }
-                });
-
-              </script>
-      
-              <div class="row">
-                <!-- Rate -->
-                <div class="col-md-4 mb-3">
-                  <label class="form-label fw-bold">Rate</label>
-                  <input type="number" step="0.0001" name="rate" class="form-control" placeholder="Enter rate">
-                </div>
-                <!-- Tax -->
-                <div class="col-md-4 mb-3">
-                  <label class="form-label fw-bold">Tax (%)</label>
-                  <input type="number" step="0.01" name="tax" class="form-control" placeholder="e.g. 15">
-                </div>
-                <!-- Tax -->
-                <div class="col-md-4 mb-3">
-                  <label class="form-label fw-bold">Penalty if paid after due date</label>
-                  <input type="number" step="0.01" name="penalty" class="form-control" placeholder="Penalty">
-                </div>
-              </div>
-      
-              <div class="row">
-                <!-- Date Range Start -->
-                <div class="col-md-4 mb-3">
-                  <label class="form-label fw-bold">Previous Date</label>
-                  <input type="date" name="date_range_start" class="form-control">
-                </div>
-      
-                <!-- Date Range End -->
-                <div class="col-md-4 mb-3">
-                  <label class="form-label fw-bold">Current Date</label>
-                  <input type="date" name="date_range_end" class="form-control">
-                </div>
-      
-                <!-- Due Date (Auto set to +1 month) -->
-                <div class="col-md-4 mb-3">
-                  <label class="form-label fw-bold">Billing Due Date</label>
-                  <input type="date" name="date_due" id="date_due" class="form-control" readonly>
-                </div>
-              </div>
-      
-              <!-- Dynamic Extra Fields -->
-              <div class="mb-3">
-                <label class="form-label fw-bold">Extra Fields</label>
-                <div id="extra-fields-container"></div>
-                <button type="button" class="btn btn-sm btn-outline-light mt-2" id="add-field-btn">+ Add Field</button>
-                <input type="hidden" name="extra_fields" id="extra-fields-json"> <!-- invisible field -->
-              </div>
-      
-              <!-- Remarks -->
-              <div class="mb-3">
-                <label class="form-label fw-bold">Remarks</label>
-                <textarea name="remarks" class="form-control" rows="3" placeholder="Additional notes..."></textarea>
-              </div>
-      
-            </div>
-      
-            <div class="card-footer text-end">
-              <button type="reset" class="btn btn-info fw-bold">Reset</button>
-              <!-- 👇 Changed to normal button -->
-              <button type="button" class="btn btn-info fw-bold" id="save-billing-btn"><i class="fa-solid fa-save me-2"></i>Save Billing</button>
-            </div>
-          </div>
-        </form>
-      </div>
-      
-      <script>
-        const addBtn = document.getElementById("add-field-btn");
-        const container = document.getElementById("extra-fields-container");
-        const hiddenInput = document.getElementById("extra-fields-json");
-        const dueDateInput = document.getElementById("date_due");
-        const form = document.getElementById("billing-form");
-        const saveBtn = document.getElementById("save-billing-btn");
-      
-        // Auto set Billing Due Date = today + 1 month
-        function setBillingDueDate() {
-          const today = new Date();
-          today.setMonth(today.getMonth() + 1); // Add 1 month
-          const yyyy = today.getFullYear();
-          const mm = String(today.getMonth() + 1).padStart(2, "0");
-          const dd = String(today.getDate()).padStart(2, "0");
-          dueDateInput.value = `${yyyy}-${mm}-${dd}`;
-        }
-        setBillingDueDate();
-      
-        // Add extra field row
-        addBtn.addEventListener("click", function () {
-          const row = document.createElement("div");
-          row.className = "row mb-2 extra-field-row";
-      
-          row.innerHTML = `
-            <div class="col-md-6">
-              <input type="text" class="form-control field-name" placeholder="Field Name">
-            </div>
-            <div class="col-md-6">
-              <input type="number" step="0.01" class="form-control field-value" placeholder="Value">
-            </div>
-          `;
-      
-          container.appendChild(row);
-        });
-      
-        // Function to collect extra fields
-        function updateHiddenInput() {
-          const rows = container.getElementsByClassName("extra-field-row");
-          const data = {};
-      
-          for (let i = 0; i < rows.length; i++) {
-            const nameInput = rows[i].getElementsByClassName("field-name")[0];
-            const valueInput = rows[i].getElementsByClassName("field-value")[0];
-            const key = nameInput.value.trim();
-            const val = parseFloat(valueInput.value);
-            if (key && !isNaN(val)) {
-              data[key] = val;
-            }
-          }
-      
-          hiddenInput.value = JSON.stringify(data);
-        }
-      
-        // Handle save button click
-        saveBtn.addEventListener("click", function () {
-          updateHiddenInput();   // 1. update JSON
-          form.submit();         // 2. submit form manually
-        });
-      </script>
-      
-      
-
-
-
   </div>
-  
-      
-  
 
+  <form method="post" action="/billing/create_billing" id="billing-form" style="max-width: 980px;">
+    {% csrf_token %}
+    <input type="hidden" name="extra_fields" id="extra-fields-json" value="{}">
+    {% if not meters %}
+    <div class="alert alert-warning"><i class="fa-solid fa-triangle-exclamation me-2"></i>No electricity meters are available for your sites.</div>
+    {% endif %}
 
+    <section class="mvc-panel p-4 mb-3">
+      <h2 class="panel-title"><i class="fa-solid fa-plug"></i>Meter &amp; tariff</h2>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="meter">Meter</label>
+          <select name="meter" class="form-select" id="meter" required>
+            {% for meter in meters %}
+            <option value="{{ meter.id }}" {% if preselected_meter == meter.id|stringformat:"s" %}selected{% endif %}>{{ meter.name }} · {{ meter.area.building.name }} / {{ meter.area.name }} ({{ meter.area.building.site.name }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="authority">Billing authority</label>
+          <input type="text" name="authority" id="authority" class="form-control" maxlength="100" placeholder="e.g. DESCO" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="rate">Rate (Taka per kWh)</label>
+          <input type="number" step="0.0001" min="0" name="rate" id="rate" class="form-control mvc-num" placeholder="0.0000" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="tax">VAT (%)</label>
+          <input type="number" step="0.01" min="0" max="100" name="tax" id="tax" class="form-control mvc-num" value="5">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="penalty">Late payment penalty (Taka)</label>
+          <input type="number" step="0.01" min="0" name="penalty" id="penalty" class="form-control mvc-num" value="0">
+        </div>
+      </div>
+    </section>
 
+    <section class="mvc-panel p-4 mb-3">
+      <h2 class="panel-title"><i class="fa-regular fa-calendar"></i>Billing period</h2>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="date_range_start">Previous reading date</label>
+          <input type="date" name="date_range_start" id="date_range_start" class="form-control" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="date_range_end">Current reading date</label>
+          <input type="date" name="date_range_end" id="date_range_end" class="form-control" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="date_due">Due date</label>
+          <input type="date" name="date_due" id="date_due" class="form-control">
+        </div>
+      </div>
+    </section>
+
+    <section class="mvc-panel p-4 mb-3">
+      <div class="d-flex align-items-center mb-3">
+        <h2 class="panel-title mb-0"><i class="fa-solid fa-list-ul"></i>Extra charges</h2>
+        <button type="button" class="btn btn-sm btn-outline-info ms-auto" id="add-field-btn"><i class="fa-solid fa-plus me-1"></i>Add charge</button>
+      </div>
+      <div id="extra-fields-container"></div>
+      <p class="small text-muted mb-3">Demand charge, meter rent, power-factor surcharge… added before VAT.</p>
+      <label class="form-label" for="remarks">Remarks</label>
+      <textarea name="remarks" id="remarks" class="form-control" rows="3" maxlength="1000" placeholder="Additional notes printed on the bill"></textarea>
+    </section>
+
+    <div class="d-flex justify-content-end gap-2">
+      <button type="reset" class="btn btn-outline-light" id="reset-btn">Reset</button>
+      <button type="submit" class="btn btn-info px-4" {% if not meters %}disabled{% endif %}><i class="fa-solid fa-floppy-disk me-2"></i>Save bill</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const form = document.getElementById('billing-form');
+  const container = document.getElementById('extra-fields-container');
+  const hiddenInput = document.getElementById('extra-fields-json');
+  const dueDate = document.getElementById('date_due');
+  const endDate = document.getElementById('date_range_end');
+
+  function addDays(iso, days) {
+    const [y, m, d] = iso.split('-').map(Number);
+    const date = new Date(Date.UTC(y, m - 1, d + days));
+    return date.toISOString().slice(0, 10);
+  }
+
+  const today = MVC.todayISO();
+  endDate.value = today;
+  endDate.max = today;
+  document.getElementById('date_range_start').max = today;
+  dueDate.value = addDays(today, 30);
+
+  document.getElementById('add-field-btn').addEventListener('click', () => {
+    const row = document.createElement('div');
+    row.className = 'row g-2 mb-2 extra-field-row align-items-center';
+    row.innerHTML = `
+      <div class="col-md-7"><input type="text" class="form-control field-name" placeholder="Charge name (e.g. Demand charge)" maxlength="100"></div>
+      <div class="col-md-4"><input type="number" step="0.01" class="form-control field-value mvc-num" placeholder="Amount (Taka)"></div>
+      <div class="col-md-1 text-end"><button type="button" class="btn btn-outline-danger remove-field p-0" title="Remove"><i class="fa-solid fa-xmark"></i></button></div>`;
+    row.querySelector('.remove-field').addEventListener('click', () => row.remove());
+    container.appendChild(row);
+  });
+
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    container.replaceChildren();
+    setTimeout(() => { endDate.value = today; dueDate.value = addDays(today, 30); }, 0);
+  });
+
+  form.addEventListener('submit', (event) => {
+    const start = document.getElementById('date_range_start').value;
+    if (start && endDate.value && endDate.value < start) {
+      event.preventDefault();
+      alert('The current reading date must be after the previous reading date.');
+      return;
+    }
+    const data = {};
+    container.querySelectorAll('.extra-field-row').forEach(row => {
+      const key = row.querySelector('.field-name').value.trim();
+      const value = parseFloat(row.querySelector('.field-value').value);
+      if (key && !Number.isNaN(value)) data[key] = value;
+    });
+    hiddenInput.value = JSON.stringify(data);
+  });
+})();
+</script>
 {% endblock %}

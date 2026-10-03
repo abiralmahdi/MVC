@@ -1,0 +1,27 @@
+{% extends 'layout.html' %}
+
+{% block title %}{% if feature_label %}{{ feature_label }} disabled{% else %}No modules enabled{% endif %} - MarksVision{% endblock %}
+
+{% block body %}
+<div class="container" id="main-content">
+  <div class="empty-state mvc-panel mx-auto mt-5" style="max-width: 620px;">
+    <div class="empty-icon"><i class="fa-solid fa-lock"></i></div>
+    {% if feature_label %}
+    <h1 class="h4">The {{ feature_label }} module is disabled</h1>
+    {% else %}
+    <h1 class="h4">No modules are enabled</h1>
+    {% endif %}
+    <p class="mt-2">
+      {% if request.user.is_superuser %}
+      You can enable it again in Settings → Configurations.
+      {% else %}
+      Please contact your system administrator if you need access.
+      {% endif %}
+    </p>
+    <div class="d-flex justify-content-center gap-2 mt-4">
+      {% if landing %}<a href="{{ landing }}" class="btn btn-outline-light"><i class="fa-solid fa-house me-2"></i>Go to start page</a>{% endif %}
+      {% if request.user.is_superuser %}<a href="/settings/configurations" class="btn btn-info"><i class="fa-solid fa-toggle-on me-2"></i>Open configurations</a>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
