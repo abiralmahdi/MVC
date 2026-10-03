@@ -1,16 +1,20 @@
-# MarksVision (MVC) - Portainer stack
-# Paste this into Portainer -> Stacks -> Add stack -> Web editor.
-# Before deploying, edit the two values marked  <-- CHANGE.
+# MarksVision (MVC) - Portainer stack (builds the image from this Git repo)
 #
-# Path A (recommended on a LAN): build the image on your PC, import it on the
-#   Portainer host, then deploy this stack as-is (uses `image:` below).
-# Path B: deploy this stack from a Git repository and let Portainer build it
-#   (comment out `image:` and uncomment `build: ..`).
+# In Portainer:  Stacks -> Add stack -> name "marksvision" -> Build method: Repository
+#   Repository URL : https://github.com/abiralmahdi/MVC.git
+#   Reference      : refs/heads/fix/security-stability-overhaul
+#   Compose path   : deploy/portainer-stack.yml
+# Then set the env vars below (in the stack's "Environment variables" section or inline),
+# and click "Deploy the stack". Portainer clones the repo and builds the image on that host.
+#
+# Edit the three values marked  <-- CHANGE  before deploying.
 
 services:
   web:
+    build:
+      context: ..                 # repo root (where the Dockerfile is), relative to this file
+      dockerfile: Dockerfile
     image: marksvision:latest
-    # build: ..                     # <-- use this instead of image: for Path B (Git build)
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -26,13 +30,16 @@ services:
       # DJANGO_EMAIL_HOST_PASSWORD: "app-password"
       # DJANGO_DEFAULT_FROM_EMAIL: "MarksVision Alerts <you@example.com>"
     volumes:
-      - mvc_db:/data                # sqlite database  (persists across updates)
-      - mvc_media:/app/media        # uploaded files (profile pictures)
+      - mvc_db:/data                # sqlite database   (persists across rebuilds)
+      - mvc_media:/app/media        # uploaded files (profile pictures, reports)
       - mvc_ml:/app/ml_artifacts    # trained ML models + cached datasets
 
   # Optional background meter poller. Enable ONLY if the meters are reachable
-  # from the Portainer PC's network. It shares the same database as the web app.
+  # from the Portainer PC's network. Shares the same database as the web app.
   # poller:
+  #   build:
+  #     context: ..
+  #     dockerfile: Dockerfile
   #   image: marksvision:latest
   #   restart: unless-stopped
   #   command: python manage.py poll_modbus
