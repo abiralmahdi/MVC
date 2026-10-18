@@ -71,9 +71,7 @@ def _device_rows():
     return rows
 
 
-@login_required
-@superuser_required
-def machine_learning(request):
+def _ml_context():
     current = active_run() or TrainingRun.objects.first()
     rows = _device_rows()
     summary = {
@@ -82,7 +80,7 @@ def machine_learning(request):
         'high': sum(1 for r in rows if r['health'] and r['health'].risk == 'high'),
         'medium': sum(1 for r in rows if r['health'] and r['health'].risk == 'medium'),
     }
-    context = {
+    return {
         'current': current,
         'current_payload': _run_payload(current),
         'model_run': latest_run(),
@@ -99,7 +97,20 @@ def machine_learning(request):
             'load_types': sorted({r['load_type'] for r in rows if r['load_type']}),
         },
     }
-    return render(request, 'ml/machine_learning.html', context)
+
+
+@login_required
+@superuser_required
+def machine_learning(request):
+    """Clean page: only the devices & motors list. Full detail lives at /ml-details."""
+    return render(request, 'ml/machine_learning.html', _ml_context())
+
+
+@login_required
+@superuser_required
+def machine_learning_details(request):
+    """Hidden full view: training progress, model quality, datasets and history."""
+    return render(request, 'ml/machine_learning_details.html', _ml_context())
 
 
 @login_required
@@ -109,7 +120,7 @@ def start_training(request):
     running = active_run()
     if running:
         messages.warning(request, f'Training run #{running.pk} is already in progress.')
-        return redirect('/ml/')
+        return redirect('/ml-details')
     run = TrainingRun.objects.create(triggered_by=request.user, stage='Starting', message='Starting the training process')
     try:
         launch_training(run)
@@ -117,9 +128,9 @@ def start_training(request):
         run.status, run.error, run.message = TrainingRun.FAILED, str(exc), 'Could not start the training process'
         run.save()
         messages.error(request, f'Could not start training: {exc}')
-        return redirect('/ml/')
+        return redirect('/ml-details')
     messages.success(request, f'Training run #{run.pk} started.')
-    return redirect('/ml/')
+    return redirect('/ml-details')
 
 
 @json_login_required

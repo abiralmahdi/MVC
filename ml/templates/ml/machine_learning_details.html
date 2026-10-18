@@ -1,0 +1,435 @@
+{% extends 'layout.html' %}
+
+{% block title %}Machine Learning Details - MarksVision{% endblock %}
+
+{% block head %}
+<style>
+  .ml-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 1.1rem; }
+  .ml-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1.1rem; }
+  .ml-kpi { padding: 0.9rem 1rem; }
+  .ml-kpi .num { font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .ml-kpi .hint { font-size: 0.74rem; color: var(--mvc-muted); }
+  .progress-track { height: 10px; border-radius: 999px; background: var(--mvc-surface-3); overflow: hidden; }
+  .progress-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #06b6d4, #22d3ee); box-shadow: 0 0 16px rgba(34, 211, 238, 0.6); transition: width 0.6s ease; }
+  .progress-fill.failed { background: #d64545; box-shadow: none; }
+  .progress-fill.completed { background: linear-gradient(90deg, #16a34a, #22c55e); box-shadow: none; }
+  .progress-fill.running { background-size: 200% 100%; background-image: linear-gradient(90deg, #06b6d4, #67e8f9, #06b6d4); animation: ml-shimmer 1.8s linear infinite; }
+  @keyframes ml-shimmer { to { background-position: -200% 0; } }
+  @media (prefers-reduced-motion: reduce) { .progress-fill.running { animation: none; } }
+  .stage-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.35rem; }
+  .stage-list li { display: flex; align-items: center; gap: 0.6rem; font-size: 0.84rem; color: var(--mvc-muted); }
+  .stage-list .dot { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 0.62rem; border: 1px solid var(--mvc-border-strong); flex-shrink: 0; }
+  .stage-list li.done { color: var(--mvc-text-2); }
+  .stage-list li.done .dot { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.5); color: #4ade80; }
+  .stage-list li.active { color: var(--mvc-text); font-weight: 600; }
+  .stage-list li.active .dot { border-color: var(--mvc-accent); color: var(--mvc-accent); box-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
+  .stage-list li.failed .dot { border-color: #f05252; color: #f87171; }
+  .console { height: 220px; overflow-y: auto; background: var(--mvc-surface-0); border: 1px solid var(--mvc-border); border-radius: var(--mvc-radius); padding: 0.6rem 0.75rem; font-family: var(--mvc-mono); font-size: 0.74rem; color: #a5f3fc; white-space: pre-wrap; }
+  .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+  .metric { padding: 0.7rem 0.8rem; border-radius: var(--mvc-radius); background: var(--mvc-surface-2); border: 1px solid var(--mvc-border); }
+  .metric .value { font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .metric .label { font-size: 0.7rem; color: var(--mvc-muted); }
+  .chip { display: inline-flex; gap: 0.3rem; align-items: center; padding: 0.12rem 0.5rem; margin: 0.1rem 0.15rem 0.1rem 0; border-radius: 999px; font-size: 0.7rem; background: var(--mvc-surface-3); border: 1px solid var(--mvc-border); color: var(--mvc-text-2); white-space: nowrap; }
+  .chip b { color: var(--mvc-accent); font-weight: 600; }
+  .health-bar { width: 90px; height: 6px; border-radius: 999px; background: var(--mvc-surface-3); overflow: hidden; display: inline-block; vertical-align: middle; }
+  .health-bar span { display: block; height: 100%; border-radius: 999px; }
+  .lifespan-bar { width: 130px; height: 9px; border-radius: 999px; background: var(--mvc-surface-3); overflow: hidden; }
+  .lifespan-bar span { display: block; height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+  .ml-filters .form-select { max-width: 210px; }
+  .segmented { display: inline-flex; padding: 3px; border-radius: 8px; background: var(--mvc-surface-2); border: 1px solid var(--mvc-border); }
+  .segmented button { border: 0; background: transparent; padding: 0.25rem 0.7rem; border-radius: 6px; font-size: 0.76rem; font-weight: 600; color: var(--mvc-text-2); }
+  .segmented button.active { background: var(--mvc-accent-soft); color: var(--mvc-accent); }
+  .chart-box { position: relative; height: 230px; }
+</style>
+{% endblock %}
+
+{% block body %}
+{% include 'settings_sidebar.html' %}
+
+<div class="container-fluid" id="main-content">
+  <div class="page-header">
+    <div class="page-icon"><i class="fa-solid fa-brain"></i></div>
+    <div>
+      <h1 class="page-title">Machine Learning</h1>
+      <p class="page-subtitle">Predictive maintenance: XGBoost models that estimate failure risk, days until maintenance and the likely failure type of every meter and motor.</p>
+    </div>
+    <div class="page-actions">
+      <form method="POST" action="/ml/score" class="m-0">
+        {% csrf_token %}
+        <button class="btn btn-outline-light" type="submit" {% if not model_run %}disabled title="Train the models first"{% endif %}><i class="fa-solid fa-stethoscope me-2"></i>Score devices now</button>
+      </form>
+      <form method="POST" action="/ml/train" class="m-0" data-confirm="Start a new training run? It downloads the public datasets (about 80 MB the first time) and takes a few minutes.">
+        {% csrf_token %}
+        <button class="btn btn-info" type="submit" id="start-training" {% if current and current.status in 'queued running' %}disabled{% endif %}><i class="fa-solid fa-play me-2"></i>Start training</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="ml-kpis">
+    <div class="mvc-panel ml-kpi"><div class="eyebrow">Devices supported</div><div class="num">{{ summary.supported }} / {{ summary.devices }}</div><div class="hint">meters and motors with mapped signals</div></div>
+    <div class="mvc-panel ml-kpi"><div class="eyebrow">High risk</div><div class="num" style="color:#f87171">{{ summary.high }}</div><div class="hint">strong signs of an approaching failure</div></div>
+    <div class="mvc-panel ml-kpi"><div class="eyebrow">Medium risk</div><div class="num" style="color:#fbbf24">{{ summary.medium }}</div><div class="hint">wear developing – plan maintenance</div></div>
+    <div class="mvc-panel ml-kpi"><div class="eyebrow">Active model</div><div class="num">{% if model_run %}#{{ model_run.pk }}{% else %}—{% endif %}</div><div class="hint">{% if model_run %}trained {{ model_run.finished_at|date:"d M Y H:i" }}{% else %}no model trained yet{% endif %}</div></div>
+  </div>
+
+  <div class="ml-grid mb-3">
+    <!-- Training progress -->
+    <section class="mvc-panel p-4">
+      <div class="d-flex align-items-center mb-3 gap-2">
+        <h2 class="panel-title mb-0"><i class="fa-solid fa-gauge-high"></i>Training progress</h2>
+        <span class="ms-auto" id="run-status">{% if current %}<span class="status-pill neutral">Run #{{ current.pk }}</span>{% else %}<span class="status-pill neutral">No runs yet</span>{% endif %}</span>
+      </div>
+      {% if current %}
+      <div class="d-flex align-items-baseline gap-2 mb-2">
+        <span class="h4 mb-0 mvc-num" id="run-percent">{{ current.progress|floatformat:0 }}%</span>
+        <span class="text-muted small" id="run-stage">{{ current.stage }}</span>
+        <span class="ms-auto small text-muted mvc-mono" id="run-duration"></span>
+      </div>
+      <div class="progress-track mb-2"><div class="progress-fill {{ current.status }}" id="run-bar" style="width: {{ current.progress }}%"></div></div>
+      <div class="small text-muted mb-3" id="run-message">{{ current.message }}</div>
+      <div class="row g-3">
+        <div class="col-md-5"><ul class="stage-list" id="stage-list">
+          {% for stage in stages %}<li data-start="{{ stage.start }}" data-end="{{ stage.end }}"><span class="dot">{{ forloop.counter }}</span>{{ stage.title }}</li>{% endfor %}
+        </ul></div>
+        <div class="col-md-7"><div class="console" id="run-log"></div></div>
+      </div>
+      {% else %}
+      <div class="empty-state py-4">
+        <div class="empty-icon"><i class="fa-solid fa-brain"></i></div>
+        <h3>No model trained yet</h3>
+        <p>Click “Start training” to download the public datasets, train the models and score every device.</p>
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- Metrics -->
+    <section class="mvc-panel p-4">
+      <h2 class="panel-title"><i class="fa-solid fa-chart-line"></i>Model quality <span class="small text-muted fw-normal ms-1" id="metrics-run"></span></h2>
+      <div class="metric-grid mb-3" id="metric-grid">
+        <div class="metric"><div class="value" id="m-auc">—</div><div class="label">Failure risk ROC-AUC</div></div>
+        <div class="metric"><div class="value" id="m-recall">—</div><div class="label">Failures flagged (medium alert)</div></div>
+        <div class="metric"><div class="value" id="m-precision">—</div><div class="label">Alerts followed by failure ≤14 days</div></div>
+        <div class="metric"><div class="value" id="m-mae">—</div><div class="label">Countdown error when wear detected</div></div>
+        <div class="metric"><div class="value" id="m-partial">—</div><div class="label">AUC, partial sensors</div></div>
+        <div class="metric"><div class="value" id="m-mode">—</div><div class="label">Failure type accuracy</div></div>
+      </div>
+      <div class="d-flex align-items-center mb-2">
+        <span class="eyebrow" id="curve-title">Learning curve</span>
+        <div class="segmented ms-auto" id="curve-tabs">
+          <button type="button" class="active" data-curve="risk">Risk</button>
+          <button type="button" data-curve="days">Days</button>
+          <button type="button" data-curve="mode">Type</button>
+          <button type="button" data-curve="countdown">Countdown</button>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="curve-chart"></canvas></div>
+    </section>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-xl-4">
+      <section class="mvc-panel p-4 h-100">
+        <h2 class="panel-title"><i class="fa-solid fa-ranking-star"></i>What the risk model looks at</h2>
+        <div class="chart-box" style="height: 220px;"><canvas id="importance-chart"></canvas></div>
+      </section>
+    </div>
+    <div class="col-xl-8">
+      <section class="mvc-panel p-4 h-100">
+        <h2 class="panel-title"><i class="fa-solid fa-database"></i>Training datasets</h2>
+        <div class="mvc-table-wrap">
+          <table class="table align-middle">
+            <thead><tr><th>Dataset</th><th>Used for</th><th class="text-end">Size</th><th></th></tr></thead>
+            <tbody>
+              {% for item in datasets %}
+              <tr>
+                <td><div class="fw-semibold">{{ item.dataset.title }}</div><div class="small text-muted">{{ item.dataset.description }}</div></td>
+                <td class="small">{{ item.dataset.used_for }}</td>
+                <td class="text-end mvc-num">{% if item.size_mb %}{{ item.size_mb }} MB{% else %}<span class="text-muted">not downloaded</span>{% endif %}</td>
+                <td class="text-end"><a href="{{ item.dataset.source }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-light" title="Source"><i class="fa-solid fa-arrow-up-right-from-square"></i></a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <p class="small text-muted mt-2 mb-0">Models learn from public fleets. Each plant device is compared with its own 30-day baseline, so predictions become more reliable as your own history and maintenance records grow.</p>
+      </section>
+    </div>
+  </div>
+
+  <!-- Devices -->
+  <section class="mvc-panel p-4 mb-3" id="devices">
+    <div class="d-flex align-items-center mb-2">
+      <h2 class="panel-title mb-0"><i class="fa-solid fa-microchip"></i>Devices &amp; motors</h2>
+      <span class="small text-muted ms-auto">Lifespan is estimated by the model from each device's signals; new meters and motors are included on the next scoring.</span>
+    </div>
+    <div class="ml-filters d-flex flex-wrap gap-2 mb-3 align-items-center">
+      <select class="form-select form-select-sm" id="filter-site" aria-label="Filter by site">
+        <option value="">All sites</option>
+        {% for s in filters.sites %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+      </select>
+      <select class="form-select form-select-sm" id="filter-building" aria-label="Filter by building">
+        <option value="">All buildings</option>
+        {% for b in filters.buildings %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
+      </select>
+      <select class="form-select form-select-sm" id="filter-area" aria-label="Filter by area">
+        <option value="">All areas</option>
+        {% for a in filters.areas %}<option value="{{ a }}">{{ a }}</option>{% endfor %}
+      </select>
+      <select class="form-select form-select-sm" id="filter-load" aria-label="Filter by load type">
+        <option value="">All load types</option>
+        {% for l in filters.load_types %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+      </select>
+      <button type="button" class="btn btn-sm btn-outline-light" id="filter-clear"><i class="fa-solid fa-filter-circle-xmark me-1"></i>Clear</button>
+      <span class="small text-muted ms-auto" id="filter-count"></span>
+    </div>
+    <div class="mvc-table-wrap" style="max-height: 70vh;">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr><th>Device</th><th>Signals used by the model</th><th>Data</th><th>Health</th><th>Lifespan elapsed</th><th>Risk (7 days)</th><th class="text-end">Days to maintenance</th><th>Likely issue / drivers</th></tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          {% with h=row.health %}
+          <tr data-site="{{ row.site }}" data-building="{{ row.building }}" data-area="{{ row.area }}" data-load="{{ row.load_type }}">
+            <td>
+              <div class="fw-semibold">{{ row.device.name }}</div>
+              <div class="small text-muted">{% if row.device.kind == 'motor' %}<i class="fa-solid fa-fan me-1"></i>{% else %}<i class="fa-solid fa-gauge me-1"></i>{% endif %}{{ row.device.type_label }} · {{ row.device.location }}</div>
+            </td>
+            <td style="max-width: 320px;">
+              {% for label, name in row.channels %}<span class="chip"><b>{{ label }}</b>{{ name }}</span>{% empty %}<span class="status-pill bad">No usable signals</span>{% endfor %}
+            </td>
+            <td class="small text-nowrap">
+              {% if h %}{{ h.hours_of_data }} h<div class="text-muted">{% if h.last_data_at %}last {{ h.last_data_at|date:"d M H:i" }}{% else %}no readings{% endif %}</div>{% else %}<span class="text-muted">not scored</span>{% endif %}
+            </td>
+            <td class="text-nowrap">
+              {% if h and h.health_score is not None %}
+              <span class="health-bar"><span style="width: {{ h.health_score }}%; background: {% if h.health_score >= 70 %}#22c55e{% elif h.health_score >= 40 %}#f5b83d{% else %}#f05252{% endif %};"></span></span>
+              <span class="mvc-num ms-1">{{ h.health_score }}%</span>
+              {% elif h %}<span class="small text-muted">{{ h.get_status_display }}</span>{% else %}<span class="small text-muted">—</span>{% endif %}
+            </td>
+            <td class="text-nowrap" style="min-width: 150px;">
+              {% if row.lifespan is not None %}
+              <div class="lifespan-bar"><span style="width: {{ row.lifespan }}%; background: {% if row.lifespan >= 70 %}#f05252{% elif row.lifespan >= 40 %}#f5b83d{% else %}#22c55e{% endif %};"></span></div>
+              <span class="mvc-num small text-muted">{{ row.lifespan }}% used</span>
+              {% else %}<span class="small text-muted">{% if h %}{{ h.get_status_display }}{% else %}not scored{% endif %}</span>{% endif %}
+            </td>
+            <td>
+              {% if h and h.status == 'ok' %}
+              <span class="status-pill {% if h.risk == 'high' %}bad{% elif h.risk == 'medium' %}warn{% else %}good{% endif %}">{{ h.get_risk_display }}</span>
+              <div class="small text-muted mvc-num">{% widthratio h.failure_probability 1 100 %}% probability</div>
+              {% elif h %}<span class="status-pill neutral">{{ h.get_status_display }}</span>{% else %}<span class="status-pill neutral">Not scored</span>{% endif %}
+            </td>
+            <td class="text-end mvc-num">{% if h and h.days_to_maintenance is not None %}{% if h.days_to_maintenance >= 30 %}30+{% else %}{{ h.days_to_maintenance|floatformat:0 }}{% endif %}{% else %}—{% endif %}</td>
+            <td class="small" style="max-width: 340px;">
+              {% if h and h.failure_mode %}<div class="fw-semibold">{{ h.failure_mode }}{% if h.failure_mode_probability %} <span class="text-muted fw-normal">({% widthratio h.failure_mode_probability 1 100 %}%)</span>{% endif %}</div>{% endif %}
+              {% if h %}{% for d in h.drivers %}<div class="text-muted">{{ d.label }}{% if d.measurement %} · {{ d.measurement }}{% endif %}: {{ d.detail }}</div>{% empty %}{% if h.status == 'ok' %}<span class="text-muted">Operating normally</span>{% elif h.status == 'learning' %}<span class="text-muted">Needs 10+ days of history to build a baseline</span>{% endif %}{% endfor %}{% endif %}
+            </td>
+          </tr>
+          {% endwith %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- History -->
+  <section class="mvc-panel p-4">
+    <h2 class="panel-title"><i class="fa-solid fa-clock-rotate-left"></i>Training history</h2>
+    <div class="mvc-table-wrap">
+      <table class="table align-middle">
+        <thead><tr><th>Run</th><th>Started</th><th>Duration</th><th>Status</th><th class="text-end">ROC-AUC</th><th class="text-end">Days MAE</th><th class="text-end">Type accuracy</th><th>Started by</th></tr></thead>
+        <tbody>
+          {% for run in runs %}
+          <tr>
+            <td class="mvc-num">#{{ run.pk }}</td>
+            <td>{{ run.started_at|date:"d M Y H:i"|default:"—" }}</td>
+            <td class="mvc-num">{% if run.duration_seconds %}{{ run.duration_seconds|floatformat:0 }} s{% else %}—{% endif %}</td>
+            <td><span class="status-pill {% if run.status == 'completed' %}good{% elif run.status == 'failed' %}bad{% elif run.status == 'running' %}info{% else %}neutral{% endif %}">{{ run.get_status_display }}</span>{% if run.status == 'failed' and run.message %}<div class="small text-muted">{{ run.message|truncatechars:80 }}</div>{% endif %}</td>
+            <td class="text-end mvc-num">{{ run.metrics.risk.roc_auc|default:"—" }}</td>
+            <td class="text-end mvc-num">{% if run.metrics.days %}{{ run.metrics.days.mae_days }}{% else %}—{% endif %}</td>
+            <td class="text-end mvc-num">{% if run.metrics.mode %}{% widthratio run.metrics.mode.accuracy 1 100 %}%{% else %}—{% endif %}</td>
+            <td>{{ run.triggered_by.username|default:"command line" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8" class="text-muted text-center py-4">No training runs yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+{{ current_payload|json_script:"ml-run" }}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const THEME = MVC.chartTheme;
+  let run = JSON.parse($('ml-run').textContent);
+  let curveKey = 'risk';
+  let curveChart = null, importanceChart = null;
+  const pct = (v) => (v === undefined || v === null) ? '—' : `${Math.round(v * 100)}%`;
+
+  function statusPill(status) {
+    const cls = { completed: 'good', failed: 'bad', running: 'info', queued: 'neutral' }[status] || 'neutral';
+    return `<span class="status-pill ${cls}">Run #${run.id} · ${status}</span>`;
+  }
+
+  function renderRun() {
+    if (!run) return;
+    $('run-status').innerHTML = statusPill(run.status);
+    $('run-percent').textContent = `${Math.round(run.progress)}%`;
+    $('run-stage').textContent = run.stage;
+    $('run-message').textContent = run.status === 'failed' ? `Failed: ${run.error || run.message}` : run.message;
+    const bar = $('run-bar');
+    bar.style.width = `${run.progress}%`;
+    bar.className = `progress-fill ${run.status}`;
+    if (run.duration) $('run-duration').textContent = `${Math.floor(run.duration / 60)}m ${Math.round(run.duration % 60)}s`;
+    document.querySelectorAll('#stage-list li').forEach((li) => {
+      const start = +li.dataset.start, end = +li.dataset.end;
+      li.classList.remove('done', 'active', 'failed');
+      if (run.status === 'completed' || run.progress >= end) li.classList.add('done');
+      else if (run.progress >= start) li.classList.add(run.status === 'failed' ? 'failed' : 'active');
+      li.querySelector('.dot').innerHTML = li.classList.contains('done') ? '<i class="fa-solid fa-check"></i>' : li.dataset.index || li.querySelector('.dot').textContent;
+    });
+    const log = $('run-log');
+    const atBottom = log.scrollTop + log.clientHeight >= log.scrollHeight - 20;
+    log.textContent = (run.log || []).join('\n');
+    if (atBottom) log.scrollTop = log.scrollHeight;
+    renderMetrics();
+  }
+
+  function renderMetrics() {
+    const m = (run && run.metrics) || {};
+    $('metrics-run').textContent = run ? `run #${run.id}` : '';
+    $('m-auc').textContent = m.risk ? m.risk.roc_auc.toFixed(3) : '—';
+    $('m-recall').textContent = m.risk ? pct(m.risk.recall) : '—';
+    $('m-precision').textContent = m.risk ? pct(m.risk.precision_14d ?? m.risk.precision) : '—';
+    $('m-mae').textContent = m.days && m.days.mae_days !== null ? `±${m.days.mae_days} d` : '—';
+    $('m-partial').textContent = m.risk ? m.risk.roc_auc_partial_signals.toFixed(3) : '—';
+    $('m-mode').textContent = m.mode ? pct(m.mode.accuracy) : '—';
+    drawCurve();
+    drawImportance();
+  }
+
+  function drawCountdown() {
+    const rows = (run && run.metrics && run.metrics.days && run.metrics.days.calibration) || [];
+    const data = {
+      labels: rows.map(r => r.actual),
+      datasets: [
+        { label: 'Predicted (mean)', data: rows.map(r => r.predicted), borderColor: MVC.seriesColor(0), pointBackgroundColor: MVC.seriesColor(0), pointRadius: 3, fill: false },
+        { label: '10–90% range', data: rows.map(r => r.p90), borderColor: 'transparent', backgroundColor: MVC.seriesColor(0, 0.14), pointRadius: 0, fill: '+1' },
+        { label: '10% bound', data: rows.map(r => r.p10), borderColor: 'transparent', pointRadius: 0, fill: false },
+        { label: 'Perfect', data: rows.map(r => r.actual), borderColor: THEME.INK.muted, borderDash: [4, 4], borderWidth: 1, pointRadius: 0, fill: false },
+      ],
+    };
+    const options = {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { position: 'top', align: 'start', labels: { filter: (item) => item.text !== '10% bound' } } },
+      scales: { x: { title: { display: true, text: 'Actual days to failure (unseen engines)', color: THEME.INK.muted }, grid: { display: false } },
+                y: { min: 0, max: 30, title: { display: true, text: 'Predicted days', color: THEME.INK.muted }, border: { display: false } } },
+    };
+    if (curveChart) curveChart.destroy();
+    curveChart = new Chart($('curve-chart'), { type: 'line', data, options });
+  }
+
+  function drawCurve() {
+    $('curve-title').textContent = curveKey === 'countdown' ? 'Countdown accuracy' : 'Learning curve';
+    if (curveKey === 'countdown') { drawCountdown(); return; }
+    if (curveChart && curveChart.config.options.scales.y.max === 30) { curveChart.destroy(); curveChart = null; }
+    const curves = (run && run.metrics && run.metrics.curves && run.metrics.curves[curveKey]) || {};
+    const metric = { risk: 'auc', days: 'mae', mode: 'mlogloss' }[curveKey];
+    const train = curves[`train_${metric}`] || [];
+    const val = curves[`validation_${metric}`] || [];
+    const labels = val.map((_, i) => i * 5 + 1);
+    const data = {
+      labels,
+      datasets: [
+        { label: `Validation ${metric.toUpperCase()}`, data: val, borderColor: MVC.seriesColor(0), pointBackgroundColor: MVC.seriesColor(0), backgroundColor: MVC.seriesColor(0, 0.12), fill: 'origin' },
+        { label: `Training ${metric.toUpperCase()}`, data: train, borderColor: MVC.seriesColor(1), pointBackgroundColor: MVC.seriesColor(1), borderDash: [4, 4], fill: false },
+      ],
+    };
+    const options = {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { position: 'top', align: 'start' } },
+      scales: { x: { title: { display: true, text: 'Boosting round', color: THEME.INK.muted }, grid: { display: false }, ticks: { maxTicksLimit: 8 } },
+                y: { border: { display: false }, ticks: { maxTicksLimit: 5 } } },
+    };
+    if (curveChart) { curveChart.data = data; curveChart.update('none'); }
+    else curveChart = new Chart($('curve-chart'), { type: 'line', data, options });
+  }
+
+  function drawImportance() {
+    const imp = run && run.metrics && run.metrics.importance && run.metrics.importance.channels;
+    if (!imp) return;
+    const labels = ['Electrical', 'Load', 'Process', 'Stress', 'Alarms'];
+    const values = ['electrical', 'load', 'process', 'stress', 'alarms'].map(k => Math.round((imp[k] || 0) * 1000) / 10);
+    const data = { labels, datasets: [{ data: values, backgroundColor: MVC.seriesColor(0), borderWidth: 0, maxBarThickness: 22 }] };
+    const options = {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.parsed.x}% of total gain` } } },
+      scales: { x: { ticks: { callback: (v) => `${v}%` }, border: { display: false } }, y: { grid: { display: false } } },
+    };
+    if (importanceChart) { importanceChart.data = data; importanceChart.update('none'); }
+    else importanceChart = new Chart($('importance-chart'), { type: 'bar', data, options });
+  }
+
+  document.querySelectorAll('#curve-tabs button').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('#curve-tabs button').forEach(b => b.classList.toggle('active', b === btn));
+    curveKey = btn.dataset.curve;
+    drawCurve();
+  }));
+
+  document.querySelectorAll('#stage-list li').forEach((li, i) => { li.dataset.index = i + 1; });
+
+  if (run) {
+    renderRun();
+    if (run.status === 'queued' || run.status === 'running') {
+      const timer = setInterval(async () => {
+        try {
+          const data = await MVC.fetchJSON(`/ml/status/${run.id}`);
+          run = data.run;
+          renderRun();
+          if (run.status === 'completed' || run.status === 'failed') {
+            clearInterval(timer);
+            setTimeout(() => window.location.reload(), 1500);
+          }
+        } catch (error) {
+          $('run-message').textContent = `Status update failed: ${error.message}`;
+        }
+      }, 2000);
+    }
+  } else {
+    renderMetrics();
+  }
+})();
+
+// Device list filters (site / building / area / load type).
+(function () {
+  const rows = Array.from(document.querySelectorAll('#devices tbody tr[data-site]'));
+  const keys = ['site', 'building', 'area', 'load'];
+  const selects = keys.map(k => document.getElementById('filter-' + k));
+  const count = document.getElementById('filter-count');
+  if (!rows.length || selects.some(s => !s)) return;
+  function apply() {
+    const want = { site: selects[0].value, building: selects[1].value, area: selects[2].value, load: selects[3].value };
+    let shown = 0;
+    rows.forEach(tr => {
+      const ok = (!want.site || tr.dataset.site === want.site)
+        && (!want.building || tr.dataset.building === want.building)
+        && (!want.area || tr.dataset.area === want.area)
+        && (!want.load || tr.dataset.load === want.load);
+      tr.hidden = !ok;
+      if (ok) shown++;
+    });
+    if (count) count.textContent = `${shown} of ${rows.length} devices`;
+  }
+  selects.forEach(s => s.addEventListener('change', apply));
+  const clearBtn = document.getElementById('filter-clear');
+  if (clearBtn) clearBtn.addEventListener('click', () => { selects.forEach(s => (s.value = '')); apply(); });
+  apply();
+})();
+</script>
+{% endblock %}

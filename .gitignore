@@ -27,3 +27,5 @@ staticfiles/
 # IDE/editor files
 .vscode/
 .idea/
+# data bundle (never commit user data)
+/marksvision-data-bundle.zip

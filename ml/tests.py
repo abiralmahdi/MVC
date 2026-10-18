@@ -179,7 +179,22 @@ class PageAccessTests(TestCase):
         self.client.force_login(self.root)
         response = self.client.get('/ml/')
         self.assertContains(response, 'Machine Learning')
+        self.assertContains(response, 'Devices &amp; motors')
+        # The clean page no longer shows the training/model detail sections.
+        self.assertNotContains(response, 'Training datasets')
+        self.assertNotContains(response, 'Training history')
+
+    def test_details_page_has_the_full_view(self):
+        self.client.force_login(self.root)
+        response = self.client.get('/ml-details')
+        self.assertContains(response, 'Devices &amp; motors')
         self.assertContains(response, 'Training datasets')
+        self.assertContains(response, 'Training history')
+
+    def test_details_page_is_superuser_only(self):
+        self.assertEqual(self.client.get('/ml-details').status_code, 302)
+        self.client.force_login(self.admin)
+        self.assertEqual(self.client.get('/ml-details').status_code, 403)
 
     def test_start_training_launches_background_process_and_reports_status(self):
         self.client.force_login(self.root)
